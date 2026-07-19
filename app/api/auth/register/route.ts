@@ -4,13 +4,29 @@ import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { nombre, email, password } = await request.json()
 
-    if (!email || !password) {
+    if (!nombre || !email || !password) {
       return NextResponse.json(
         { error: "Completa todos los campos" },
+        { status: 400 },
+      )
+    }
+
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json(
+        { error: "Ingresa un correo electrónico válido" },
+        { status: 400 },
+      )
+    }
+
+    if (typeof password !== "string" || password.length < 8) {
+      return NextResponse.json(
+        { error: "La contraseña debe tener al menos 8 caracteres" },
         { status: 400 },
       )
     }
@@ -33,48 +49,24 @@ export async function POST(request: Request) {
       },
     )
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { nombre, role: "customer" },
+      },
     })
 
-    if (error || !data.user) {
-      return NextResponse.json(
-        { error: error?.message ?? "Error de autenticación" },
-        { status: 401 },
-      )
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    const userId = data.user.id
-
-    const result = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()
-
-    if (result.error || !result.data) {
-      const msg = result.error
-        ? "Error al verificar permisos: " + result.error.message
-        : "No se encontró el perfil del usuario"
-      return NextResponse.json({ error: msg }, { status: 500 })
-    }
-
-    const profile = result.data as unknown as { role: string }
-
-    if (profile.role !== "admin") {
-      return NextResponse.json(
-        { error: "No tienes permisos de administrador" },
-        { status: 403 },
-      )
-    }
+    const needsConfirmation = !data.session
 
     return NextResponse.json({
       success: true,
-      user: {
-        id: userId,
-        email: data.user.email,
-      },
+      needsConfirmation,
+      user: data.user ? { id: data.user.id, email: data.user.email } : null,
     })
   } catch {
     return NextResponse.json(

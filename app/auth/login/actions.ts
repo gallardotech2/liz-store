@@ -14,19 +14,14 @@ export async function login(formData: FormData) {
       return redirect("/auth/login?error=Completa+todos+los+campos")
     }
 
-    console.log("[LOGIN] intento para:", email)
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      console.error("[LOGIN ERROR]", error.message)
       return redirect("/auth/login?error=" + encodeURIComponent(error.message))
     }
-
-    console.log("[LOGIN OK] user:", data.user?.id)
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -35,21 +30,18 @@ export async function login(formData: FormData) {
       .single()
 
     if (profileError) {
-      console.error("[LOGIN PROFILE ERROR]", profileError.message)
       return redirect("/auth/login?error=Error+al+verificar+permisos")
     }
 
     const role = (profile as unknown as { role?: string })?.role
-    console.log("[LOGIN] profile role:", role)
 
     if (role !== "admin") {
-      return redirect("/auth/login?error=No+tienes+permisos+de+admin.+Role:" + role)
+      return redirect("/auth/login?error=No+tienes+permisos+de+administrador")
     }
 
     revalidatePath("/", "layout")
     redirect("/admin")
-  } catch (e) {
-    console.error("[LOGIN UNCAUGHT]", e)
+  } catch {
     return redirect("/auth/login?error=Error+inesperado+en+el+servidor")
   }
 }
