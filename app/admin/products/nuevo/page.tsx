@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { ProductForm } from "@/components/admin/ProductForm"
 import { createProduct } from "../actions"
 
+export const dynamic = "force-dynamic"
+
 export default async function NewProductPage() {
   const supabase = await createClient()
   const { data: categories } = await (supabase as any)

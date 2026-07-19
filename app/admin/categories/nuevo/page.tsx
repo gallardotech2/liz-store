@@ -1,6 +1,8 @@
 import { CategoryForm } from "@/components/admin/CategoryForm"
 import { createCategory } from "../actions"
 
+export const dynamic = "force-dynamic"
+
 export default function NewCategoryPage() {
   return (
     <div>
