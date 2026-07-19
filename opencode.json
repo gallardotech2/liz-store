@@ -1,0 +1,47 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "model-migrator": {
+      "description": "Lee modelos Django y genera schema SQL para Supabase + tipos TypeScript",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash-free",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "template-migrator": {
+      "description": "Lee templates HTML/CSS y genera componentes React + Tailwind",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash-free",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "logic-migrator": {
+      "description": "Migra lógica de negocio a Server Actions + Supabase queries",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash-free",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "page-architect": {
+      "description": "Crea páginas App Router con ISR, SSG y SEO",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash-free",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "admin-migrator": {
+      "description": "Migra panel admin a rutas protegidas + dashboards",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash-free",
+      "permission": { "edit": "allow", "bash": "ask" }
+    }
+  },
+  "references": {
+    "backup": {
+      "path": "/home/elvirio16/Proyect-app/liz-react-django-backup",
+      "description": "Proyecto Django original respaldado para consultar modelos, templates y lógica durante la migración"
+    },
+    "docs": {
+      "path": "docs_migracion",
+      "description": "Bitácoras de migración por módulo"
+    }
+  },
+  "formatter": false,
+  "lsp": false
+}
