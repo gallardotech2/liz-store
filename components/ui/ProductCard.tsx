@@ -72,7 +72,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
         </Link>
       </div>
 
-      <Link href={`/productos/${product.slug}`} className="no-underline">
+       <Link href={`/productos/${product.slug}`} className="no-underline group">
         <div className="relative aspect-square overflow-hidden bg-[#FFFBF9]">
           {product.image ? (
             <Image
@@ -80,7 +80,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               alt={product.name}
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
-              className="object-cover transition-transform duration-500 hover:scale-105"
+              className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
           ) : (

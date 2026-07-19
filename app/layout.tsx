@@ -40,14 +40,14 @@ export const metadata: Metadata = {
     template: "%s | Liz Store",
     default: "Liz Store — Bisutería y Accesorios Elegantes",
   },
-  description: "Tienda boliviana de bisutería y accesorios elegantes. Moneda: Bolivianos (Bs). Pago seguro con Escudo Pago.",
-  keywords: ["bisutería", "accesorios", "joyería", "Bolivia", "Escudo Pago", "Liz Store"],
+  description: "Tienda boliviana de bisutería y accesorios elegantes. Moneda: Bolivianos (Bs). Pago seguro y confiable.",
+  keywords: ["bisutería", "accesorios", "joyería", "Bolivia", "Liz Store"],
   openGraph: {
     type: "website",
     locale: "es_BO",
     siteName: "Liz Store",
     title: "Liz Store — Bisutería y Accesorios Elegantes",
-    description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro con Escudo Pago.",
+    description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro y confiable.",
   },
   robots: {
     index: true,

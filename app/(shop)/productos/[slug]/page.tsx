@@ -7,9 +7,11 @@ import { ProductCard } from "@/components/ui/ProductCard"
 import { formatCurrency } from "@/lib/utils"
 import { addToCartAction } from "../../carrito/actions"
 import { AddToCartForm } from "./AddToCartForm"
+import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
+export const dynamicParams = true
 
 export async function generateStaticParams() {
   try {
@@ -18,7 +20,6 @@ export async function generateStaticParams() {
       .from("products")
       .select("slug")
       .eq("is_active", true)
-      .limit(50)
 
     return ((data ?? []) as { slug: string }[]).map((p) => ({ slug: p.slug }))
   } catch {
@@ -32,11 +33,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
+  const cleanSlug = slug.trim()
   const supabase = await createClient()
   const { data } = await supabase
     .from("products")
     .select("name, meta_description, meta_keywords")
-    .eq("slug", slug)
+    .eq("slug", cleanSlug)
     .eq("is_active", true)
     .single()
 
@@ -56,6 +58,7 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+  const cleanSlug = slug.trim()
   const supabase = await createClient()
   const s = supabase as any
 
@@ -64,7 +67,7 @@ export default async function ProductDetailPage({
     .select(
       "*, category:categories(id, name, slug), product_images(id, image, alt_text, is_main, order)",
     )
-    .eq("slug", slug)
+    .eq("slug", cleanSlug)
     .eq("is_active", true)
     .single()
 
@@ -188,7 +191,7 @@ export default async function ProductDetailPage({
                     alt={mainImage.alt_text || p.name}
                     width={600}
                     height={600}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-center"
                     priority
                   />
                 ) : (
@@ -200,18 +203,18 @@ export default async function ProductDetailPage({
               {sortedImages.length > 1 && (
                 <div className="flex gap-2.5">
                   {sortedImages.map((img) => (
-                    <div
-                      key={img.id}
-                      className="w-20 h-20 rounded-[8px] overflow-hidden cursor-pointer border-2 border-transparent hover:border-primary transition-colors duration-300"
-                    >
-                      <Image
-                        src={img.image}
-                        alt={img.alt_text || p.name}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                   <div
+                       key={img.id}
+                       className="w-20 h-20 rounded-[8px] overflow-hidden cursor-pointer border-2 border-transparent hover:border-primary transition-colors duration-300"
+                     >
+                       <Image
+                         src={img.image}
+                         alt={img.alt_text || p.name}
+                         width={80}
+                         height={80}
+                         className="w-full h-full object-cover object-center"
+                       />
+                     </div>
                   ))}
                 </div>
               )}
@@ -284,16 +287,18 @@ export default async function ProductDetailPage({
                 />
               )}
 
-              <div className="bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[8px] p-5 my-6 border border-[rgba(183,110,121,0.2)]">
-                <h4 className="flex items-center gap-2 text-sm mb-2 font-sans text-[#2D2D2D]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                  Escudo Pago
-                </h4>
-                <p className="text-[13px] text-[#888888] leading-[1.6]">
-                  Tu dinero está protegido y solo se liberará cuando confirmes
-                  que recibiste tu pedido. Compra con total tranquilidad.
-                </p>
-              </div>
+              {ESCUDO_PAGO_ENABLED && (
+                <div className="bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[8px] p-5 my-6 border border-[rgba(183,110,121,0.2)]">
+                  <h4 className="flex items-center gap-2 text-sm mb-2 font-sans text-[#2D2D2D]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    Escudo Pago
+                  </h4>
+                  <p className="text-[13px] text-[#888888] leading-[1.6]">
+                    Tu dinero está protegido y solo se liberará cuando confirmes
+                    que recibiste tu pedido. Compra con total tranquilidad.
+                  </p>
+                </div>
+              )}
 
               {p.long_description && (
                 <div className="mt-7.5">

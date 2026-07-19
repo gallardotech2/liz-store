@@ -153,7 +153,7 @@ export default async function CategoryDetailPage({
                 src={category.image}
                 alt={category.name}
                 fill
-                className="object-cover"
+                className="object-cover object-center"
                 sizes="100vw"
                 priority
               />

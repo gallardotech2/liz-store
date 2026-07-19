@@ -84,7 +84,7 @@ export function Header({
       ) : (
         <div className="bg-[#2D2D2D] text-white text-[12px] py-2 text-center tracking-[1px] uppercase">
           <div className="max-w-7xl mx-auto px-4">
-            ✦ ENVÍO GRATIS EN COMPRAS MAYORES A Bs. 599 <span className="text-[#C9A96E]">✦</span> PAGO SEGURO <span className="text-[#C9A96E]">✦</span>
+            NO TE PIERDAS NUESTROS LIVES <span className="text-[#C9A96E]">•</span> ÚNETE A NUESTRO GRUPO DE WHATSAPP
           </div>
         </div>
       )}

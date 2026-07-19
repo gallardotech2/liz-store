@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 
 interface FooterCategory {
   name: string
@@ -29,7 +30,7 @@ export function Footer({ categories = [] }: FooterProps) {
             />
             <button
               type="submit"
-              className="bg-[#C9A96E] text-white border-none px-8 py-4 font-semibold cursor-pointer transition-colors duration-300 font-sans whitespace-nowrap hover:bg-[#B8954E]"
+              className="bg-[#2D2D2D] text-white border-none px-8 py-4 font-semibold cursor-pointer transition-colors duration-300 font-sans whitespace-nowrap hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:bg-primary-dark"
             >
               Suscribirse
             </button>
@@ -41,7 +42,10 @@ export function Footer({ categories = [] }: FooterProps) {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-10 mb-10">
             <div>
-              <h3 className="text-white font-serif text-xl mb-5">✦ Liz Store</h3>
+              <h3 className="text-white text-xl mb-5 flex items-baseline gap-1">
+                <span className="font-['Great_Vibes',cursive] text-[24px] text-primary">Liz</span>
+                <span className="font-['Cinzel',serif] text-[14px] text-white font-medium tracking-[2px] uppercase">Store</span>
+              </h3>
               <p className="text-sm leading-[1.8]">
                 Bisutería y accesorios elegantes en Bolivia. Tu estilo merece lo mejor, con la confianza de un pago completamente seguro.
               </p>
@@ -106,9 +110,11 @@ export function Footer({ categories = [] }: FooterProps) {
               <ul className="list-none p-0 m-0">
                 {[
                   { href: "/faq", label: "Preguntas frecuentes" },
-                  { href: "#", label: "Cómo comprar" },
-                  { href: "#", label: "Envíos y devoluciones" },
-                  { href: "#", label: "Escudo Pago" },
+                  { href: "/faq", label: "Cómo comprar" },
+                  { href: "/faq", label: "Envíos y devoluciones" },
+                  ...(ESCUDO_PAGO_ENABLED
+                    ? [{ href: "#", label: "Escudo Pago" }]
+                    : []),
                   { href: "#", label: "Términos y condiciones" },
                 ].map((link) => (
                   <li key={link.label} className="mb-2.5">
@@ -132,9 +138,9 @@ export function Footer({ categories = [] }: FooterProps) {
                   </a>
                 </li>
                 <li className="mb-2.5">
-                  <a href="#" className="text-[rgba(255,255,255,0.7)] no-underline text-sm transition-colors duration-300 hover:text-[#C9A96E]">
+                  <a href="https://wa.me/59176426643" target="_blank" rel="noopener noreferrer" className="text-[rgba(255,255,255,0.7)] no-underline text-sm transition-colors duration-300 hover:text-[#C9A96E]">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline mr-2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    +591 66023514
+                    +591 76426643
                   </a>
                 </li>
                 <li className="mb-2.5">

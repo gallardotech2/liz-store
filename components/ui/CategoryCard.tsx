@@ -20,7 +20,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
     <Link
       href={`/categorias/${category.slug}`}
       className={cn(
-        "bg-white rounded-[16px] no-underline transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(183,110,121,0.05)] overflow-hidden flex flex-col hover:-translate-y-1.5 hover:shadow-[0_10px_40px_rgba(183,110,121,0.15)] hover:border-[rgb(251,132,150)]",
+        "bg-white rounded-[16px] no-underline transition-all duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(183,110,121,0.05)] overflow-hidden flex flex-col hover:-translate-y-1.5 hover:shadow-[0_10px_40px_rgba(183,110,121,0.15)] hover:border-[rgb(251,132,150)] group",
         className,
       )}
     >
@@ -31,7 +31,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             alt={category.name}
             fill
             sizes="(max-width: 768px) 50vw, 220px"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl text-primary bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6]">

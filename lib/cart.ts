@@ -110,6 +110,10 @@ export function calculateCartTotal(cart: CartData): CartSummary {
   }
 }
 
+export function clearCartCookie(cookieStore: any) {
+  cookieStore.set(CART_COOKIE, "", { maxAge: 0, path: "/" })
+}
+
 function round(n: number): number {
   return Math.round(n * 100) / 100
 }
