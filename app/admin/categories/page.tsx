@@ -53,7 +53,7 @@ export default async function AdminCategoriesPage() {
             </thead>
             <tbody>
               {raw.map((cat) => (
-                <tr key={cat.id} className="border-b border-white/12 hover:bg-white/4 transition-colors">
+                <tr key={cat.id} className="border-b border-white/12 hover:bg-white/5 transition-colors">
                   <td className="px-5 py-3.5">
                     {cat.image ? (
                       <img

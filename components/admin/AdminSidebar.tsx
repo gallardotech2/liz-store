@@ -88,7 +88,7 @@ export function AdminSidebar({ userName, userEmail, sidebarOpen, onClose }: Admi
               href="/admin"
               className={cn(
                 "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all no-underline",
-                pathname === "/admin" ? "text-white bg-primary/12" : "text-[#ABB2BF] hover:text-white hover:bg-white/6",
+                pathname === "/admin" ? "text-white bg-primary/10" : "text-[#ABB2BF] hover:text-white hover:bg-white/5",
               )}
               prefetch={false}
             >
@@ -111,7 +111,7 @@ export function AdminSidebar({ userName, userEmail, sidebarOpen, onClose }: Admi
                       href={link.href}
                       className={cn(
                         "flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all no-underline",
-                        isActive ? "text-white bg-primary/12" : "text-[#ABB2BF] hover:text-white hover:bg-white/6",
+                        isActive ? "text-white bg-primary/10" : "text-[#ABB2BF] hover:text-white hover:bg-white/5",
                       )}
                       prefetch={false}
                       onClick={() => { if (window.innerWidth <= 768) onClose() }}

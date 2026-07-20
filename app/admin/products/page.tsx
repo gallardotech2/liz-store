@@ -76,7 +76,7 @@ export default async function AdminProductsPage() {
               {raw.map((p) => {
                 const cat = Array.isArray(p.category) ? p.category[0] : p.category
                 return (
-                  <tr key={p.id} className="border-b border-white/12 hover:bg-white/4 transition-colors">
+                  <tr key={p.id} className="border-b border-white/12 hover:bg-white/5 transition-colors">
                     <td className="px-5 py-3.5">
                       {imageMap.has(p.id) ? (
                         <img

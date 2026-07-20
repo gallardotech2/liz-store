@@ -66,6 +66,7 @@ function SubmitBtn() {
 function AddImageForm({ productId }: { productId: number }) {
   const { pending } = useFormStatus()
   const [preview, setPreview] = useState<string | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
@@ -89,15 +90,16 @@ function AddImageForm({ productId }: { productId: number }) {
               const f = e.target.files?.[0]
               if (f) {
                 if (f.size > 5 * 1024 * 1024) {
-                  alert("La imagen no debe superar los 5MB")
+                  setImageError("La imagen no debe superar los 5MB")
                   e.target.value = ""
                   return
                 }
                 if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
-                  alert("Formato no soportado. Usa JPG, PNG o WEBP")
+                  setImageError("Formato no soportado. Usa JPG, PNG o WEBP")
                   e.target.value = ""
                   return
                 }
+                setImageError(null)
                 setPreview(URL.createObjectURL(f))
               }
             }}
@@ -128,6 +130,7 @@ function AddImageForm({ productId }: { productId: number }) {
           <img src={preview} alt="Vista previa" className="w-20 h-20 rounded-xl object-cover border border-white/12" />
         </div>
       )}
+      {imageError && <p className="text-[#E74C3C] text-[12px] mt-2">{imageError}</p>}
     </form>
   )
 }

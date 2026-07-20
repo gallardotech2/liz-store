@@ -21,7 +21,7 @@ export function AdminShell({ userName, userEmail, children }: AdminShellProps) {
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <div className="flex-1 ml-[288px] max-md:ml-0 flex flex-col min-h-screen">
+      <div className="flex-1 ml-[288px] max-md:ml-0 flex flex-col min-h-screen min-w-0">
         <AdminNavbar
           userName={userName}
           onMenuClick={() => setSidebarOpen((prev) => !prev)}

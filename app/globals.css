@@ -3,9 +3,9 @@
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #171717;
-  --color-primary: #fb8496;
+  --color-primary: #B76E79;
   --color-primary-dark: #9A5A63;
-  --color-primary-light: #ff8e9f;
+  --color-primary-light: #d98e98;
   --color-secondary: #20232a;
   --color-secondary-light: #33373e;
   --color-accent: #D4A5A5;
@@ -21,4 +21,13 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
 }

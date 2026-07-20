@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -28,6 +29,8 @@ function SubmitBtn() {
 }
 
 export function CategoryForm({ initialData, action }: CategoryFormProps) {
+  const removeImageRef = useRef<HTMLInputElement>(null)
+
   return (
     <form action={action} className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div className="flex flex-col gap-1.5">
@@ -60,15 +63,12 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
         <label className="text-[13px] text-[#ABB2BF] font-medium">
           Imagen de la categoría
         </label>
+        <input ref={removeImageRef} type="hidden" name="remove_image" defaultValue={initialData?.image ? "0" : "1"} />
         <ImageDropzone
           name="image"
           currentImage={initialData?.image}
           onClear={() => {
-            const input = document.createElement("input")
-            input.type = "hidden"
-            input.name = "remove_image"
-            input.value = "1"
-            document.forms[0]?.appendChild(input)
+            if (removeImageRef.current) removeImageRef.current.value = "1"
           }}
         />
       </div>

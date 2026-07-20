@@ -86,7 +86,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: Im
           relative flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed cursor-pointer
           transition-all duration-200 min-h-[120px]
           ${isDragging
-            ? "border-primary bg-primary/8 scale-[1.02]"
+            ? "border-primary bg-primary/10 scale-[1.02]"
             : showImage
               ? "border-white/20 bg-[#1E2028]"
               : "border-white/20 bg-[#1E2028] hover:border-white/30 hover:bg-[#22242D]"

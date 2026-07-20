@@ -4,7 +4,7 @@ import { ChartsSection } from "@/components/admin/ChartsSection"
 import Link from "next/link"
 import { BoxIcon, CartIcon, UsersIcon, ExternalLinkIcon, DollarIcon } from "@/components/admin/Icons"
 
-export const revalidate = 3600
+export const dynamic = "force-dynamic"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
