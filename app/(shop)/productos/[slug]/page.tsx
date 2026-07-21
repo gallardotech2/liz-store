@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server"
 import { createStaticClient } from "@/lib/supabase/static"
 import { ProductCard } from "@/components/ui/ProductCard"
 import { formatCurrency } from "@/lib/utils"
-import { addToCartAction } from "../../carrito/actions"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import type { Metadata } from "next"
@@ -283,12 +282,11 @@ export default async function ProductDetailPage({
                   productSlug={p.slug}
                   price={displayPrice}
                   stock={p.stock}
-                  addToCartAction={addToCartAction}
                 />
               )}
 
               {ESCUDO_PAGO_ENABLED && (
-                <div className="bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[8px] p-5 my-6 border border-[rgba(183,110,121,0.2)]">
+                <div className="bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[8px] p-5 my-6 border border-[rgba(255,142,159,0.2)]">
                   <h4 className="flex items-center gap-2 text-sm mb-2 font-sans text-[#2D2D2D]">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Escudo Pago
@@ -363,7 +361,7 @@ export default async function ProductDetailPage({
                 }) => (
                   <div
                     key={review.id}
-                    className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(183,110,121,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(183,110,121,0.12)] hover:border-[rgb(251,132,150)]"
+                    className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
                   >
                     <div className="text-[#F4B740] text-lg mb-3 tracking-[1px]">
                       {"★".repeat(review.rating)}

@@ -46,7 +46,7 @@ const FAQS = [
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group bg-white rounded-[16px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(183,110,121,0.05)] transition-all duration-300 open:shadow-[0_4px_15px_rgba(183,110,121,0.12)] open:border-[rgb(251,132,150)]">
+    <details className="group bg-white rounded-[16px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 open:shadow-[0_4px_15px_rgba(255,142,159,0.12)] open:border-[rgb(251,132,150)]">
       <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[#2D2D2D] font-semibold text-[15px] font-sans">
         {q}
         <svg
@@ -94,7 +94,7 @@ export default function FaqPage() {
           ))}
         </div>
 
-        <div className="mt-10 text-center bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[16px] p-7.5 border border-[rgba(183,110,121,0.2)]">
+        <div className="mt-10 text-center bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[16px] p-7.5 border border-[rgba(255,142,159,0.2)]">
           <p className="text-[#4A4A4A] text-[15px] mb-4">
             ¿No encontraste tu respuesta? Escríbenos y te ayudamos.
           </p>

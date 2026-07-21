@@ -51,13 +51,13 @@ export async function ChartsSection() {
 
   const catCounts = await Promise.all(catCountPromises)
   const totalCatProducts = catCounts.reduce((s, c) => s + c.count, 0) || 1
-  const pieColors = ["#B76E79", "#03C9D7", "#FB9678", "#7352FF", "#27AE60", "#C9A96E", "#3498DB", "#E74C3C"]
+  const pieColors = ["#ff8e9f", "#03C9D7", "#FB9678", "#7352FF", "#27AE60", "#C9A96E", "#3498DB", "#E74C3C"]
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
       <div className="bg-secondary-light border border-white/12 rounded-[16px] p-6 shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
         <h3 className="text-base font-bold text-white m-0 mb-4 flex items-center gap-2">
-          <span style={{ color: "#B76E79" }}>
+          <span style={{ color: "#ff8e9f" }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
@@ -72,7 +72,7 @@ export async function ChartsSection() {
                 className="w-full rounded-[4px] transition-all duration-300 hover:opacity-80"
                 style={{
                   height: `${Math.max((m.total / maxRevenue) * 160, 8)}px`,
-                  background: "linear-gradient(180deg, #B76E79, rgba(183,110,121,0.4))",
+                  background: "linear-gradient(180deg, #ff8e9f, rgba(255,142,159,0.4))",
                 }}
               />
               <span className="text-[10px] text-[#ABB2BF]">{m.month}</span>

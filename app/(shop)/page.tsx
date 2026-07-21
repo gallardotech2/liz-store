@@ -100,7 +100,7 @@ export default async function HomePage() {
   return (
     <>
       <section className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6] overflow-hidden">
-        <div className="absolute -top-1/2 -right-1/5 w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(183,110,121,0.08)_0%,transparent_70%)] rounded-full pointer-events-none" />
+        <div className="absolute -top-1/2 -right-1/5 w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(255,142,159,0.08)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="absolute -bottom-1/3 -left-1/10 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(201,169,110,0.06)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between flex-wrap w-full">
           <div className="relative z-10 max-w-[600px] py-15 px-5 max-md:p-5 max-md:text-center">
@@ -258,7 +258,7 @@ export default async function HomePage() {
               {testimonials.map((review) => (
                 <div
                   key={review.id}
-                  className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(183,110,121,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(183,110,121,0.12)] hover:border-[rgb(251,132,150)]"
+                  className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
                 >
                   <div className="text-[#F4B740] text-lg mb-3 tracking-[1px]">
                     {"★".repeat(review.rating)}
@@ -287,12 +287,12 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="bg-white py-15 border-t border-[rgba(183,110,121,0.1)] border-b border-[rgba(183,110,121,0.1)]">
+      <section className="bg-white py-15 border-t border-[rgba(255,142,159,0.1)] border-b border-[rgba(255,142,159,0.1)]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-7.5 text-center">
             {ESCUDO_PAGO_ENABLED && (
               <div className="p-5 flex flex-col items-center">
-                <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(183,110,121,0.08)]">
+                <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                   <FaShieldAlt className="text-[26px]" />
                 </div>
                 <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Escudo Pago</h4>
@@ -302,7 +302,7 @@ export default async function HomePage() {
               </div>
             )}
             <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(183,110,121,0.08)]">
+              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaTruck className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Envío Seguro</h4>
@@ -311,7 +311,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(183,110,121,0.08)]">
+              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaGem className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Calidad Premium</h4>
@@ -320,7 +320,7 @@ export default async function HomePage() {
               </p>
             </div>
             <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(183,110,121,0.08)]">
+              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaHeart className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Amor al Detalle</h4>

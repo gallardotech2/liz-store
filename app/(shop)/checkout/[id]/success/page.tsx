@@ -88,7 +88,7 @@ export default async function OrderSuccessPage({
               <span>{Number(order.shipping) === 0 ? <span className="text-[#27AE60] font-semibold">GRATIS</span> : `Bs. ${Number(order.shipping).toFixed(2)}`}</span>
             </div>
             {order.payment_method === "direct" && (
-              <div className="mt-4 p-4 rounded-xl bg-[rgba(183,110,121,0.06)] border border-[rgba(183,110,121,0.15)]">
+              <div className="mt-4 p-4 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">
                 <div className="text-[13px] font-semibold text-[#2D2D2D] mb-2">Pago Directo</div>
                 <p className="text-[12px] text-[#888888] leading-[1.6]">
                   Una vez confirmemos tu pago, procesaremos tu pedido. Si elegiste transferencia, por favor envía el comprobante a nuestro WhatsApp.

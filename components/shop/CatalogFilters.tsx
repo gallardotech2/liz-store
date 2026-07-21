@@ -64,7 +64,7 @@ export function CatalogFilters({ categories, categorySlug, sort, q }: CatalogFil
         />
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 font-sans whitespace-nowrap no-underline cursor-pointer border-none px-5 py-2.5 text-xs bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(183,110,121,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(183,110,121,0.4)]"
+          className="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 font-sans whitespace-nowrap no-underline cursor-pointer border-none px-5 py-2.5 text-xs bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(255,142,159,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(255,142,159,0.4)]"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           Buscar

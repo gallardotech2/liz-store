@@ -18,24 +18,27 @@ No todos los colores del CSS original se mapean al theme de `globals.css`. Se us
 
 ### Colores originales mapeados a arbitrarios
 
+> **Actualizado 2026-07-20:** Los colores primarios fueron unificados con la paleta oficial del proyecto de referencia Django.
+
 | Variable original | Color | Uso |
 |---|---|---|
-| `--rose-gold` (#B76E79 / #ff8e9f) | `text-primary` / `bg-primary` | Se mapeó al theme `#d4a574` como color primario |
-| `--rose-gold` (#ff8e9f) | `[rgb(251,132,150)]` | Gradientes de iconos de categoría sin imagen, hover borders |
-| `--rose-gold-dark` (#9A5A63) | `[rgb(154,90,99)]` | Nombres de categoría, precios, texto de categoría en producto |
-| `--gold` (#C9A96E) | `[#C9A96E]` | Badge "Nuevo", spans decorativos en top-bar/footer, botón gold |
-| `--gold-dark` (#B8954E) | `[#B8954E]` | Hover del botón de suscripción newsletter |
-| `--dark` (#2D2D2D) | `[#2D2D2D]` | Texto de headings, color del logo, fondo del footer |
-| `--text` (#4A4A4A) | `[#4A4A4A]` | Color de texto body |
-| `--text-light` (#888888) | `[#888888]` | Subtítulos, textos secundarios |
-| `--bg-warm` (#FDF8F6) | `[#FDF8F6]` | Fondo del body |
-| `--bg-light` (#FFFBF9) | `[#FFFBF9]` | Fondo de imágenes sin contenido |
-| `--shadow-md` (rgba(183,110,121,0.12)) | `[0_4px_15px_rgba(183,110,121,0.12)]` | Sombra del header scrolleado |
-| `--shadow-lg` (rgba(183,110,121,0.15)) | `[0_10px_40px_rgba(183,110,121,0.15)]` | Sombra hover de cards |
+| `--rose-gold` (`#ff8e9f`) | `text-primary` / `bg-primary` | **Color primario oficial** — botones, CTAs, enlaces, badges |
+| `--rose-gold-dark` (`#B76E79`) | `text-primary-dark` / `bg-primary-dark` | Hover, gradientes, elementos interactivos |
+| `--rose-light` (`#FB8496`) | `text-primary-light` / `bg-primary-light` | Hover states, fondos de categorías |
+| `--rose-gold` (`#ff8e9f`) | `[rgb(251,132,150)]` | Gradientes de iconos de categoría sin imagen, hover borders |
+| `--gold` (`#C9A96E`) | `[#C9A96E]` | Badge "Nuevo", spans decorativos en top-bar/footer, botón gold |
+| `--gold-dark` (`#B8954E`) | `[#B8954E]` | Hover del botón de suscripción newsletter |
+| `--dark` (`#2D2D2D`) | `[#2D2D2D]` | Texto de headings, color del logo, fondo del footer |
+| `--text` (`#4A4A4A`) | `[#4A4A4A]` | Color de texto body |
+| `--text-light` (`#888888`) | `[#888888]` | Subtítulos, textos secundarios |
+| `--bg-warm` (`#FDF8F6`) | `[#FDF8F6]` | Fondo del body |
+| `--bg-light` (`#FFFBF9`) | `[#FFFBF9]` | Fondo de imágenes sin contenido |
+| `--shadow-md` (rgba(255,142,159,0.12)) | `[0_4px_15px_rgba(255,142,159,0.12)]` | Sombra del header scrolleado |
+| `--shadow-lg` (rgba(255,142,159,0.15)) | `[0_10px_40px_rgba(255,142,159,0.15)]` | Sombra hover de cards |
 | `--shadow-xl` (rgba(0,0,0,0.1)) | `[0_20px_60px_rgba(0,0,0,0.1)]` | Sombra de la imagen del hero |
 | `--radius-md` (16px) | `[16px]` | Border radius de cards |
 | `--radius-lg` (24px) | `[24px]` | Border radius de hero image |
-| `--border-color` (rgba(183,110,121,0.05)) | `[rgba(183,110,121,0.05)]` | Bordes de cards |
+| `--border-color` (rgba(255,142,159,0.05)) | `[rgba(255,142,159,0.05)]` | Bordes de cards |
 
 ### Gradientes
 
@@ -43,7 +46,7 @@ No todos los colores del CSS original se mapean al theme de `globals.css`. Se us
 |---|---|
 | `linear-gradient(135deg, #FDF8F6 0%, #F5E6E8 50%, #FDF8F6 100%)` | `bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6]` |
 | `linear-gradient(135deg, #1a1a2e, #16213e, #0f0f1a)` | `bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f0f1a]` |
-| `radial-gradient(circle, rgba(183,110,121,0.08) 0%, transparent 70%)` | `bg-[radial-gradient(circle,rgba(183,110,121,0.08)_0%,transparent_70%)]` |
+| `radial-gradient(circle, rgba(255,142,159,0.08) 0%, transparent 70%)` | `bg-[radial-gradient(circle,rgba(255,142,159,0.08)_0%,transparent_70%)]` |
 | `linear-gradient(135deg, var(--rose-gold), var(--rose-gold-dark))` | `bg-gradient-to-br from-primary to-primary-dark` (usa theme) |
 | `linear-gradient(135deg, var(--rose-light), var(--bg-warm))` | `bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6]` |
 | `linear-gradient(135deg, var(--rose-gold), var(--rose-gold-dark))` (newsletter) | `bg-gradient-to-br from-primary to-primary-dark` |
@@ -63,7 +66,7 @@ No todos los colores del CSS original se mapean al theme de `globals.css`. Se us
 
 ## Decisiones de diseño
 
-1. **Colores**: Se priorizó usar las variables del theme de `globals.css` (`--color-primary: #d4a574`) como base. Cuando el diseño original usaba colores específicos (ej. rose-gold #ff8e9f, gold #C9A96E) que no tienen equivalente directo en el theme, se usaron valores arbitrarios de Tailwind `[color]` para mantener la fidelidad visual.
+1. **Colores**: Se priorizó usar las variables del theme de `globals.css` (`--color-primary: #ff8e9f`) como base. Cuando el diseño original usaba colores específicos (ej. gold #C9A96E) que no tienen equivalente directo en el theme, se usaron valores arbitrarios de Tailwind `[color]` para mantener la fidelidad visual. La paleta oficial fue adoptada el 2026-07-20 a partir del proyecto de referencia Django.
 
 2. **Tipografía**: Se agregaron 4 fuentes via `next/font/google`:
    - `Playfair Display` → headings (serif, reemplaza `--font-serif`)

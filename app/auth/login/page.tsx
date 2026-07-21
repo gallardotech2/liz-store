@@ -66,7 +66,7 @@ export default function LoginPage() {
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
-      <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(183,110,121,0.15)]">
+      <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
         <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D]">
           ✦ Bienvenida
         </h1>
@@ -103,7 +103,7 @@ export default function LoginPage() {
               placeholder="tu@correo.com"
               aria-invalid={!!emailError}
               aria-describedby={emailError ? "email-error" : undefined}
-              className={`w-full px-4 py-3 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(183,110,121,0.1)] ${
+              className={`w-full px-4 py-3 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)] ${
                 emailError
                   ? "border-[#E74C3C] focus:border-[#E74C3C]"
                   : "border-[#DDD] focus:border-primary"

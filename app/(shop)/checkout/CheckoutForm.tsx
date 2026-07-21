@@ -219,7 +219,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
             <label
               className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                 deliveryMethod === "pickup"
-                  ? "border-primary bg-[rgba(183,110,121,0.06)]"
+                  ? "border-primary bg-[rgba(255,142,159,0.06)]"
                   : "border-[#EEE] bg-white hover:border-[#DDD]"
               }`}
               onClick={() => setDeliveryMethod("pickup")}
@@ -242,7 +242,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
             <label
               className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                 deliveryMethod === "home"
-                  ? "border-primary bg-[rgba(183,110,121,0.06)]"
+                  ? "border-primary bg-[rgba(255,142,159,0.06)]"
                   : "border-[#EEE] bg-white hover:border-[#DDD]"
               }`}
               onClick={() => setDeliveryMethod("home")}
@@ -259,7 +259,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
                 <div className="font-semibold text-sm text-[#2D2D2D]">Envío a domicilio</div>
                 <div className="text-[13px] text-[#888888]">Recibe tu pedido en la puerta de tu casa</div>
                 {shipping > 0 && (
-                  <span className="inline-block mt-1 text-[11px] font-bold text-primary bg-[rgba(183,110,121,0.1)] px-2 py-0.5 rounded">
+                  <span className="inline-block mt-1 text-[11px] font-bold text-primary bg-[rgba(255,142,159,0.1)] px-2 py-0.5 rounded">
                     Bs. {shipping.toFixed(2)}
                   </span>
                 )}
@@ -365,7 +365,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
               <label
                 className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                   paymentMethod === "escudo"
-                    ? "border-primary bg-[rgba(183,110,121,0.06)]"
+                    ? "border-primary bg-[rgba(255,142,159,0.06)]"
                     : "border-[#EEE] bg-white hover:border-[#DDD]"
                 }`}
                 onClick={() => setPaymentMethod("escudo")}
@@ -388,7 +388,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
             <label
               className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                 paymentMethod === "direct"
-                  ? "border-primary bg-[rgba(183,110,121,0.06)]"
+                  ? "border-primary bg-[rgba(255,142,159,0.06)]"
                   : "border-[#EEE] bg-white hover:border-[#DDD]"
               }`}
               onClick={() => setPaymentMethod("direct")}
@@ -410,7 +410,7 @@ export function CheckoutForm({ items, totals, storeProfile }: CheckoutFormProps)
 
           {/* Escudo Pago info: pendiente de activación (ESCUDO_PAGO_ENABLED) */}
           {ESCUDO_PAGO_ENABLED && paymentMethod === "escudo" && (
-            <div className="mb-6 p-5 rounded-xl bg-[rgba(183,110,121,0.06)] border border-[rgba(183,110,121,0.15)]">
+            <div className="mb-6 p-5 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">
               <h4 className="flex items-center gap-2 text-sm font-semibold text-[#2D2D2D] mb-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 Escudo Pago

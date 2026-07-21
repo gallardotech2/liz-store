@@ -75,7 +75,7 @@ export function Header({
             )}
             <Link
               href="/productos"
-              className="inline-flex items-center gap-2 rounded-full font-semibold transition-all duration-300 cursor-pointer border-none font-sans whitespace-nowrap no-underline px-5 py-2.5 text-xs bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(183,110,121,0.3)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-full font-semibold transition-all duration-300 cursor-pointer border-none font-sans whitespace-nowrap no-underline px-5 py-2.5 text-xs bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(255,142,159,0.3)] hover:-translate-y-0.5"
             >
               Ver productos
             </Link>
@@ -91,7 +91,7 @@ export function Header({
 
       <header
         className={`sticky top-0 z-[1000] bg-white transition-shadow duration-300 ${
-          scrolled ? "shadow-[0_4px_15px_rgba(183,110,121,0.12)]" : "shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
+          scrolled ? "shadow-[0_4px_15px_rgba(255,142,159,0.12)]" : "shadow-[0_1px_3px_rgba(0,0,0,0.08)]"
         }`}
       >
         <div className="flex items-center justify-between px-5 py-3.5 max-w-7xl mx-auto">

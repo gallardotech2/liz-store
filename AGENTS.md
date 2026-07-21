@@ -14,6 +14,29 @@
 - `.opencode/agents/` — Subagentes especializados por módulo
 - `supabase/sql/` — Sistema de migraciones manual (ejecucion.sql, migraciones.sql, esquema.sql)
 
+## Identidad Visual Oficial (Regla Permanente)
+
+> **REGLA INAMOVIBLE:** La paleta de colores a continuación es la identidad visual oficial y permanente del proyecto. Fue adoptada el 2026-07-20 a partir del proyecto de referencia Django `liz-store pythom` (`static/css/style.css`).
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| Primary | `#ff8e9f` | Botones, CTAs, enlaces, badges, iconografía |
+| Primary Dark | `#B76E79` | Hover, gradientes, elementos interactivos |
+| Primary Light | `#FB8496` | Hover states, fondos, bordes |
+| Accent | `#D4A5A5` | Elementos decorativos |
+| Gold | `#C9A96E` | Badge "Nuevo", premium |
+
+### Prohibiciones
+1. **NO restaurar** la paleta anterior (`#B76E79` como primario, `#9A5A63` como dark).
+2. **NO cambiar** colores de botones de WhatsApp (`#25D366`, `#128C7E`, `#1DA851`).
+3. **Ningún agente** debe modificar la identidad visual automáticamente.
+4. **Cualquier cambio** de identidad visual requiere decisión **explícita del propietario** del proyecto.
+
+### Archivos que controlan la identidad visual
+- `app/globals.css` — Tokens de tema (fuente de verdad)
+- `app/layout.tsx` — theme-color meta tag
+- `README.md` — Documentación oficial de la paleta
+
 ## Reglas de migración
 1. **Fidelidad visual**: réplica pixel-perfect del diseño original (respaldo en liz-react-django-backup)
 2. **Optimización Vercel**: ISR (`revalidate`) por defecto, `prefetch={false}`, evitar SSR innecesario

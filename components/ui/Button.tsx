@@ -1,3 +1,5 @@
+"use client"
+
 import { cn } from "@/lib/utils"
 import { ButtonHTMLAttributes } from "react"
 
@@ -18,7 +20,7 @@ export function Button({
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 font-sans whitespace-nowrap no-underline cursor-pointer border-none",
         variant === "primary" &&
-          "bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(183,110,121,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(183,110,121,0.4)]",
+          "bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(255,142,159,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(255,142,159,0.4)]",
         variant === "secondary" &&
           "bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white hover:-translate-y-0.5",
         variant === "gold" &&

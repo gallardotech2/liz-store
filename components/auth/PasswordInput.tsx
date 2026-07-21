@@ -53,7 +53,7 @@ export function PasswordInput({
           autoComplete={autoComplete}
           aria-invalid={!!error}
           aria-describedby={error ? errorId : undefined}
-          className={`w-full px-4 py-3 pr-12 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(183,110,121,0.1)] ${
+          className={`w-full px-4 py-3 pr-12 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)] ${
             error
               ? "border-[#E74C3C] focus:border-[#E74C3C]"
               : "border-[#DDD] focus:border-primary"

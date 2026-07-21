@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
         <Link
           href="/"
           target="_blank"
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl no-underline transition-all hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(183,110,121,0.2)] max-sm:self-stretch max-sm:justify-center"
+          className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white font-semibold text-sm rounded-xl no-underline transition-all hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(255,142,159,0.2)] max-sm:self-stretch max-sm:justify-center"
           prefetch={false}
         >
           <ExternalLinkIcon />
@@ -57,7 +57,7 @@ export default async function AdminDashboard() {
           value={activeProducts ?? 0}
           label="Productos activos"
           trend={`+${totalProducts ?? 0}`}
-          accentColor="#B76E79"
+          accentColor="#ff8e9f"
         />
         <MetricCard
           icon={<CartIcon className="w-5 h-5" />}
