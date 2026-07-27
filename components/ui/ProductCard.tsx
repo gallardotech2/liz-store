@@ -29,9 +29,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const displayPrice = hasDiscount ? product.discountPrice! : product.price
 
   return (
-    <div
+    <Link
+      href={`/productos/${product.slug}`}
       className={cn(
-        "bg-white rounded-[16px] overflow-hidden transition-all duration-400 shadow-[0_1px_3px_rgba(0,0,0,0.08)] relative border border-[rgba(255,142,159,0.05)] hover:-translate-y-1.5 hover:shadow-[0_10px_40px_rgba(255,142,159,0.15)] hover:border-[rgb(251,132,150)]",
+        "group block bg-white rounded-[16px] overflow-hidden transition-all duration-400 shadow-[0_1px_3px_rgba(0,0,0,0.08)] relative border border-[rgba(255,142,159,0.05)] hover:-translate-y-1.5 hover:shadow-[0_10px_40px_rgba(255,142,159,0.15)] hover:border-[rgb(251,132,150)] no-underline",
         className,
       )}
     >
@@ -56,52 +57,41 @@ export function ProductCard({ product, className }: ProductCardProps) {
       )}
 
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-0 translate-x-2.5 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-        <Link
-          href={`/productos/${product.slug}`}
-          className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[#4A4A4A] text-base shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all duration-300 hover:bg-primary hover:text-white no-underline"
-          title="Ver detalle"
+        <span
+          className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[#4A4A4A] text-base shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all duration-300"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        </Link>
-        <Link
-          href={`/productos/${product.slug}`}
-          className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[#4A4A4A] text-base shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all duration-300 hover:bg-primary hover:text-white no-underline"
-          title="Ver detalle"
+        </span>
+        <span
+          className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-[#4A4A4A] text-base shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-all duration-300"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </Link>
+        </span>
       </div>
 
-       <Link href={`/productos/${product.slug}`} className="no-underline group">
-        <div className="relative aspect-square overflow-hidden bg-[#FFFBF9]">
-          {product.image ? (
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              sizes="(max-width: 768px) 50vw, 25vw"
-              className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            </div>
-          )}
-        </div>
-      </Link>
+      <div className="relative aspect-square overflow-hidden bg-[#FFFBF9]">
+        {product.image ? (
+          <Image
+            src={product.image}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 50vw, 25vw"
+            className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+        )}
+      </div>
 
       <div className="p-5">
         <div className="text-[12px] text-primary-dark uppercase tracking-[1px] font-semibold mb-1.5">
           {product.category.name}
         </div>
-        <h3 className="text-base font-sans mb-2 leading-[1.4]">
-          <Link
-            href={`/productos/${product.slug}`}
-            className="text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
-          >
-            {product.name}
-          </Link>
+        <h3 className="text-base font-sans mb-2 leading-[1.4] text-[#2D2D2D] transition-colors duration-300 group-hover:text-primary">
+          {product.name}
         </h3>
         {product.ratingCount > 0 && (
           <div className="flex items-center gap-1.5 text-[13px] mb-2.5">
@@ -128,6 +118,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
