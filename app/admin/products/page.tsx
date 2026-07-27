@@ -62,14 +62,14 @@ export default async function AdminProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/12 text-[#9CA3B8] text-[13px]">
-                <th className="text-left px-5 py-3 font-medium w-[60px]">Img</th>
-                <th className="text-left px-5 py-3 font-medium">Nombre</th>
-                <th className="text-left px-5 py-3 font-medium">SKU</th>
-                <th className="text-left px-5 py-3 font-medium">Categoría</th>
-                <th className="text-right px-5 py-3 font-medium">Precio</th>
-                <th className="text-right px-5 py-3 font-medium">Stock</th>
-                <th className="text-center px-5 py-3 font-medium">Estado</th>
-                <th className="text-right px-5 py-3 font-medium">Acciones</th>
+                <th className="text-left px-5 py-3 font-medium w-[60px] max-sm:px-2 max-sm:py-2">Img</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Nombre</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:hidden">SKU</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:hidden">Categoría</th>
+                <th className="text-right px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Precio</th>
+                <th className="text-right px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Stock</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Estado</th>
+                <th className="text-right px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -77,7 +77,7 @@ export default async function AdminProductsPage() {
                 const cat = Array.isArray(p.category) ? p.category[0] : p.category
                 return (
                   <tr key={p.id} className="border-b border-white/12 hover:bg-white/5 transition-colors">
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 max-sm:px-2 max-sm:py-2">
                       {imageMap.has(p.id) ? (
                         <img
                           src={imageMap.get(p.id)}
@@ -94,13 +94,13 @@ export default async function AdminProductsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 max-sm:px-2 max-sm:py-2">
                       <div className="text-white font-medium">{p.name}</div>
                       <div className="text-[#9CA3B8] text-[12px]">{p.slug}</div>
                     </td>
-                    <td className="px-5 py-3.5 text-[#ABB2BF]">{p.sku}</td>
-                    <td className="px-5 py-3.5 text-[#ABB2BF]">{cat?.name ?? "-"}</td>
-                    <td className="px-5 py-3.5 text-right text-white">
+                    <td className="px-5 py-3.5 text-[#ABB2BF] max-sm:hidden">{p.sku}</td>
+                    <td className="px-5 py-3.5 text-[#ABB2BF] max-sm:hidden">{cat?.name ?? "-"}</td>
+                    <td className="px-5 py-3.5 text-right text-white max-sm:px-2 max-sm:py-2">
                       {p.discount_price ? (
                         <>
                           <span className="text-[#ABB2BF] line-through mr-1">Bs.{Number(p.price).toFixed(2)}</span>
@@ -110,12 +110,12 @@ export default async function AdminProductsPage() {
                         `Bs.${Number(p.price).toFixed(2)}`
                       )}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
+                    <td className="px-5 py-3.5 text-right max-sm:px-2 max-sm:py-2">
                       <span className={p.stock > 0 ? "text-[#27AE60]" : "text-[#E74C3C]"}>
                         {p.stock}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-5 py-3.5 text-center max-sm:hidden">
                       <div className="flex items-center justify-center gap-1.5">
                         {p.is_active && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#27AE60]" title="Activo" />
@@ -131,8 +131,8 @@ export default async function AdminProductsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-3.5 text-right max-sm:px-2 max-sm:py-2">
+                      <div className="flex items-center justify-end gap-2 max-sm:gap-1">
                         <Link
                           href={`/admin/products/${p.id}/editar`}
                           className="text-[#ABB2BF] hover:text-white text-xs no-underline transition-colors"

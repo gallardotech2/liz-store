@@ -43,18 +43,18 @@ export default async function AdminCategoriesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/12 text-[#9CA3B8] text-[13px]">
-                <th className="text-left px-5 py-3 font-medium w-[60px]">Img</th>
-                <th className="text-left px-5 py-3 font-medium">Nombre</th>
-                <th className="text-left px-5 py-3 font-medium">Slug</th>
-                <th className="text-center px-5 py-3 font-medium">Orden</th>
-                <th className="text-center px-5 py-3 font-medium">Activo</th>
-                <th className="text-right px-5 py-3 font-medium">Acciones</th>
+                <th className="text-left px-5 py-3 font-medium w-[60px] max-sm:px-2 max-sm:py-2">Img</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Nombre</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:hidden">Slug</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Orden</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Activo</th>
+                <th className="text-right px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {raw.map((cat) => (
                 <tr key={cat.id} className="border-b border-white/12 hover:bg-white/5 transition-colors">
-                  <td className="px-5 py-3.5">
+                  <td className="px-5 py-3.5 max-sm:px-2 max-sm:py-2">
                     {cat.image ? (
                       <img
                         src={cat.image}
@@ -71,20 +71,20 @@ export default async function AdminCategoriesPage() {
                       </div>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-5 py-3.5 max-sm:px-2 max-sm:py-2">
                     <div className="text-white font-medium">{cat.name}</div>
                   </td>
-                  <td className="px-5 py-3.5 text-[#ABB2BF]">{cat.slug}</td>
-                  <td className="px-5 py-3.5 text-center text-[#ABB2BF]">{cat.order}</td>
-                  <td className="px-5 py-3.5 text-center">
+                  <td className="px-5 py-3.5 text-[#ABB2BF] max-sm:hidden">{cat.slug}</td>
+                  <td className="px-5 py-3.5 text-center text-[#ABB2BF] max-sm:hidden">{cat.order}</td>
+                  <td className="px-5 py-3.5 text-center max-sm:hidden">
                     {cat.is_active ? (
                       <span className="w-1.5 h-1.5 rounded-full bg-[#27AE60] inline-block" />
                     ) : (
                       <span className="text-[#9CA3B8] text-[12px]">Inactivo</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-5 py-3.5 text-right max-sm:px-2 max-sm:py-2">
+                    <div className="flex items-center justify-end gap-2 max-sm:gap-1">
                       <Link
                         href={`/admin/categories/${cat.id}/editar`}
                         className="text-[#ABB2BF] hover:text-white text-xs no-underline transition-colors"

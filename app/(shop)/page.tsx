@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/Button"
 import { ProductCard } from "@/components/ui/ProductCard"
 import { CategoryCard } from "@/components/ui/CategoryCard"
 import { formatCurrency } from "@/lib/utils"
-import { FaWhatsapp, FaTiktok, FaInstagram, FaShieldAlt, FaTruck, FaGem, FaHeart } from "react-icons/fa"
+import { FaShieldAlt, FaTruck, FaGem, FaHeart } from "react-icons/fa"
+import { HeroSocialIcons } from "@/components/layout/HeroSocialIcons"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 
 export const revalidate = 3600
@@ -99,7 +100,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <section className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6] overflow-hidden">
+      <section className="relative min-h-[85vh] max-md:min-h-[70vh] flex items-center bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6] overflow-hidden">
         <div className="absolute -top-1/2 -right-1/5 w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(255,142,159,0.08)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="absolute -bottom-1/3 -left-1/10 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(201,169,110,0.06)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between flex-wrap w-full">
@@ -108,29 +109,7 @@ export default async function HomePage() {
               <span className="text-[13px] font-bold tracking-[1px] text-primary">
                 REDES LIZ
               </span>
-              <a
-                href="#"
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-[#25D366] text-white no-underline transition-transform duration-300 hover:scale-110"
-                style={{ background: "#25D366" }}
-                aria-label="WhatsApp"
-              >
-                <FaWhatsapp className="text-[18px] flex-shrink-0" />
-              </a>
-              <a
-                href="#"
-                className="flex items-center justify-center w-8 h-8 rounded-full bg-black text-white no-underline transition-transform duration-300 hover:scale-110"
-                aria-label="TikTok"
-              >
-                <FaTiktok className="text-[18px] flex-shrink-0" />
-              </a>
-              <a
-                href="#"
-                className="flex items-center justify-center w-8 h-8 rounded-full text-white no-underline transition-transform duration-300 hover:scale-110"
-                style={{ background: "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)" }}
-                aria-label="Instagram"
-              >
-                <FaInstagram className="text-[18px] flex-shrink-0" />
-              </a>
+              <HeroSocialIcons />
             </div>
             <h1 className="text-[clamp(36px,5vw,64px)] leading-[1.1] mb-5 text-[#2D2D2D] font-serif">
               Bisutería con <span className="text-primary">Estilo</span>,<br />

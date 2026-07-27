@@ -76,13 +76,7 @@ export default function RegisterPage() {
         return
       }
 
-      if (data.needsConfirmation) {
-        setSuccess(
-          "¡Cuenta creada! Revisa tu correo para confirmar tu cuenta antes de iniciar sesión.",
-        )
-      } else {
-        router.push("/")
-      }
+      router.push("/")
     } catch {
       setError("Error de conexión con el servidor")
     } finally {

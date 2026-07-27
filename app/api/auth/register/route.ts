@@ -1,10 +1,36 @@
 import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const ERROR_TRANSLATIONS: Record<string, string> = {
+  "rate limit": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
+  "rate_limit": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
+  "already registered": "Este correo ya está registrado. Inicia sesión o usa otro correo.",
+  "User already registered": "Este correo ya está registrado. Inicia sesión o usa otro correo.",
+  "email not confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
+  "Email not confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
+  "invalid email": "Ingresa un correo electrónico válido.",
+  "Invalid email": "Ingresa un correo electrónico válido.",
+  "weak password": "La contraseña es muy débil. Usa al menos 8 caracteres.",
+  "Weak password": "La contraseña es muy débil. Usa al menos 8 caracteres.",
+  "over_request": "Demasiadas solicitudes. Espera unos minutos.",
+  "over_email_send_rate": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
+  "signup_disabled": "El registro está deshabilitado temporalmente.",
+}
+
+function translateError(msg: string): string {
+  for (const [key, translation] of Object.entries(ERROR_TRANSLATIONS)) {
+    if (msg.toLowerCase().includes(key.toLowerCase())) {
+      return translation
+    }
+  }
+  return "Error al crear la cuenta. Intenta de nuevo."
+}
 
 export async function POST(request: Request) {
   try {
@@ -58,14 +84,43 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json({ error: translateError(error.message) }, { status: 400 })
     }
 
-    const needsConfirmation = !data.session
+    if (!data.user) {
+      return NextResponse.json(
+        { error: "Error al crear el usuario" },
+        { status: 500 },
+      )
+    }
+
+    let session = data.session
+
+    if (!session) {
+      const adminSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } },
+      )
+
+      const { error: confirmError } =
+        await adminSupabase.auth.admin.updateUserById(data.user.id, {
+          email_confirm: true,
+        })
+
+      if (!confirmError) {
+        const { data: signInData } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if (signInData?.session) {
+          session = signInData.session
+        }
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      needsConfirmation,
       user: data.user ? { id: data.user.id, email: data.user.email } : null,
     })
   } catch {

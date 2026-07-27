@@ -1,22 +1,24 @@
-# Proyecto: Liz Store (Migración a Next.js/Supabase)
+# Proyecto: Liz Store (Escudo Market)
 
 ## Stack
 - **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS 4
 - **Backend**: Supabase (PostgreSQL + JS SDK)
 - **Despliegue**: Vercel (priorizar SSG/ISR)
+- **Tipos**: TypeScript strict mode
 
 ## Estructura del proyecto
-- `app/` — Páginas App Router
-- `components/` — Componentes React (ui/, layout/, shop/, admin/)
-- `lib/` — Utilidades, clientes Supabase, lógica de negocio
-- `types/` — Tipos TypeScript (database.ts mapea schema de Supabase)
-- `docs_migracion/` — Bitácoras de migración
-- `.opencode/agents/` — Subagentes especializados por módulo
+- `app/` — Páginas App Router (24 pages, 4 layouts)
+- `components/` — Componentes React (19: ui/, layout/, shop/, admin/, auth/)
+- `lib/` — Utilidades, clientes Supabase, lógica de negocio (19 módulos)
+- `types/` — Tipos TypeScript (database.ts: 17 tablas)
+- `docs_migracion/` — Bitácoras de migración (8 archivos)
+- `.opencode/agents/` — Subagentes especializados por módulo (5)
+- `.opencode/skills/` — Skills del proyecto (reglas detalladas por categoría)
 - `supabase/sql/` — Sistema de migraciones manual (ejecucion.sql, migraciones.sql, esquema.sql)
 
 ## Identidad Visual Oficial (Regla Permanente)
 
-> **REGLA INAMOVIBLE:** La paleta de colores a continuación es la identidad visual oficial y permanente del proyecto. Fue adoptada el 2026-07-20 a partir del proyecto de referencia Django `liz-store pythom` (`static/css/style.css`).
+> **REGLA INAMOVIBLE:** La paleta de colores a continuación es la identidad visual oficial y permanente del proyecto. Fue adoptada el 2026-07-20 desde el proyecto Django `liz-store pythom` (`static/css/style.css`).
 
 | Token | Valor | Uso |
 |-------|-------|-----|
@@ -42,6 +44,10 @@
 2. **Optimización Vercel**: ISR (`revalidate`) por defecto, `prefetch={false}`, evitar SSR innecesario
 3. **Documentar cada paso** en `docs_migracion/` antes y después de cada migración
 4. **Consultar agentes** según la tarea: model-migrator para BD, template-migrator para UI, etc.
+
+## Middleware
+- `proxy.ts` en la raíz funciona como middleware Edge para refrescar sesión Supabase y redirecciones
+- `lib/supabase/middleware.ts` contiene el helper `updateSession()` usado por `proxy.ts`
 
 ## Sistema de Migraciones SQL (estilo e-mstore V2.0)
 
@@ -95,6 +101,23 @@ ALTER TABLE products ADD COLUMN descuento INT DEFAULT 0;
 - `ejecucion.sql` solo tiene UNA migración pendiente a la vez. No acumular SQL pendiente.
 - Las migraciones se ejecutan SOLO a mano en el Dashboard. No hay automatización.
 - `esquema.sql` es la fuente de verdad. Ante duda, leer ese archivo.
+
+## Skills del proyecto
+
+Las Skills contienen reglas detalladas para preservar la consistencia. Consultar según la tarea:
+
+| Tarea | Skill a cargar |
+|-------|---------------|
+| Cambiar colores o identidad visual | `identidad-visual` |
+| Crear o modificar componentes UI | `componentes-ui`, `botones-estados` |
+| Maquetar responsive | `responsive`, `sistema-diseno` |
+| Crear formularios | `formularios` |
+| Trabajar en admin | `admin-panel` |
+| Modificar catálogo o detalle | `catalogo-productos` |
+| Elegir tipografía | `tipografia` |
+| Escribir queries Supabase | `supabase-convenciones` |
+| Configurar Vercel | `vercel-despliegue` |
+| Cualquier tarea de desarrollo | `convenciones-desarrollo`, `react-practicas`, `estructura-componentes`, `flujo-trabajo` |
 
 ## Para iniciar servidor de desarrollo
 ```bash

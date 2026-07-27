@@ -140,7 +140,7 @@ export default async function CartPage() {
                           type="number"
                           name="quantity"
                           defaultValue={item.quantity}
-                          min={0}
+                          min={1}
                           max={item.stock}
                           className="w-15 px-1.5 py-1 border border-[#ddd] rounded-[6px] text-center text-sm"
                         />

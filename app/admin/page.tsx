@@ -21,15 +21,15 @@ export default async function AdminDashboard() {
   ] = await Promise.all([
     supabase.from("products").select("*", { count: "exact", head: true }),
     supabase.from("products").select("*", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("orders").select("*", { count: "exact", head: true }),
-    supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "completed"),
+    supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }),
+    supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }).in("status", ["payment_confirmed"]),
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("categories").select("*", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("orders").select("total").eq("status", "completed"),
+    supabase.from("whatsapp_requests").select("product_price").in("status", ["payment_confirmed"]),
   ])
 
-  const totalRevenue = (revenueData as unknown as { total: number }[])?.reduce((sum, o) => sum + (o.total ?? 0), 0) ?? 0
+  const totalRevenue = (revenueData as unknown as { product_price: number }[])?.reduce((sum, o) => sum + (o.product_price ?? 0), 0) ?? 0
 
   return (
     <>
@@ -70,7 +70,7 @@ export default async function AdminDashboard() {
           icon={<DollarIcon className="w-5 h-5" />}
           value={`Bs. ${totalRevenue.toFixed(0)}`}
           label="Ingresos"
-          trend={`${completedOrders ?? 0} compl.`}
+          trend={`${completedOrders ?? 0} pagados`}
           accentColor="#27AE60"
         />
         <MetricCard

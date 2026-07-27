@@ -15,6 +15,9 @@ import {
   ExternalLinkIcon,
   DashboardSmallIcon,
   LogoutIcon,
+  CreditCardIcon,
+  MapPinIcon,
+  MessageCircleIcon,
 } from "./Icons"
 
 interface AdminSidebarProps {
@@ -29,8 +32,11 @@ const navGroups = [
     title: "Comercio",
     links: [
       { href: "/admin/products", label: "Productos", icon: <BoxIcon /> },
-      { href: "/admin/orders", label: "Pedidos", icon: <CartIcon /> },
+      { href: "/admin/whatsapp-requests", label: "Pedidos", icon: <CartIcon /> },
       { href: "/admin/categories", label: "Categorías", icon: <TagsIcon /> },
+      { href: "/admin/payment-methods", label: "Pagos", icon: <CreditCardIcon /> },
+      { href: "/admin/pickup-points", label: "Puntos de entrega", icon: <MapPinIcon /> },
+      { href: "/admin/social-links", label: "Redes Sociales", icon: <MessageCircleIcon /> },
     ],
   },
   {
@@ -78,7 +84,10 @@ export function AdminSidebar({ userName, userEmail, sidebarOpen, onClose }: Admi
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
             </div>
-            <span className="text-primary text-xl font-bold tracking-tight">Liz Store</span>
+                        <span className="flex items-baseline gap-1">
+              <span className="font-['Great_Vibes',cursive] text-[22px] text-primary">Liz</span>
+              <span className="font-['Cinzel',serif] text-[13px] text-white font-medium tracking-[2px] uppercase">Store</span>
+            </span>
           </Link>
         </div>
 

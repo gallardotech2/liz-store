@@ -61,6 +61,8 @@ export default async function ProductDetailPage({
   const supabase = await createClient()
   const s = supabase as any
 
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: product } = await s
     .from("products")
     .select(
@@ -220,7 +222,7 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="pt-5">
-              <div className="text-[12px] text-[rgb(154,90,99)] uppercase tracking-[1px] font-semibold mb-2.5">
+              <div className="text-[12px] text-primary-dark uppercase tracking-[1px] font-semibold mb-2.5">
                 {cat.name}
               </div>
               <h1 className="text-[clamp(24px,3vw,36px)] font-serif mb-4 text-[#2D2D2D]">
@@ -240,7 +242,7 @@ export default async function ProductDetailPage({
               )}
 
               <div className="flex items-center gap-2 flex-wrap my-4">
-                <span className="text-[28px] font-bold text-[rgb(154,90,99)] font-serif inline-flex items-center gap-0.5">
+                <span className="text-[28px] font-bold text-primary-dark font-serif inline-flex items-center gap-0.5">
                   {formatCurrency(displayPrice)}
                 </span>
                 {hasDiscount && (
@@ -329,7 +331,7 @@ export default async function ProductDetailPage({
                 También te puede gustar
               </h2>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
               {related.map((rp) => (
                 <ProductCard key={rp.id} product={rp} />
               ))}

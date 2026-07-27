@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useSyncExternalStore, useCallback } from "react"
 import Link from "next/link"
+import { parseCart, CART_COOKIE } from "@/lib/cart"
+import { createClient } from "@/lib/supabase/client"
 
 interface HeaderCategory {
   name: string
@@ -30,10 +32,58 @@ export function Header({
   categories = [],
   storeProfile = null,
   activeLive = null,
-  cartCount = 0,
+  cartCount: _cartCount = 0,
 }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+
+  const getCartSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return _cartCount
+    const raw = document.cookie
+      .split("; ")
+      .find((r) => r.startsWith(`${CART_COOKIE}=`))
+      ?.split("=")[1]
+    if (!raw) return 0
+    try {
+      return Object.keys(parseCart(decodeURIComponent(raw))).length
+    } catch {
+      return 0
+    }
+  }, [_cartCount])
+
+  const subscribeToCart = useCallback((callback: () => void) => {
+    window.addEventListener("cart:changed", callback)
+    window.addEventListener("focus", callback)
+    window.addEventListener("storage", callback)
+    const interval = setInterval(callback, 5000)
+    return () => {
+      window.removeEventListener("cart:changed", callback)
+      window.removeEventListener("focus", callback)
+      window.removeEventListener("storage", callback)
+      clearInterval(interval)
+    }
+  }, [])
+
+  const localCartCount = useSyncExternalStore(
+    subscribeToCart,
+    getCartSnapshot,
+    () => 0,
+  )
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const supabase = createClient()
+      supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user)).catch(() => setIsLoggedIn(false))
+    }
+  }, [])
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = "/"
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,17 +195,60 @@ export function Header({
           </nav>
 
           <div className="flex items-center gap-5">
-            <Link
-              href="/auth/login"
-              className="text-[#2D2D2D] no-underline text-xl transition-colors duration-300 hover:text-primary"
-              title="Ingresar"
-              prefetch={false}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
-            </Link>
+            <div className="relative">
+              {isLoggedIn ? (
+                <button
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="text-[#2D2D2D] text-xl transition-colors duration-300 hover:text-primary cursor-pointer bg-none border-none"
+                  title="Mi cuenta"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </button>
+              ) : (
+                <Link
+                  href="/perfil"
+                  className="text-[#2D2D2D] no-underline text-xl transition-colors duration-300 hover:text-primary"
+                  title="Mi perfil"
+                  prefetch={false}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </Link>
+              )}
+              {profileOpen && isLoggedIn && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-20 bg-white rounded-xl shadow-lg border border-[#eee] min-w-[180px] py-2">
+                    <Link
+                      href="/perfil"
+                      className="block px-4 py-2.5 text-sm text-[#2D2D2D] no-underline hover:bg-[#F9F9F9] hover:text-primary transition-colors"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Mi perfil
+                    </Link>
+                    <Link
+                      href="/perfil/historial"
+                      className="block px-4 py-2.5 text-sm text-[#2D2D2D] no-underline hover:bg-[#F9F9F9] hover:text-primary transition-colors"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Mis pedidos
+                    </Link>
+                    <hr className="border-t border-[#eee] mx-3" />
+                    <button
+                      onClick={() => { setProfileOpen(false); handleLogout() }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-[#E74C3C] hover:bg-[#FFF5F5] transition-colors cursor-pointer bg-none border-none"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <Link
               href="/carrito"
               className="text-[#2D2D2D] no-underline text-xl transition-colors duration-300 relative hover:text-primary"
@@ -167,9 +260,9 @@ export function Header({
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
               </svg>
-              {cartCount > 0 && (
+              {localCartCount > 0 && (
                 <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-semibold">
-                  {cartCount}
+                  {localCartCount}
                 </span>
               )}
             </Link>
@@ -221,20 +314,48 @@ export function Header({
           FAQ
         </Link>
         <hr className="my-5 border-none border-t border-[#eee]" />
-        <Link
-          href="/auth/login"
-          className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
-          onClick={() => setMobileOpen(false)}
-        >
-          Ingresar
-        </Link>
-        <Link
-          href="/auth/registro"
-          className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
-          onClick={() => setMobileOpen(false)}
-        >
-          Registrarse
-        </Link>
+        {isLoggedIn ? (
+          <>
+            <Link
+              href="/perfil"
+              className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
+              onClick={() => setMobileOpen(false)}
+            >
+              Mi perfil
+            </Link>
+            <Link
+              href="/perfil/historial"
+              className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
+              onClick={() => setMobileOpen(false)}
+            >
+              Mis pedidos
+            </Link>
+            <hr className="my-4 border-none border-t border-[#eee]" />
+            <button
+              onClick={() => { setMobileOpen(false); handleLogout() }}
+              className="w-full text-left py-4 text-lg text-[#E74C3C] no-underline bg-none border-none cursor-pointer transition-colors duration-300 hover:text-[#C0392B]"
+            >
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/auth/login"
+              className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
+              onClick={() => setMobileOpen(false)}
+            >
+              Ingresar
+            </Link>
+            <Link
+              href="/auth/registro"
+              className="block py-4 text-lg text-[#2D2D2D] no-underline transition-colors duration-300 hover:text-primary"
+              onClick={() => setMobileOpen(false)}
+            >
+              Registrarse
+            </Link>
+          </>
+        )}
       </div>
     </>
   )

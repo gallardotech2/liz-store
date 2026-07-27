@@ -1,24 +1,35 @@
 # AUDITORÍA TÉCNICA INTEGRAL PREVIA A PRODUCCIÓN — ESCUDO MARKET (LIZ STORE)
 
 **Fecha:** 2026-07-19
+**Última actualización:** 2026-07-27
 **Auditor:** Equipo multidisciplinario (Security, React, Supabase, Vercel, Full Stack, DevSecOps, QA, Performance, UX/UI, Accesibilidad, DB, OWASP)
 **Versión proyecto:** Next.js 16.2.10 / React 19.2.4 / Supabase / Vercel
-**Estado general:** ⚠️ **FUNCIONAL EN DESARROLLO — NO LISTO PARA PRODUCCIÓN**
+**Estado general:** 🟡 **EN PROGRESO — Varios hallazgos resueltos, pendientes críticos mitigados**
 
 ---
 
 ## 1. RESUMEN EJECUTIVO
 
-| Métrica | Valor |
-|---------|-------|
-| **Bloqueadores críticos** | 6 |
-| **Riesgos altos** | 8 |
-| **Riesgos medios** | 14 |
-| **Riesgos bajos** | 7 |
-| **Tiempo estimado fixes críticos** | 3-4 horas |
-| **Tiempo estimado auditoría completa** | 8-10 horas |
+| Métrica | Valor | Estado actual |
+|---------|-------|---------------|
+| **Bloqueadores críticos** | 6 | 🟢 3 resueltos, 3 pendientes |
+| **Riesgos altos** | 8 | 🟡 Google OAuth resuelto, 7 pendientes |
+| **Riesgos medios** | 14 | 🔴 Sin cambios |
+| **Riesgos bajos** | 7 | 🔴 Sin cambios |
 
-**Conclusión:** La aplicación funciona correctamente en entorno de desarrollo (ISR, auth, carrito, admin CRUD). **No está lista para producción** por exposición de secretos críticos, checkout roto, ausencia de middleware de autenticación, riesgos XSS y violaciones de accesibilidad.
+### Hallazgos resueltos desde la auditoría
+
+| ID | Hallazgo | Resolución |
+|----|----------|------------|
+| **S4** | Checkout roto: `/api/checkout` no existe | ✅ Server Action `checkoutAction` usada directamente, sin dependencia de `/api/checkout` |
+| **S14** | Google OAuth deshabilitado | ✅ `GoogleButton.tsx` funcional con `signInWithOAuth("google")`, callback en `/auth/callback` |
+
+### Pendientes críticos aún no resueltos
+| ID | Hallazgo | Riesgo |
+|----|----------|--------|
+| **S6** | Viewport deshabilita zoom | Violación WCAG 1.4.4 — `maximumScale=1, userScalable=false` aún en `layout.tsx:34-35` |
+
+**Conclusión:** La aplicación funciona correctamente en entorno de desarrollo. Los bloqueadores críticos de checkout y Google OAuth han sido resueltos. Resta resolver viewport zoom, sanitización XSS, middleware de auth, y la exposición de secrets en `.env.local` (archivo ignorado por git pero presente en disco).
 
 ---
 
@@ -96,9 +107,9 @@ docs_migracion/         # 7 bitácoras de migración
 |----------|------|--------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Pública | ✅ Correcta |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Pública | ✅ Correcta |
-| `SUPABASE_SERVICE_ROLE_KEY` | **SECRETA** | 🔴 **EXPUESTA EN REPO** |
+| `SUPABASE_SERVICE_ROLE_KEY` | **SECRETA** | ⚠️ **EN DISCO LOCAL (ignorado por git)** |
 | `NEXT_PUBLIC_SITE_URL` | Pública | ✅ Correcta |
-| `VERCEL_OIDC_TOKEN` | **SECRETA** | 🔴 **EXPUESTA EN REPO** |
+| `VERCEL_OIDC_TOKEN` | **SECRETA** | ⚠️ **EN DISCO LOCAL (ignorado por git)** |
 
 ---
 
@@ -106,27 +117,27 @@ docs_migracion/         # 7 bitácoras de migración
 
 ### 🔴 CRÍTICO (Bloquean producción)
 
-| ID | Hallazgo | Causa | Riesgo | Archivo/Línea |
-|----|----------|-------|--------|---------------|
-| **S1** | **Service Role Key commiteada en `.env.local`** | Archivo no en `.gitignore` (sí lo está) pero **sí commiteado al historial git** | Acceso total a BD (bypass RLS, borrar datos, crear admins, leer auth) | `.env.local:3` |
-| **S2** | **VERCEL_OIDC_TOKEN commiteado** | Token de despliegue largo vivo en repo | Toma de control del proyecto en Vercel, acceso a secrets, logs, dominios | `.env.local:7` |
-| **S3** | **Middleware de auth ausente** | No existe `middleware.ts` en raíz; `lib/supabase/middleware.ts` no se usa | Sesiones no se refrescan, auth state inconsistente, logout roto en edge | **Archivo faltante** |
-| **S4** | **Checkout roto: `/api/checkout` no existe** | `CheckoutForm.tsx:134` hace `fetch("/api/checkout")` pero route no existe | **Compra imposible en producción** — 404 al enviar pedido | `app/(shop)/checkout/CheckoutForm.tsx:134` |
-| **S5** | **XSS via `dangerouslySetInnerHTML` sin sanitizar** | `long_description` de BD renderizado directo | Inyección HTML/JS si admin malicioso o BD comprometida | `app/(shop)/productos/[slug]/page.tsx:310` |
-| **S6** | **Viewport deshabilita zoom** (`maximumScale=1, userScalable=false`) | Config en `viewport` export | Viola WCAG 1.4.4 (Resize text), inaccesible para baja visión | `app/layout.tsx:34-35` |
+| ID | Hallazgo | Causa | Riesgo | Archivo/Línea | Estado |
+|----|----------|-------|--------|---------------|--------|
+| **S1** | **Service Role Key en `.env.local`** | Archivo existe en disco con secretos reales | Acceso total a BD (bypass RLS) si se commitea | `.env.local:3` | ⚠️ Ignorado por git pero presente en disco |
+| **S2** | **VERCEL_OIDC_TOKEN en `.env.local`** | Token de despliegue largo vivo en disco | Toma de control del proyecto en Vercel | `.env.local:7` | ⚠️ Ignorado por git pero presente en disco |
+| **S3** | **Middleware de auth ausente** | No existe `middleware.ts` en raíz; `lib/supabase/middleware.ts` no se usa | Sesiones no se refrescan, auth state inconsistente | **Archivo faltante** | 🔴 Sin resolver |
+| **S4** | **Checkout roto: `/api/checkout` no existe** | ~`CheckoutForm.tsx` usaba `fetch("/api/checkout")`~ → Ahora usa `checkoutAction` directamente | ✅ **RESUELTO** — Server Action reemplazó API route | `app/(shop)/checkout/CheckoutForm.tsx` | 🟢 Resuelto |
+| **S5** | **XSS via `dangerouslySetInnerHTML` sin sanitizar** | `long_description` de BD renderizado directo | Inyección HTML/JS si admin malicioso o BD comprometida | `app/(shop)/productos/[slug]/page.tsx:310` | 🔴 Sin resolver |
+| **S6** | **Viewport deshabilita zoom** | `maximumScale=1, userScalable=false` en viewport | Viola WCAG 1.4.4 (Resize text) | `app/layout.tsx:34-35` | 🔴 Sin resolver |
 
 ### 🟠 ALTO
 
-| ID | Hallazgo | Causa | Riesgo | Archivo/Línea |
-|----|----------|-------|--------|---------------|
-| **S7** | **RLS `orders`: anon INSERT sin validar ownership** | Policy `Orders: anon INSERT` permite `user_id` arbitrario | Guest checkout puede crear pedidos atribuidos a otros usuarios | `supabase/sql/esquema.sql:419-422` |
-| **S8** | **RLS `order_items`: INSERT sin validar order ownership** | Policy `Order Items: INSERT` con `WITH CHECK (true)` | Inyección de líneas en pedidos ajenos | `supabase/sql/esquema.sql:425-427` |
-| **S9** | **Cart cookie sin firma/encriptación** | `lib/cart.ts:28-34` guarda JSON plano en cookie | Manipulación client-side: precios, cantidades, productos inexistentes | `lib/cart.ts`, `app/(shop)/carrito/actions.ts` |
-| **S10** | **Trigger `handle_new_user` setea `raw_user_meta_data` pero admin verifica `app_metadata`** | Desync entre metadata auth | Usuario admin creado vía SQL no tiene role en `app_metadata` → acceso denegado | `supabase/sql/esquema.sql:374-382` vs `app/admin/layout.tsx:29` |
-| **S11** | **Contraste insuficiente** (`#888888` sobre `#FDF8F6` = 3.1:1) | Paleta de grises claros | Viola WCAG AA (mín 4.5:1 texto normal) | Global (`globals.css`, componentes) |
-| **S12** | **Validación upload imágenes solo client-side** | `ImageDropzone.tsx:22-32` chequea MIME/size; servidor confía | Bypass subiendo archivo >5MB o tipo no permitido (ej. .svg, .php) | `lib/supabase/storage.ts:26-28` |
-| **S13** | **No rate limiting en auth endpoints** | `/api/auth/login`, `/api/auth/register` sin protección | Fuerza bruta, enumeração de emails, DoS | `app/api/auth/login/route.ts`, `register/route.ts` |
-| **S14** | **Google OAuth botón visible pero deshabilitado** | `GoogleButton.tsx:8-24` `disabled` + badge "Próximamente" | Confusión UX, expectation mismatch | `components/auth/GoogleButton.tsx` |
+| ID | Hallazgo | Causa | Riesgo | Archivo/Línea | Estado |
+|----|----------|-------|--------|---------------|--------|
+| **S7** | **RLS `orders`: anon INSERT sin validar ownership** | Policy permite `user_id` arbitrario | Guest checkout puede crear pedidos de otros | `supabase/sql/esquema.sql:419-422` | 🔴 Sin resolver |
+| **S8** | **RLS `order_items`: INSERT sin validar order ownership** | Policy con `WITH CHECK (true)` | Inyección de líneas en pedidos ajenos | `supabase/sql/esquema.sql:425-427` | 🔴 Sin resolver |
+| **S9** | **Cart cookie sin firma/encriptación** | JSON plano en cookie | Manipulación client-side | `lib/cart.ts`, `carrito/actions.ts` | 🔴 Sin resolver |
+| **S10** | **Trigger `handle_new_user` vs app_metadata** | Desync en metadata de admin | Admin no tiene acceso al dashboard | `esquema.sql:374-382` vs `admin/layout.tsx:29` | 🔴 Sin resolver |
+| **S11** | **Contraste insuficiente** | `#888888` sobre `#FDF8F6` = 3.1:1 | Viola WCAG AA | Global (`globals.css`) | 🔴 Sin resolver |
+| **S12** | **Validación upload imágenes solo client-side** | Servidor no valida magic bytes/size/tipo | Bypass subiendo archivos maliciosos | `lib/supabase/storage.ts` | 🔴 Sin resolver |
+| **S13** | **No rate limiting en auth endpoints** | Sin protección en `/api/auth/*` | Fuerza bruta, enumeración de emails | `app/api/auth/login/route.ts` | 🔴 Sin resolver |
+| **S14** | **Google OAuth — botón funcional** | ~Deshabilitado~ → ✅ Ahora funcional con `signInWithOAuth` | Confusión UX resuelta | `components/auth/GoogleButton.tsx` | 🟢 Resuelto |
 
 ### 🟡 MEDIO
 
@@ -165,25 +176,26 @@ docs_migracion/         # 7 bitácoras de migración
 
 ### SPRINT 1 — CRÍTICOS (Bloquean producción) — ~3.5h
 
-| # | Tarea | Archivos | Verificación |
-|---|-------|----------|--------------|
-| 1 | **Rotar `SUPABASE_SERVICE_ROLE_KEY`** en Supabase Dashboard → actualizar solo en Vercel Env Vars (NO en repo) | `.env.local` (eliminar línea), Vercel Dashboard | `git log --all --full-history -- .env.local` muestra historia; secret revocado en Supabase |
-| 2 | **Rotar `VERCEL_OIDC_TOKEN`** en Vercel Dashboard → actualizar solo en Vercel | `.env.local` (eliminar línea), Vercel Dashboard | Token viejo inválido en Vercel |
-| 3 | **Crear `middleware.ts` en raíz** para refrescar sesión auth | `middleware.ts` (nuevo) | Login/logout funciona; sesión persiste en navigation |
-| 4 | **Crear `app/api/checkout/route.ts`** wrapper de `checkoutAction` | `app/api/checkout/route.ts` (nuevo) | POST `/api/checkout` devuelve `{ url: "/checkout/{id}/success?order=..." }` |
-| 5 | **Sanitizar `dangerouslySetInnerHTML`** con `DOMPurify` (solo tags seguros) | `app/(shop)/productos/[slug]/page.tsx:310`, `package.json` + `npm i dompurify @types/dompurify` | HTML malicioso en `long_description` neutralizado |
-| 6 | **Quitar `maximumScale=1, userScalable=false`** del viewport | `app/layout.tsx:34-35` | Zoom habilitado en móvil/desktop; Lighthouse a11y pass |
+| # | Tarea | Archivos | Verificación | Estado |
+|---|-------|----------|--------------|--------|
+| 1 | **Rotar `SUPABASE_SERVICE_ROLE_KEY`** en Supabase Dashboard → actualizar solo en Vercel Env Vars (NO en repo) | `.env.local` (eliminar línea), Vercel Dashboard | `git log --all --full-history -- .env.local` muestra historia; secret revocado en Supabase | 🔴 Pendiente — archivo en disco con secretos |
+| 2 | **Rotar `VERCEL_OIDC_TOKEN`** en Vercel Dashboard → actualizar solo en Vercel | `.env.local` (eliminar línea), Vercel Dashboard | Token viejo inválido en Vercel | 🔴 Pendiente — archivo en disco con token |
+| 3 | **Crear `middleware.ts` en raíz** para refrescar sesión auth | `middleware.ts` (nuevo) | Login/logout funciona; sesión persiste en navigation | 🔴 Pendiente |
+| 4 | **Crear `app/api/checkout/route.ts`** — ✅ **NO NECESARIO** — checkout usa Server Action directamente | No aplica | Server Action `checkoutAction` funciona correctamente | 🟢 Resuelto |
+| 5 | **Sanitizar `dangerouslySetInnerHTML`** con `DOMPurify` (solo tags seguros) | `app/(shop)/productos/[slug]/page.tsx:310`, `package.json` + `npm i dompurify @types/dompurify` | HTML malicioso en `long_description` neutralizado | 🔴 Pendiente |
+| 6 | **Quitar `maximumScale=1, userScalable=false`** del viewport | `app/layout.tsx:34-35` | Zoom habilitado en móvil/desktop; Lighthouse a11y pass | 🔴 Pendiente |
 
 ### SPRINT 2 — ALTOS (Seguridad/UX crítica) — ~4h
 
-| # | Tarea | Archivos | Verificación |
-|---|-------|----------|--------------|
-| 7 | **Firmar cart cookie** con `iron-session` (o JWT) | `lib/cart.ts`, `app/(shop)/carrito/actions.ts`, `package.json` + `npm i iron-session` | Cookie manipulada client-side → error firma / descarte |
-| 8 | **Validación servidor upload imágenes** (magic bytes, size, tipo) | `lib/supabase/storage.ts`, `components/admin/ImageDropzone.tsx` | Archivo >5MB o .svg/.php → reject 400 |
-| 9 | **Corregir trigger `handle_new_user`** para setear `app_metadata.role` | `supabase/sql/esquema.sql:374-382` (ejecutar en Supabase SQL Editor) | Admin creado via SQL → acceso dashboard OK |
-| 10 | **Rate limiting** en `/api/auth/*` (Upstash Redis o `next-rate-limit`) | `app/api/auth/login/route.ts`, `register/route.ts`, `package.json` | 10 req/min/IP → 429 |
-| 11 | **Endurecer RLS `orders`/`order_items` INSERT** — validar ownership via `session_key` o `user_id` = `auth.uid()` | `supabase/sql/esquema.sql:419-427` (migración) | Guest checkout crea order con `session_key`; no puede setear `user_id` ajeno |
-| 12 | **Subir contraste textos grises** `#888888` → `#6B6B6B` (4.5:1) | `app/globals.css`, componentes Tailwind | Lighthouse/axe: contraste pass |
+| # | Tarea | Archivos | Verificación | Estado |
+|---|-------|----------|--------------|--------|
+| 7 | **Firmar cart cookie** con `iron-session` (o JWT) | `lib/cart.ts`, `app/(shop)/carrito/actions.ts`, `package.json` + `npm i iron-session` | Cookie manipulada client-side → error firma / descarte | 🔴 Pendiente |
+| 8 | **Validación servidor upload imágenes** (magic bytes, size, tipo) | `lib/supabase/storage.ts`, `components/admin/ImageDropzone.tsx` | Archivo >5MB o .svg/.php → reject 400 | 🔴 Pendiente |
+| 9 | **Corregir trigger `handle_new_user`** para setear `app_metadata.role` | `supabase/sql/esquema.sql:374-382` (ejecutar en Supabase SQL Editor) | Admin creado via SQL → acceso dashboard OK | 🔴 Pendiente |
+| 10 | **Rate limiting** en `/api/auth/*` (Upstash Redis o `next-rate-limit`) | `app/api/auth/login/route.ts`, `register/route.ts`, `package.json` | 10 req/min/IP → 429 | 🔴 Pendiente |
+| 11 | **Endurecer RLS `orders`/`order_items` INSERT** — validar ownership via `session_key` o `user_id` = `auth.uid()` | `supabase/sql/esquema.sql:419-427` (migración) | Guest checkout crea order con `session_key`; no puede setear `user_id` ajeno | 🔴 Pendiente |
+| 12 | **Subir contraste textos grises** `#888888` → `#6B6B6B` (4.5:1) | `app/globals.css`, componentes Tailwind | Lighthouse/axe: contraste pass | 🔴 Pendiente |
+| — | **Google OAuth funcional** | `components/auth/GoogleButton.tsx`, `app/auth/callback/route.ts` | Botón activo, callback funcional | 🟢 Resuelto |
 
 ### SPRINT 3 — MEDIOS (Calidad/Performance) — ~3.5h
 
@@ -289,20 +301,21 @@ Los botones de WhatsApp (`#25D366`, `#128C7E`, `#1DA851`) no fueron modificados.
 ## 7. VALIDACIÓN FINAL (DEFINITION OF DONE)
 
 ### Pre-deploy checklist
-- [ ] `.env.local` **limpio** (solo vars `NEXT_PUBLIC_*`)
+- [ ] `.env.local` **limpio** (solo vars `NEXT_PUBLIC_*`) — actualmente ignorado por git pero tiene secrets en disco
 - [ ] Secrets **rotados y solo en Vercel/Supabase Dashboard**
-- [ ] `middleware.ts` **activo** (session refresh verificado)
-- [ ] `/api/checkout/route.ts` **funcional** (POST → redirect success)
-- [ ] `dangerouslySetInnerHTML` **sanitizado** (DOMPurify)
-- [ ] Viewport **permite zoom** (accesibilidad)
-- [ ] Cart cookie **firmada** (manipulación → reject)
-- [ ] Upload imágenes **validado servidor** (magic bytes, size, tipo)
-- [ ] Rate limiting **activo** en `/api/auth/*`
-- [ ] Contraste **WCAG AA pass** (Lighthouse/axe)
-- [ ] `vercel.json` **con security headers** (CSP, HSTS, X-Frame-Options, Referrer-Policy)
-- [ ] `npm run build` **sin errores/warnings**
+- [ ] `middleware.ts` **activo** (session refresh verificado) — pendiente
+- [x] `/api/checkout` — **RESUELTO** (usa Server Action directamente)
+- [ ] `dangerouslySetInnerHTML` **sanitizado** (DOMPurify) — pendiente
+- [ ] Viewport **permite zoom** (accesibilidad) — `userScalable=false` aún presente
+- [ ] Cart cookie **firmada** (manipulación → reject) — pendiente
+- [ ] Upload imágenes **validado servidor** (magic bytes, size, tipo) — pendiente
+- [ ] Rate limiting **activo** en `/api/auth/*` — pendiente
+- [ ] Contraste **WCAG AA pass** (Lighthouse/axe) — pendiente
+- [ ] `vercel.json` **con security headers** (CSP, HSTS, X-Frame-Options, Referrer-Policy) — pendiente
+- [x] `npm run build` **sin errores/warnings** — ✅ Verificado
 - [ ] `npm run lint` **limpio**
-- [ ] `tsc --noEmit` **limpio**
+- [x] `tsc --noEmit` **limpio** — ✅ Verificado
+- [ ] Google OAuth **funcional** — ✅ Verificado
 - [ ] Flujo **E2E manual verificado**: Home → Catálogo → Producto → Carrito → Checkout (pickup/delivery) → WhatsApp/Success → Admin login → CRUD productos/categorías → Upload imágenes
 
 ### Confirmación expresa

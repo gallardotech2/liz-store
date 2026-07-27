@@ -6,6 +6,168 @@
 -- ============================================================
 
 -- ============================================================
+-- Fix 0013: Corregir role de nuevos administradores
+-- Fecha ejecución: 2026-07-26
+-- Estado: EJECUTADO
+-- Descripción: Los admins creados por Supabase Dashboard tenían
+--   role='customer' en profiles y sin 'admin' en app_metadata.
+--   Se actualizan ambos para que el login y RLS funcionen.
+-- ============================================================
+/*
+UPDATE profiles
+SET role = 'admin'
+WHERE id IN (
+  SELECT id FROM auth.users
+  WHERE email IN ('gallardoelvirio@gmail.com', 'marielacondori037@gmail.com')
+)
+AND role != 'admin';
+
+UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'::jsonb
+WHERE email IN ('gallardoelvirio@gmail.com', 'marielacondori037@gmail.com')
+  AND (raw_app_meta_data ->> 'role') IS DISTINCT FROM 'admin';
+
+NOTIFY pgrst, 'reload schema';
+*/
+
+-- ============================================================
+-- Fix 0012: Crear tabla admin_authorized para admins autorizados con OTP
+-- Fecha ejecución: 2026-07-26
+-- Estado: EJECUTADO
+-- Descripción: Nueva tabla para administradores que requieren verificación
+--   OTP antes de acciones críticas. Campos: user_id, email, role, otp_enabled,
+--   is_active. RLS: propio SELECT, admin INSERT/UPDATE/DELETE.
+-- ============================================================
+/*
+CREATE TABLE IF NOT EXISTS admin_authorized (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
+  otp_enabled BOOLEAN DEFAULT true,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id)
+);
+
+ALTER TABLE admin_authorized ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admin Authorized: propio SELECT" ON admin_authorized
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE POLICY "Admin Authorized: admin INSERT" ON admin_authorized
+  FOR INSERT TO authenticated
+  WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE POLICY "Admin Authorized: admin UPDATE" ON admin_authorized
+  FOR UPDATE TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE POLICY "Admin Authorized: admin DELETE" ON admin_authorized
+  FOR DELETE TO authenticated
+  USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE INDEX IF NOT EXISTS idx_admin_authorized_user_id ON admin_authorized(user_id);
+
+DROP TRIGGER IF EXISTS trg_update_updated_at ON admin_authorized;
+CREATE TRIGGER trg_update_updated_at
+  BEFORE UPDATE ON admin_authorized
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON admin_authorized TO authenticated;
+*/
+
+-- ============================================================
+-- Fix 0011: Crear tabla pickup_points para puntos de recogida dinámicos
+-- Fecha ejecución: 2026-07-26
+-- Estado: EJECUTADO
+-- Descripción: Nueva tabla para que el admin gestione puntos de recogida.
+--   Campos: name, address, schedule, google_maps_url, is_active, order.
+--   RLS: anon SELECT solo activos, admin ALL.
+-- ============================================================
+/*
+CREATE TABLE IF NOT EXISTS pickup_points (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL DEFAULT '',
+  schedule TEXT NOT NULL DEFAULT '',
+  google_maps_url TEXT DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  "order" INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE pickup_points ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Pickup Points: anon SELECT activos" ON pickup_points
+  FOR SELECT TO anon, authenticated
+  USING (is_active = true);
+
+CREATE POLICY "Pickup Points: admin todo" ON pickup_points
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE INDEX IF NOT EXISTS idx_pickup_points_active_order ON pickup_points(is_active, "order");
+
+DROP TRIGGER IF EXISTS trg_update_updated_at ON pickup_points;
+CREATE TRIGGER trg_update_updated_at
+  BEFORE UPDATE ON pickup_points
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+GRANT SELECT ON pickup_points TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON pickup_points TO authenticated;
+*/
+
+-- ============================================================
+-- Fix 0010: Crear tabla whatsapp_requests para seguimiento de pedidos
+-- Fecha ejecución: 2026-07-26
+-- Estado: EJECUTADO
+-- Descripción: Nueva tabla para que usuarios registrados puedan solicitar
+--   productos por WhatsApp y dar seguimiento con 9 estados administrables.
+--   RLS: usuario SELECT/INSERT propio, admin ALL.
+-- ============================================================
+/*
+CREATE TABLE whatsapp_requests (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  product_name TEXT NOT NULL,
+  product_image TEXT DEFAULT '',
+  product_price NUMERIC(10,2),
+  reference_code TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
+    'pending', 'pending_payment', 'payment_confirmed', 'preparing',
+    'in_package', 'ready_for_pickup', 'shipped', 'delivered', 'cancelled'
+  )),
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE whatsapp_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "WhatsApp: propio SELECT" ON whatsapp_requests
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "WhatsApp: auth INSERT" ON whatsapp_requests
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "WhatsApp: admin todo" ON whatsapp_requests
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_user_id ON whatsapp_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_reference_code ON whatsapp_requests(reference_code);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_status ON whatsapp_requests(status);
+
+DROP TRIGGER IF EXISTS trg_update_updated_at ON whatsapp_requests;
+CREATE TRIGGER trg_update_updated_at
+  BEFORE UPDATE ON whatsapp_requests
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+*/
+
+-- ============================================================
 -- Fix 0009: Recrear usuario admin después de Fix 0008
 -- Fecha ejecución: 2026-07-19
 -- Estado: EJECUTADO
@@ -799,6 +961,35 @@ CREATE POLICY "Storage live: admin INSERT"
     bucket_id = 'live'
     AND ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
   );
+
+-- =========================================================================
+-- Fix 0014: social_links
+-- =========================================================================
+/*
+CREATE TABLE IF NOT EXISTS social_links (
+  id SERIAL PRIMARY KEY,
+  platform TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  url TEXT NOT NULL DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE social_links ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Social Links: admin todo" ON social_links
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+CREATE POLICY "Social Links: public SELECT" ON social_links
+  FOR SELECT USING (true);
+
+INSERT INTO social_links (platform, label, url) VALUES
+  ('facebook', 'Facebook', 'https://facebook.com/lizstore'),
+  ('instagram', 'Instagram', 'https://instagram.com/lizstore'),
+  ('whatsapp', 'WhatsApp', 'https://wa.me/59176426643'),
+  ('tiktok', 'TikTok', 'https://tiktok.com/@lizstore')
+ON CONFLICT (platform) DO NOTHING;
+*/
 
 -- =========================================================================
 -- GRANTS (column-level)

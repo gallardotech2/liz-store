@@ -20,16 +20,13 @@ export function CatalogFilters({ categories, categorySlug, sort, q }: CatalogFil
         <select
           name="category"
           id="category"
+          value={categorySlug}
           onChange={(e) => e.target.form?.submit()}
           className="px-3.5 py-2 border border-[#DDD] rounded-[8px] text-[14px] font-sans focus:border-primary focus:outline-none"
         >
           <option value="">Todas</option>
           {(categories ?? []).map((cat) => (
-            <option
-              key={cat.slug}
-              value={cat.slug}
-              selected={categorySlug === cat.slug}
-            >
+            <option key={cat.slug} value={cat.slug}>
               {cat.name}
             </option>
           ))}
@@ -43,14 +40,15 @@ export function CatalogFilters({ categories, categorySlug, sort, q }: CatalogFil
         <select
           name="sort"
           id="sort"
+          value={sort}
           onChange={(e) => e.target.form?.submit()}
           className="px-3.5 py-2 border border-[#DDD] rounded-[8px] text-[14px] font-sans focus:border-primary focus:outline-none"
         >
-          <option value="newest" selected={sort === "newest"}>Más recientes</option>
-          <option value="price_asc" selected={sort === "price_asc"}>Menor precio</option>
-          <option value="price_desc" selected={sort === "price_desc"}>Mayor precio</option>
-          <option value="rating" selected={sort === "rating"}>Mejor calificados</option>
-          <option value="name_asc" selected={sort === "name_asc"}>A-Z</option>
+          <option value="newest">Más recientes</option>
+          <option value="price_asc">Menor precio</option>
+          <option value="price_desc">Mayor precio</option>
+          <option value="rating">Mejor calificados</option>
+          <option value="name_asc">A-Z</option>
         </select>
       </div>
 

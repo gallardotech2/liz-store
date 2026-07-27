@@ -47,6 +47,17 @@ export type ProductInterestAction =
   | 'add_cart'
   | 'checkout'
 
+export type WhatsappRequestStatus =
+  | 'pending'
+  | 'pending_payment'
+  | 'payment_confirmed'
+  | 'preparing'
+  | 'in_package'
+  | 'ready_for_pickup'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+
 // ---------------------------------------------------------------------------
 // Tables
 // ---------------------------------------------------------------------------
@@ -755,6 +766,144 @@ export interface ProductInterestsTable {
   }
 }
 
+export interface PickupPointsTable {
+  Row: {
+    id: number
+    name: string
+    address: string
+    schedule: string
+    googleMapsUrl: string
+    isActive: boolean
+    order: number
+    createdAt: string
+    updatedAt: string
+  }
+  Insert: {
+    id?: number
+    name: string
+    address?: string
+    schedule?: string
+    googleMapsUrl?: string
+    isActive?: boolean
+    order?: number
+    createdAt?: string
+    updatedAt?: string
+  }
+  Update: {
+    id?: number
+    name?: string
+    address?: string
+    schedule?: string
+    googleMapsUrl?: string
+    isActive?: boolean
+    order?: number
+    createdAt?: string
+    updatedAt?: string
+  }
+}
+
+export interface AdminAuthorizedTable {
+  Row: {
+    id: number
+    userId: string
+    email: string
+    role: string
+    otpEnabled: boolean
+    isActive: boolean
+    createdAt: string
+    updatedAt: string
+  }
+  Insert: {
+    id?: number
+    userId: string
+    email: string
+    role?: string
+    otpEnabled?: boolean
+    isActive?: boolean
+    createdAt?: string
+    updatedAt?: string
+  }
+  Update: {
+    id?: number
+    userId?: string
+    email?: string
+    role?: string
+    otpEnabled?: boolean
+    isActive?: boolean
+    createdAt?: string
+    updatedAt?: string
+  }
+}
+
+export interface WhatsappRequestsTable {
+  Row: {
+    id: number
+    userId: string
+    productId: number
+    productName: string
+    productImage: string
+    productPrice: number | null
+    referenceCode: string
+    status: WhatsappRequestStatus
+    notes: string
+    createdAt: string
+    updatedAt: string
+  }
+  Insert: {
+    id?: number
+    userId: string
+    productId: number
+    productName: string
+    productImage?: string
+    productPrice?: number | null
+    referenceCode: string
+    status?: WhatsappRequestStatus
+    notes?: string
+    createdAt?: string
+    updatedAt?: string
+  }
+  Update: {
+    id?: number
+    userId?: string
+    productId?: number
+    productName?: string
+    productImage?: string
+    productPrice?: number | null
+    referenceCode?: string
+    status?: WhatsappRequestStatus
+    notes?: string
+    createdAt?: string
+    updatedAt?: string
+  }
+}
+
+export interface SocialLinksTable {
+  Row: {
+    id: number
+    platform: string
+    label: string
+    url: string
+    isActive: boolean
+    updatedAt: string
+  }
+  Insert: {
+    id?: number
+    platform: string
+    label: string
+    url?: string
+    isActive?: boolean
+    updatedAt?: string
+  }
+  Update: {
+    id?: number
+    platform?: string
+    label?: string
+    url?: string
+    isActive?: boolean
+    updatedAt?: string
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Database interface completa (estilo Supabase)
 // ---------------------------------------------------------------------------
@@ -778,6 +927,10 @@ export interface Database {
       live_session_products: LiveSessionProductsTable
       live_products: LiveProductsTable
       product_interests: ProductInterestsTable
+      pickup_points: PickupPointsTable,
+      admin_authorized: AdminAuthorizedTable,
+      whatsapp_requests: WhatsappRequestsTable
+      social_links: SocialLinksTable
     }
     Views: {}
     Functions: {}

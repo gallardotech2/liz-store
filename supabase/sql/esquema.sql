@@ -292,6 +292,60 @@ CREATE TABLE live_products (
 
 ALTER TABLE live_products ENABLE ROW LEVEL SECURITY;
 
+-- Pickup Points (puntos de recogida dinámicos)
+CREATE TABLE pickup_points (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL DEFAULT '',
+  schedule TEXT NOT NULL DEFAULT '',
+  google_maps_url TEXT DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  "order" INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE pickup_points ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Pickup Points: anon SELECT activos" ON pickup_points
+  FOR SELECT TO anon, authenticated
+  USING (is_active = true);
+
+CREATE POLICY "Pickup Points: admin todo" ON pickup_points
+  FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- WhatsApp Requests (seguimiento de pedidos)
+CREATE TABLE whatsapp_requests (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  product_name TEXT NOT NULL,
+  product_image TEXT DEFAULT '',
+  product_price NUMERIC(10,2),
+  reference_code TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN (
+    'pending', 'pending_payment', 'payment_confirmed', 'preparing',
+    'in_package', 'ready_for_pickup', 'shipped', 'delivered', 'cancelled'
+  )),
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE whatsapp_requests ENABLE ROW LEVEL SECURITY;
+
+-- Social Links
+CREATE TABLE social_links (
+  id SERIAL PRIMARY KEY,
+  platform TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  url TEXT NOT NULL DEFAULT '',
+  is_active BOOLEAN DEFAULT true,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE social_links ENABLE ROW LEVEL SECURITY;
+
 -- Product Interests
 CREATE TABLE product_interests (
   id SERIAL PRIMARY KEY,
@@ -302,6 +356,21 @@ CREATE TABLE product_interests (
 );
 
 ALTER TABLE product_interests ENABLE ROW LEVEL SECURITY;
+
+-- Admin Authorized (admins con permiso OTP para acciones críticas)
+CREATE TABLE admin_authorized (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
+  otp_enabled BOOLEAN DEFAULT true,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id)
+);
+
+ALTER TABLE admin_authorized ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================================
 -- ÍNDICES
@@ -331,6 +400,11 @@ CREATE INDEX IF NOT EXISTS idx_live_sessions_status ON live_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_live_products_session_id ON live_products(session_id);
 CREATE INDEX IF NOT EXISTS idx_product_interests_session_id ON product_interests(session_id);
 CREATE INDEX IF NOT EXISTS idx_product_interests_product_id ON product_interests(product_id);
+CREATE INDEX IF NOT EXISTS idx_pickup_points_active_order ON pickup_points(is_active, "order");
+CREATE INDEX IF NOT EXISTS idx_admin_authorized_user_id ON admin_authorized(user_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_user_id ON whatsapp_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_reference_code ON whatsapp_requests(reference_code);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_status ON whatsapp_requests(status);
 
 -- =========================================================================
 -- TRIGGERS
@@ -353,7 +427,8 @@ BEGIN
     SELECT unnest(ARRAY[
       'profiles', 'addresses', 'categories', 'products', 'orders',
       'transactions', 'payment_methods', 'qr_payments', 'reviews',
-      'store_profiles', 'live_sessions', 'live_products'
+      'store_profiles', 'live_sessions', 'live_products',
+      'pickup_points', 'admin_authorized', 'whatsapp_requests'
     ])
   LOOP
     EXECUTE format(
@@ -467,6 +542,25 @@ CREATE POLICY "Live Products: admin todo" ON live_products FOR ALL USING ((auth.
 CREATE POLICY "Product Interests: INSERT anon" ON product_interests FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "Product Interests: admin SELECT" ON product_interests FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
+-- Pickup Points
+CREATE POLICY "Pickup Points: anon SELECT activos" ON pickup_points FOR SELECT TO anon, authenticated USING (is_active = true);
+CREATE POLICY "Pickup Points: admin todo" ON pickup_points FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- Admin Authorized
+CREATE POLICY "Admin Authorized: propio SELECT" ON admin_authorized FOR SELECT TO authenticated USING (user_id = auth.uid() OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+CREATE POLICY "Admin Authorized: admin INSERT" ON admin_authorized FOR INSERT TO authenticated WITH CHECK ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+CREATE POLICY "Admin Authorized: admin UPDATE" ON admin_authorized FOR UPDATE TO authenticated USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+CREATE POLICY "Admin Authorized: admin DELETE" ON admin_authorized FOR DELETE TO authenticated USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- WhatsApp Requests
+CREATE POLICY "WhatsApp: propio SELECT" ON whatsapp_requests FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "WhatsApp: auth INSERT" ON whatsapp_requests FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "WhatsApp: admin todo" ON whatsapp_requests FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- Social Links
+CREATE POLICY "Social Links: public SELECT" ON social_links FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Social Links: admin todo" ON social_links FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
 -- =========================================================================
 -- STORAGE BUCKETS
 -- =========================================================================
@@ -501,6 +595,7 @@ REVOKE ALL ON profiles FROM anon, authenticated;
 GRANT SELECT(id, nombre, avatar) ON profiles TO anon;
 GRANT SELECT(id, nombre, avatar, phone, role) ON profiles TO authenticated;
 GRANT UPDATE(phone, avatar, nombre) ON profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON social_links TO anon, authenticated;
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;

@@ -58,14 +58,14 @@ export default async function AdminLivesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/12 text-[#9CA3B8] text-[13px]">
-                <th className="text-left px-5 py-3 font-medium">Sesión</th>
-                <th className="text-left px-5 py-3 font-medium">Tienda</th>
-                <th className="text-center px-5 py-3 font-medium">Estado</th>
-                <th className="text-center px-5 py-3 fontmedium">Productos</th>
-                <th className="text-center px-5 py-3 font-medium">Interacciones</th>
-                <th className="text-center px-5 py-3 font-medium">Ventas</th>
-                <th className="text-center px-5 py-3 font-medium">Iniciada</th>
-                <th className="text-right px-5 py-3 font-medium">Acciones</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Sesión</th>
+                <th className="text-left px-5 py-3 font-medium max-sm:hidden">Tienda</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Estado</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Productos</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Interacciones</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Ventas</th>
+                <th className="text-center px-5 py-3 font-medium max-sm:hidden">Iniciada</th>
+                <th className="text-right px-5 py-3 font-medium max-sm:px-2 max-sm:py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -78,12 +78,12 @@ export default async function AdminLivesPage() {
 
                 return (
                   <tr key={s.id} className="border-b border-white/12 hover:bg-white/5 transition-colors">
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 max-sm:px-2 max-sm:py-2">
                       <div className="text-white font-medium">{s.title}</div>
                       <div className="text-[#9CA3B8] text-[12px]">ID: {s.id}</div>
                     </td>
-                    <td className="px-5 py-3.5 text-[#ABB2BF]">{s.store_profiles?.name ?? "—"}</td>
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-5 py-3.5 text-[#ABB2BF] max-sm:hidden">{s.store_profiles?.name ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-center max-sm:px-2 max-sm:py-2">
                       <div className="flex items-center justify-center gap-1.5">
                         {cfg.icon}
                         <span
@@ -93,16 +93,16 @@ export default async function AdminLivesPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-center text-[#ABB2BF]">{productCount}</td>
-                    <td className="px-5 py-3.5 text-center text-[#ABB2BF]">
+                    <td className="px-5 py-3.5 text-center text-[#ABB2BF] max-sm:hidden">{productCount}</td>
+                    <td className="px-5 py-3.5 text-center text-[#ABB2BF] max-sm:hidden">
                       👁️ {shown} · ❤️ {interested}
                     </td>
-                    <td className="px-5 py-3.5 text-center text-[#27AE60] font-semibold">Bs. {sold}</td>
-                    <td className="px-5 py-3.5 text-center text-[#9CA3B8] text-[12px]">
+                    <td className="px-5 py-3.5 text-center text-[#27AE60] font-semibold max-sm:hidden">Bs. {sold}</td>
+                    <td className="px-5 py-3.5 text-center text-[#9CA3B8] text-[12px] max-sm:hidden">
                       {s.started_at ? new Date(s.started_at).toLocaleString("es-BO") : "—"}
                     </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-5 py-3.5 text-right max-sm:px-2 max-sm:py-2">
+                      <div className="flex items-center justify-end gap-2 max-sm:gap-1 max-sm:flex-wrap max-sm:justify-end">
                         <Link
                           href={`/admin/lives/${s.id}/editar`}
                           className="text-[#ABB2BF] hover:text-white text-xs no-underline transition-colors"

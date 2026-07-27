@@ -1,8 +1,10 @@
+import Link from "next/link"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
 import { CheckoutForm } from "./CheckoutForm"
+import { OrderSummary } from "./OrderSummary"
 
 export const metadata = {
   title: "Finalizar Compra | Liz Store",
@@ -19,6 +21,18 @@ export default async function CheckoutPage() {
 
   const productIds = cartItems.map((item) => Number(item.id))
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  let profile: { nombre: string; phone: string } | null = null
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("nombre, phone")
+      .eq("id", user.id)
+      .single()
+    profile = data as unknown as { nombre: string; phone: string } | null
+  }
+
   const { data: products } = await (supabase as any)
     .from("products")
     .select("id, price, discount_price, stock, slug, name, product_images(image, is_main)")
@@ -51,18 +65,35 @@ export default async function CheckoutPage() {
     Object.fromEntries(mergedItems.map((i) => [i.id, i])),
   )
 
-  const { data: profile } = await (supabase as any)
+  const { data: storeProfile } = await (supabase as any)
     .from("store_profiles")
     .select("*")
     .single()
+
+  const { data: paymentMethods } = await (supabase as any)
+    .from("payment_methods")
+    .select("id, name, code, description, icon, config")
+    .eq("is_active", true)
+    .order("order", { ascending: true })
+
+  const { data: qrPayments } = await (supabase as any)
+    .from("qr_payments")
+    .select("id, payment_method_id, qr_type, qr_image, qr_code, account_name, account_number, bank_name, is_active")
+    .eq("is_active", true)
+
+  const { data: pickupPoints } = await (supabase as any)
+    .from("pickup_points")
+    .select("*")
+    .eq("is_active", true)
+    .order("order", { ascending: true })
 
   return (
     <section className="py-15">
       <div className="max-w-7xl mx-auto px-4">
         <div className="breadcrumbs py-5 text-[14px] text-[#888888]">
-          <a href="/" className="text-primary no-underline hover:underline">Inicio</a>
+          <Link href="/" className="text-primary no-underline hover:underline">Inicio</Link>
           {" / "}
-          <a href="/carrito" className="text-primary no-underline hover:underline">Carrito</a>
+          <Link href="/carrito" className="text-primary no-underline hover:underline">Carrito</Link>
           {" / "}
           <span>Pagar</span>
         </div>
@@ -85,66 +116,14 @@ export default async function CheckoutPage() {
               total: summary.total,
               freeShippingRemaining: summary.freeShippingRemaining,
             }}
-            storeProfile={profile || null}
+            storeProfile={storeProfile || null}
+            user={user ? { id: user.id, email: user.email ?? "" } : null}
+            profile={profile}
+            paymentMethods={(paymentMethods ?? []) as any[]}
+            qrPayments={(qrPayments ?? []) as any[]}
+            pickupPoints={(pickupPoints ?? []) as any[]}
           />
-          <div className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] sticky top-[100px]">
-            <h3 className="text-xl mb-6 pb-4 border-b border-[#EEE] font-serif text-[#2D2D2D]">
-              Resumen del pedido
-            </h3>
-            {mergedItems.map((item) => {
-              const total = item.price * item.quantity
-              return (
-                <div
-                  key={item.id}
-                  className="flex gap-3 mb-4 pb-4 border-b border-[#F5F5F5]"
-                >
-                  <div className="w-[60px] h-[60px] rounded-[8px] overflow-hidden flex-shrink-0 bg-[#FFFBF9]">
-                    {item.image ? (
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[#2D2D2D] truncate">{item.name}</div>
-                    <div className="text-[12px] text-[#888888]">x{item.quantity}</div>
-                  </div>
-                  <div className="text-sm font-semibold text-primary shrink-0">
-                    Bs. {total.toFixed(2)}
-                  </div>
-                </div>
-              )
-            })}
-            <div className="flex justify-between mb-2 text-[14px]">
-              <span className="text-[#888888]">Subtotal</span>
-              <span>Bs. {summary.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between mb-2 text-[14px]">
-              <span className="text-[#888888]">Envío</span>
-              <span id="sidebarShipping">
-                {summary.shipping === 0 ? (
-                  <span className="text-[#27AE60] font-semibold">GRATIS</span>
-                ) : (
-                  `Bs. ${summary.shipping.toFixed(2)}`
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between text-[20px] font-bold text-primary border-t border-[#EEE] pt-4 mt-4 font-serif">
-              <span>Total</span>
-              <span id="sidebarTotal">Bs. {summary.total.toFixed(2)}</span>
-            </div>
-            {summary.freeShippingRemaining > 0 && (
-              <div className="text-center text-[13px] text-[#27AE60] mt-3 pt-2.5 pb-2.5 px-2.5 bg-[rgba(39,174,96,0.08)] rounded-[8px]">
-                ✦ Agrega Bs. {summary.freeShippingRemaining.toFixed(2)} más para envío gratis
-              </div>
-            )}
-          </div>
+          <OrderSummary items={mergedItems} />
         </div>
       </div>
     </section>

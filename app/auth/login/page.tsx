@@ -56,7 +56,7 @@ export default function LoginPage() {
         return
       }
 
-      router.push("/admin")
+      router.push(data.role === "admin" ? "/admin" : "/")
     } catch {
       setError("Error de conexión con el servidor")
     } finally {

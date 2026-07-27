@@ -47,6 +47,7 @@ export function AddToCartForm({
       formData.set("productId", String(productId))
       formData.set("quantity", String(quantity))
       await addToCartAction(formData)
+      window.dispatchEvent(new CustomEvent("cart:changed"))
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ocurrió un error. Intenta de nuevo.")
@@ -89,16 +90,16 @@ export function AddToCartForm({
         </button>
       </div>
 
-      <div className="product-buttons flex justify-center gap-3 my-6 max-md:flex-col max-md:items-stretch">
+      <div className="product-buttons flex gap-3 my-6 max-md:flex-col max-md:items-stretch">
         <form action={addAndGo} className="contents">
-          <Button variant="buy" type="submit" disabled={loading} className="max-md:w-full">
+          <Button variant="buy" type="submit" disabled={loading} className="flex-1 max-md:w-full">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             {loading ? "Procesando..." : "Comprar ahora"}
           </Button>
         </form>
 
         <form action={addAndStay} className="contents">
-          <Button variant="primary" type="submit" disabled={loading} className="max-md:w-full">
+          <Button variant="primary" type="submit" disabled={loading} className="flex-1 max-md:w-full">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             {loading ? "Agregando..." : "Agregar al carrito"}
           </Button>

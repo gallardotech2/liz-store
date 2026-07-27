@@ -60,20 +60,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 500 })
     }
 
-    const profile = result.data as unknown as { role: string }
-
-    if (profile.role !== "admin") {
-      return NextResponse.json(
-        { error: "No tienes permisos de administrador" },
-        { status: 403 },
-      )
-    }
+    const profile = result.data as unknown as { role: string; nombre: string }
 
     return NextResponse.json({
       success: true,
+      role: profile.role,
       user: {
         id: userId,
         email: data.user.email,
+        nombre: profile.nombre,
       },
     })
   } catch {

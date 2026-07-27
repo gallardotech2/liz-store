@@ -92,7 +92,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       </Link>
 
       <div className="p-5">
-        <div className="text-[12px] text-[rgb(154,90,99)] uppercase tracking-[1px] font-semibold mb-1.5">
+        <div className="text-[12px] text-primary-dark uppercase tracking-[1px] font-semibold mb-1.5">
           {product.category.name}
         </div>
         <h3 className="text-base font-sans mb-2 leading-[1.4]">
@@ -113,7 +113,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[22px] font-bold text-[rgb(154,90,99)] font-serif inline-flex items-center gap-0.5">
+          <span className="text-[22px] font-bold text-primary-dark font-serif inline-flex items-center gap-0.5">
             {formatCurrency(displayPrice)}
           </span>
           {hasDiscount && (

@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 export function getOrders(client: SupabaseClient, userId: string, limit = 20) {
   return client
     .from("orders")
-    .select("id, order_number, status, total, is_paid, payment_method, created_at, order_items(id, product_name, quantity, price)")
+    .select("id, order_number, status, total, is_paid, payment_method, created_at, order_items(id, product_name, product_image, quantity, price)")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit)
