@@ -27,16 +27,15 @@ export const CART_MAX_AGE = 60 * 60 * 24 * 30
 export const FREE_SHIPPING_THRESHOLD = 599
 export const SHIPPING_COST = 89
 
-function getCartSecret(): string {
+function getCartSecret(): string | null {
   const secret = process.env.CART_HMAC_SECRET
-  if (!secret) {
-    throw new Error("CART_HMAC_SECRET no está configurada")
-  }
-  return secret
+  return secret || null
 }
 
-function signCart(data: string): string {
-  const hmac = createHmac("sha256", getCartSecret())
+function signCart(data: string): string | null {
+  const secret = getCartSecret()
+  if (!secret) return null
+  const hmac = createHmac("sha256", secret)
   hmac.update(data)
   return hmac.digest("hex")
 }
@@ -44,10 +43,16 @@ function signCart(data: string): string {
 export function parseCart(raw: string | null | undefined): CartData {
   if (!raw) return {}
   try {
-    const [payload, signature] = raw.split("|")
+    const pipeIdx = raw.indexOf("|")
+    if (pipeIdx === -1) return JSON.parse(raw) as CartData
+
+    const payload = raw.slice(0, pipeIdx)
+    const signature = raw.slice(pipeIdx + 1)
     if (!payload || !signature) return {}
 
     const expectedSig = signCart(payload)
+    if (!expectedSig) return JSON.parse(payload) as CartData
+
     const sigBuffer = Buffer.from(signature, "hex")
     const expectedBuffer = Buffer.from(expectedSig, "hex")
 
@@ -64,7 +69,7 @@ export function parseCart(raw: string | null | undefined): CartData {
 export function signCartData(cart: CartData): string {
   const payload = JSON.stringify(cart)
   const signature = signCart(payload)
-  return `${payload}|${signature}`
+  return signature ? `${payload}|${signature}` : payload
 }
 
 export function addToCart(
