@@ -11,7 +11,7 @@ interface ProfileFormProps {
   phone: string
 }
 
-export function ProfileForm({ userId, email, nombre, phone }: ProfileFormProps) {
+export function ProfileForm({ userId, nombre, phone }: ProfileFormProps) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState(nombre)
@@ -58,11 +58,11 @@ export function ProfileForm({ userId, email, nombre, phone }: ProfileFormProps) 
         <h2 className="text-lg font-serif text-[#2D2D2D] mb-6">Datos del usuario</h2>
         <div className="space-y-4 mb-6">
           <div className="p-4 rounded-xl bg-[#FDF8F6] border border-[#EEE]">
-            <span className="text-[12px] text-[#888888] block mb-1">Nombre</span>
+            <span className="text-[12px] text-[#6B6B6B] block mb-1">Nombre</span>
             <span className="text-[15px] font-medium text-[#2D2D2D]">{displayName || "—"}</span>
           </div>
           <div className="p-4 rounded-xl bg-[#FDF8F6] border border-[#EEE]">
-            <span className="text-[12px] text-[#888888] block mb-1">Teléfono</span>
+            <span className="text-[12px] text-[#6B6B6B] block mb-1">Teléfono</span>
             <span className="text-[15px] font-medium text-[#2D2D2D]">{displayPhone || "—"}</span>
           </div>
         </div>
@@ -84,7 +84,7 @@ export function ProfileForm({ userId, email, nombre, phone }: ProfileFormProps) 
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="text-sm text-[#888888] bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] transition-colors"
+          className="text-sm text-[#6B6B6B] bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] transition-colors"
         >
           Cancelar
         </button>

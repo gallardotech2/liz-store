@@ -73,7 +73,7 @@ export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-[#2D2D2D] truncate">{item.name}</div>
-              <div className="text-[12px] text-[#888888]">x{item.quantity}</div>
+              <div className="text-[12px] text-[#6B6B6B]">x{item.quantity}</div>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <div className="text-sm font-semibold text-primary">
@@ -91,7 +91,7 @@ export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
         )
       })}
       <div className="flex justify-between mb-2 text-[14px]">
-        <span className="text-[#888888]">Subtotal</span>
+        <span className="text-[#6B6B6B]">Subtotal</span>
         <span>Bs. {subtotal.toFixed(2)}</span>
       </div>
       <div className="flex justify-between text-[20px] font-bold text-primary border-t border-[#EEE] pt-4 mt-4 font-serif">

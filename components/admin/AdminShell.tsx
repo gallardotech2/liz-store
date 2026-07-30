@@ -6,18 +6,16 @@ import { AdminNavbar } from "./AdminNavbar"
 
 interface AdminShellProps {
   userName: string
-  userEmail: string
   children: React.ReactNode
 }
 
-export function AdminShell({ userName, userEmail, children }: AdminShellProps) {
+export function AdminShell({ userName, children }: AdminShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-secondary">
       <AdminSidebar
         userName={userName}
-        userEmail={userEmail}
         sidebarOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

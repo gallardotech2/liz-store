@@ -20,11 +20,6 @@ export async function POST(request: Request) {
   const total = items.reduce((sum: number, i: { price: number; quantity: number }) => sum + i.price * i.quantity, 0)
   const itemSummary = items.length === 1 ? firstItem.name : `${firstItem.name} y ${items.length - 1} más`
 
-  const deliveryInfo =
-    deliveryMethod === "pickup"
-      ? `Recoger en: ${addressText}`
-      : `Envío a domicilio: ${addressText}${reference ? `, Ref: ${reference}` : ""}`
-
   const refCode = `PED-${String(Math.floor(100000 + Math.random() * 900000))}`
 
   const { data, error } = await supabase

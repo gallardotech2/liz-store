@@ -90,7 +90,7 @@ export default async function CheckoutPage() {
   return (
     <section className="py-15">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="breadcrumbs py-5 text-[14px] text-[#888888]">
+        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B]">
           <Link href="/" className="text-primary no-underline hover:underline">Inicio</Link>
           {" / "}
           <Link href="/carrito" className="text-primary no-underline hover:underline">Carrito</Link>

@@ -2,8 +2,9 @@ export const SITE_NAME = "Liz Store"
 export const SITE_DESCRIPTION =
   "Tienda boliviana de bisutería y accesorios elegantes"
 export const SITE_CURRENCY = "Bs."
-export const WHATSAPP_NUMBER = "591XXXXXXXXX"
+export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "591XXXXXXXXX"
 export const SHIPPING_COST = 15
+export const REVALIDATE_TIME = parseInt(process.env.NEXT_PUBLIC_REVALIDATE || "3600", 10)
 
 export const PICKUP_LOCATIONS = [
   { name: "Centro", address: "Calle Bolívar #123" },

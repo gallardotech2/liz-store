@@ -35,7 +35,7 @@ export default async function AdminDashboard() {
     <>
       <div className="bg-secondary-light border border-white/12 rounded-[16px] p-7 mb-6 shadow-[0_4px_24px_rgba(0,0,0,0.3)] flex items-center justify-between flex-wrap gap-4 max-sm:p-4 max-sm:flex-col max-sm:text-center">
         <div>
-          <h2 className="text-2xl font-bold text-white m-0 mb-1 max-sm:text-lg">Bienvenido a Liz Store ✦</h2>
+          <h2 className="text-2xl font-bold text-white m-0 mb-1 max-sm:text-lg">Bienvenido a Liz Store</h2>
           <p className="text-sm text-[#9CA3B8] m-0 max-sm:text-[13px]">
             Panel de administración — gestiona productos, pedidos, usuarios y más.
           </p>

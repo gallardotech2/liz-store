@@ -1,11 +1,22 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request)
+    const { allowed } = checkRateLimit(`login:${clientIp}`)
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Espera un minuto e intenta de nuevo." },
+        { status: 429 },
+      )
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password) {

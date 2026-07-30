@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
+import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 interface CartItem {
   id: string
@@ -137,7 +138,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
 
   function sendWhatsAppMsg() {
     const msg = buildWhatsAppMessage()
-    const whatsappUrl = `https://wa.me/59176426643?text=${encodeURIComponent(msg)}`
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
     window.open(whatsappUrl, "_blank")
   }
 
@@ -182,7 +183,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
       }
 
       const msg = buildWhatsAppMessage()
-      const whatsappUrl = `https://wa.me/59176426643?text=${encodeURIComponent(msg)}`
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
       sessionStorage.setItem("liz_whatsapp_sent", "1")
       window.open(whatsappUrl, "_blank")
 
@@ -208,14 +209,14 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             <h3 className="text-xl font-serif text-[#2D2D2D] mb-3">Pedido solicitado correctamente</h3>
             {referenceCode && (
               <div className="mb-4 p-3 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">
-                <p className="text-[12px] text-[#888888] mb-1">Código de referencia</p>
+                <p className="text-[12px] text-[#6B6B6B] mb-1">Código de referencia</p>
                 <p className="text-lg font-bold text-[#2D2D2D] tracking-wider">{referenceCode}</p>
               </div>
             )}
             <div className="text-left mb-6 p-4 rounded-xl bg-[#FDF8F6]">
               <p className="text-[14px] font-semibold text-[#2D2D2D] mb-2">Resumen del pedido</p>
               {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-1.5 text-[13px] text-[#888888]">
+                <div key={item.id} className="flex items-center gap-3 py-1.5 text-[13px] text-[#6B6B6B]">
                   <span className="text-[#2D2D2D] font-medium">{item.name}</span>
                   <span>x{item.quantity}</span>
                 </div>
@@ -252,7 +253,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
             <h3 className="text-xl font-serif text-[#2D2D2D] mb-3">✅ Tu solicitud fue enviada correctamente.</h3>
-            <p className="text-sm text-[#888888] mb-6 leading-[1.6]">
+            <p className="text-sm text-[#6B6B6B] mb-6 leading-[1.6]">
               Hemos preparado tu pedido en WhatsApp. Si no se abrió automáticamente,
               presiona el botón para continuar.
             </p>
@@ -265,7 +266,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             </button>
             <button
               onClick={() => setStatus("form")}
-              className="text-sm text-[#888888] bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] transition-colors"
+              className="text-sm text-[#6B6B6B] bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] transition-colors"
             >
               Cerrar
             </button>
@@ -277,14 +278,14 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         <h2 className="text-lg font-serif text-[#2D2D2D] mb-6">Datos de contacto</h2>
 
         {user && profile && (
-          <div className="mb-5 p-3.5 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)] text-[13px] text-[#888888]">
+          <div className="mb-5 p-3.5 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)] text-[13px] text-[#6B6B6B]">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1.5 -mt-0.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Tus datos se cargaron automáticamente desde tu perfil.
           </div>
         )}
 
         <div className="flex flex-col gap-1.5 mb-5">
-          <label className="text-[13px] text-[#888888] font-medium">Nombre completo *</label>
+          <label className="text-[13px] text-[#6B6B6B] font-medium">Nombre completo *</label>
           <input
             type="text"
             value={name}
@@ -296,7 +297,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         </div>
 
         <div className="flex flex-col gap-1.5 mb-5">
-          <label className="text-[13px] text-[#888888] font-medium">Teléfono</label>
+          <label className="text-[13px] text-[#6B6B6B] font-medium">Teléfono</label>
           <input
             type="tel"
             value={phone}
@@ -329,7 +330,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             />
             <div className="flex-1">
               <div className="font-semibold text-sm text-[#2D2D2D]">Recoger en paquetería</div>
-              <div className="text-[13px] text-[#888888]">Pasas a recoger tu pedido por nuestra dirección</div>
+              <div className="text-[13px] text-[#6B6B6B]">Pasas a recoger tu pedido por nuestra dirección</div>
               <span className="inline-block mt-1 text-[11px] font-bold text-[#27AE60] bg-[rgba(39,174,96,0.1)] px-2 py-0.5 rounded">GRATIS</span>
             </div>
           </label>
@@ -352,19 +353,19 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             />
               <div className="flex-1">
               <div className="font-semibold text-sm text-[#2D2D2D]">Envío a domicilio</div>
-              <div className="text-[13px] text-[#888888]">Cotiza tu envío por WhatsApp</div>
+              <div className="text-[13px] text-[#6B6B6B]">Cotiza tu envío por WhatsApp</div>
             </div>
           </label>
         </div>
 
         {deliveryMethod === "pickup" && (
           <div className="mb-6 p-5 rounded-xl bg-[#FDF8F6]">
-            <p className="text-[14px] text-[#888888] mb-4">
+            <p className="text-[14px] text-[#6B6B6B] mb-4">
               Selecciona el punto de recogida más cercano a ti.
             </p>
             <div className="flex flex-col gap-2">
               {pickupPoints.length === 0 && (
-                <p className="text-[13px] text-[#888888]">No hay puntos de recogida disponibles.</p>
+                <p className="text-[13px] text-[#6B6B6B]">No hay puntos de recogida disponibles.</p>
               )}
               {pickupPoints.map((point) => (
                 <div key={point.id}>
@@ -386,8 +387,8 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                     />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-[#2D2D2D]">{point.name}</div>
-                      <div className="text-[12px] text-[#888888]">{point.address}</div>
-                      <div className="text-[12px] text-[#888888] mt-0.5">{point.schedule}</div>
+                      <div className="text-[12px] text-[#6B6B6B]">{point.address}</div>
+                      <div className="text-[12px] text-[#6B6B6B] mt-0.5">{point.schedule}</div>
                       {point.google_maps_url && (
                         <a
                           href={point.google_maps_url}
@@ -410,14 +411,14 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
 
         {deliveryMethod === "home" && (
           <div className="mb-6 p-5 rounded-xl bg-[#FDF8F6]">
-            <p className="text-[14px] text-[#888888]">
+            <p className="text-[14px] text-[#6B6B6B]">
               El costo y la disponibilidad del envío se coordinarán directamente por WhatsApp.
             </p>
           </div>
         )}
 
         <div className="flex flex-col gap-1.5 mb-6">
-          <label className="text-[13px] text-[#888888] font-medium">Notas adicionales</label>
+          <label className="text-[13px] text-[#6B6B6B] font-medium">Notas adicionales</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -455,7 +456,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                   <div className="flex-1">
                     <div className="font-semibold text-sm text-[#2D2D2D]">{pm.icon} {pm.name}</div>
                     {pm.description && (
-                      <div className="text-[13px] text-[#888888]">{pm.description}</div>
+                      <div className="text-[13px] text-[#6B6B6B]">{pm.description}</div>
                     )}
                   </div>
                 </label>
@@ -463,13 +464,13 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                   <div className="mt-3 p-5 rounded-xl bg-[#FDF8F6] border border-[#EEE]">
                     <div className="space-y-1.5 text-[13px] text-[#2D2D2D]">
                       {qrConfig.account_name && (
-                        <div className="flex justify-between"><span className="text-[#888888]">Titular:</span><strong>{qrConfig.account_name}</strong></div>
+                        <div className="flex justify-between"><span className="text-[#6B6B6B]">Titular:</span><strong>{qrConfig.account_name}</strong></div>
                       )}
                       {qrConfig.bank_name && (
-                        <div className="flex justify-between"><span className="text-[#888888]">Banco:</span><strong>{qrConfig.bank_name}</strong></div>
+                        <div className="flex justify-between"><span className="text-[#6B6B6B]">Banco:</span><strong>{qrConfig.bank_name}</strong></div>
                       )}
                       {qrConfig.account_number && (
-                        <div className="flex justify-between"><span className="text-[#888888]">Cuenta:</span><strong>{qrConfig.account_number}</strong></div>
+                        <div className="flex justify-between"><span className="text-[#6B6B6B]">Cuenta:</span><strong>{qrConfig.account_number}</strong></div>
                       )}
                     </div>
                     {qrConfig.qr_image && (
@@ -479,7 +480,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                     )}
                     {!qrConfig.qr_image && qrConfig.qr_code && (
                       <div className="mt-4 pt-4 border-t border-[#EEE]">
-                        <p className="text-[12px] text-[#888888] text-center">Código QR: <strong>{qrConfig.qr_code}</strong></p>
+                        <p className="text-[12px] text-[#6B6B6B] text-center">Código QR: <strong>{qrConfig.qr_code}</strong></p>
                       </div>
                     )}
                     {!qrConfig.qr_image && !qrConfig.qr_code && storeProfile?.qr_code && (

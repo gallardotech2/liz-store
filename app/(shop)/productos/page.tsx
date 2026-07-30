@@ -140,7 +140,7 @@ export default async function CatalogPage({
           <Link href="/" className="text-primary no-underline hover:underline">
             Inicio
           </Link>{" "}
-          / <span className="text-[#888888]">Catálogo</span>
+          / <span className="text-[#6B6B6B]">Catálogo</span>
         </div>
       </div>
 
@@ -153,7 +153,7 @@ export default async function CatalogPage({
             <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
               Nuestro Catálogo
             </h1>
-            <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+            <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
               Encuentra la pieza perfecta para cada ocasión.
             </p>
           </div>
@@ -225,7 +225,7 @@ export default async function CatalogPage({
               <h2 className="text-[#2D2D2D] mb-3 font-serif text-2xl">
                 No encontramos productos
               </h2>
-              <p className="text-[#888888] mb-6">
+              <p className="text-[#6B6B6B] mb-6">
                 Intenta con otros filtros o explora todas nuestras categorías.
               </p>
               <Link href="/productos" prefetch={false}>

@@ -56,7 +56,7 @@ export default async function HistorialPage() {
         {!requests || requests.length === 0 ? (
           <div className="text-center py-16">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#DDD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            <p className="text-[#888888]">No tienes compras aún</p>
+            <p className="text-[#6B6B6B]">No tienes compras aún</p>
             <Link href="/productos" className="text-primary font-semibold no-underline hover:underline text-sm mt-2 inline-block">
               Explorar productos
             </Link>
@@ -70,7 +70,7 @@ export default async function HistorialPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <span className="text-[13px] text-[#888888]">Código</span>
+                    <span className="text-[13px] text-[#6B6B6B]">Código</span>
                     <p className="font-semibold text-[#2D2D2D]">{req.reference_code}</p>
                   </div>
                   <span className={`text-[12px] px-2.5 py-1 rounded font-semibold ${STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"}`}>
@@ -89,12 +89,12 @@ export default async function HistorialPage() {
                   <div className="flex-1">
                     <p className="text-[14px] font-medium text-[#2D2D2D]">{req.product_name}</p>
                     {req.product_price != null && (
-                      <p className="text-[13px] text-[#888888]">{formatCurrency(req.product_price)}</p>
+                      <p className="text-[13px] text-[#6B6B6B]">{formatCurrency(req.product_price)}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#F5F5F5] text-[13px] text-[#888888]">
+                <div className="mt-4 pt-3 border-t border-[#F5F5F5] text-[13px] text-[#6B6B6B]">
                   {new Date(req.created_at).toLocaleDateString("es-BO", {
                     year: "numeric",
                     month: "long",

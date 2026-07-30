@@ -34,10 +34,9 @@ export default async function AdminLayout({
     user.user_metadata?.full_name ??
     user.email?.split("@")[0] ??
     "Admin"
-  const userEmail = user.email ?? ""
 
   return (
-    <AdminShell userName={userName} userEmail={userEmail}>
+    <AdminShell userName={userName}>
       {children}
     </AdminShell>
   )

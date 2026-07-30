@@ -68,9 +68,9 @@ export default function LoginPage() {
     <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
       <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
         <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D]">
-          ✦ Bienvenida
+          Bienvenida
         </h1>
-        <p className="text-center text-[#888888] mb-7 sm:mb-7.5 text-[15px]">
+        <p className="text-center text-[#6B6B6B] mb-7 sm:mb-7.5 text-[15px]">
           Ingresa a tu cuenta Liz Store
         </p>
 
@@ -149,7 +149,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-center mt-6 text-[14px] text-[#888888]">
+        <p className="text-center mt-6 text-[14px] text-[#6B6B6B]">
           ¿No tienes cuenta?{" "}
           <Link href="/auth/registro" className="text-primary font-semibold no-underline hover:underline">
             Regístrate aquí

@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "crypto"
+
 export interface CartItem {
   id: string
   name: string
@@ -25,13 +27,44 @@ export const CART_MAX_AGE = 60 * 60 * 24 * 30
 export const FREE_SHIPPING_THRESHOLD = 599
 export const SHIPPING_COST = 89
 
+function getCartSecret(): string {
+  const secret = process.env.CART_HMAC_SECRET
+  if (!secret) {
+    throw new Error("CART_HMAC_SECRET no está configurada")
+  }
+  return secret
+}
+
+function signCart(data: string): string {
+  const hmac = createHmac("sha256", getCartSecret())
+  hmac.update(data)
+  return hmac.digest("hex")
+}
+
 export function parseCart(raw: string | null | undefined): CartData {
   if (!raw) return {}
   try {
-    return JSON.parse(raw) as CartData
+    const [payload, signature] = raw.split("|")
+    if (!payload || !signature) return {}
+
+    const expectedSig = signCart(payload)
+    const sigBuffer = Buffer.from(signature, "hex")
+    const expectedBuffer = Buffer.from(expectedSig, "hex")
+
+    if (sigBuffer.length !== expectedBuffer.length || !timingSafeEqual(sigBuffer, expectedBuffer)) {
+      return {}
+    }
+
+    return JSON.parse(payload) as CartData
   } catch {
     return {}
   }
+}
+
+export function signCartData(cart: CartData): string {
+  const payload = JSON.stringify(cart)
+  const signature = signCart(payload)
+  return `${payload}|${signature}`
 }
 
 export function addToCart(

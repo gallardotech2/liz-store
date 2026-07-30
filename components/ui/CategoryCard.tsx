@@ -43,7 +43,7 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
         <h3 className="text-base font-sans font-semibold text-[rgb(154,90,99)] m-0">
           {category.name}
         </h3>
-        <span className="text-[13px] text-[#888888] mt-1 block">
+        <span className="text-[13px] text-[#6B6B6B] mt-1 block">
           {category.productCount} productos
         </span>
       </div>

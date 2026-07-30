@@ -15,7 +15,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   const s = supabase as any
 
-  const [categoriesResult, featuredResult, newResult, testimonialsResult, storeProfileResult, productCounts] =
+  const [categoriesResult, featuredResult, newResult, testimonialsResult, _storeProfileResult, productCounts] =
     await Promise.all([
       s.from("categories").select("*").eq("is_active", true).order("order"),
       s
@@ -96,8 +96,6 @@ export default async function HomePage() {
   const newProducts = ((newResult.data ?? []) as RawProduct[]).map(mapProduct)
 
   const testimonials = (testimonialsResult.data ?? []) as { id: number; rating: number; content: string }[]
-  const storeProfile = storeProfileResult.data
-
   return (
     <>
       <section className="relative min-h-[85vh] max-md:min-h-[70vh] flex items-center bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6] overflow-hidden">
@@ -115,7 +113,7 @@ export default async function HomePage() {
               Bisutería con <span className="text-primary">Estilo</span>,<br />
               Confianza <span className="text-primary">Elegante</span>
             </h1>
-            <p className="text-lg text-[#888888] mb-9 leading-[1.8] max-w-[480px] max-md:mx-auto">
+            <p className="text-lg text-[#6B6B6B] mb-9 leading-[1.8] max-w-[480px] max-md:mx-auto">
               Descubre accesorios que realzan tu belleza. Cada pieza está seleccionada para ti.
             </p>
             <div className="flex gap-4 flex-wrap max-md:justify-center">
@@ -155,7 +153,7 @@ export default async function HomePage() {
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
                 Explora por categoría
               </h2>
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 Descubre nuestra colección organizada para encontrar tu estilo perfecto.
               </p>
             </div>
@@ -178,7 +176,7 @@ export default async function HomePage() {
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
                 Los más vendidos
               </h2>
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 Nuestros clientes aman estas piezas. Tú también las amarás.
               </p>
             </div>
@@ -206,7 +204,7 @@ export default async function HomePage() {
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
                 Recién llegados
               </h2>
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 Las últimas tendencias en bisutería que debes tener.
               </p>
             </div>
@@ -229,7 +227,7 @@ export default async function HomePage() {
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
                 Lo que dicen nuestras clientas
               </h2>
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 Mujeres reales, resultados reales. Su satisfacción es nuestra mejor carta de presentación.
               </p>
             </div>
@@ -254,7 +252,7 @@ export default async function HomePage() {
                       <div className="font-semibold text-sm text-[#2D2D2D]">
                         Cliente verificado
                       </div>
-                      <div className="text-[12px] text-[#888888]">
+                      <div className="text-[12px] text-[#6B6B6B]">
                         Compra verificada
                       </div>
                     </div>
@@ -275,7 +273,7 @@ export default async function HomePage() {
                   <FaShieldAlt className="text-[26px]" />
                 </div>
                 <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Escudo Pago</h4>
-                <p className="text-sm text-[#888888] leading-[1.6]">
+                <p className="text-sm text-[#6B6B6B] leading-[1.6]">
                   Tu dinero protegido hasta recibir tu pedido. Paga con total confianza.
                 </p>
               </div>
@@ -285,7 +283,7 @@ export default async function HomePage() {
                 <FaTruck className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Envío Seguro</h4>
-              <p className="text-sm text-[#888888] leading-[1.6]">
+              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
                 Empaquetamos con amor. Envíos rápidos a todo el país.
               </p>
             </div>
@@ -294,7 +292,7 @@ export default async function HomePage() {
                 <FaGem className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Calidad Premium</h4>
-              <p className="text-sm text-[#888888] leading-[1.6]">
+              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
                 Solo trabajamos con materiales que realzan tu belleza natural.
               </p>
             </div>
@@ -303,7 +301,7 @@ export default async function HomePage() {
                 <FaHeart className="text-[26px]" />
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Amor al Detalle</h4>
-              <p className="text-sm text-[#888888] leading-[1.6]">
+              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
                 Cada pieza es seleccionada cuidadosamente para ti.
               </p>
             </div>
@@ -321,7 +319,7 @@ export default async function HomePage() {
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
                 Tu dinero está protegido
               </h2>
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 Solo se libera cuando confirmes que recibiste tu pedido.
               </p>
             </div>
@@ -329,7 +327,7 @@ export default async function HomePage() {
               <div className="text-[72px] text-primary mb-5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
-              <p className="text-lg leading-[1.8] text-[#888888] mb-7.5">
+              <p className="text-lg leading-[1.8] text-[#6B6B6B] mb-7.5">
                 Con <strong>Escudo Pago</strong> tu compra está completamente protegida. El vendedor recibe el pago solo hasta que tú confirmes que recibiste tu producto en perfectas condiciones.
               </p>
               <Link href="/faq">

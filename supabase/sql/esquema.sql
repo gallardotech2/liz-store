@@ -135,7 +135,7 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 CREATE TABLE order_items (
   id SERIAL PRIMARY KEY,
   order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
   product_name TEXT NOT NULL,
   product_sku TEXT NOT NULL,
   product_image TEXT DEFAULT '',
@@ -210,8 +210,7 @@ CREATE TABLE reviews (
   is_verified BOOLEAN DEFAULT false,
   is_approved BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(product_id, user_id)
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
@@ -383,6 +382,7 @@ CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_active_featured ON products(is_active, is_featured);
+CREATE INDEX IF NOT EXISTS idx_products_category_active ON products(category_id, is_active);
 CREATE INDEX IF NOT EXISTS idx_product_images_product_id ON product_images(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_images_main ON product_images(product_id, is_main);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
@@ -492,13 +492,14 @@ CREATE POLICY "Product Images: admin todo" ON product_images FOR ALL USING ((aut
 
 -- Orders
 CREATE POLICY "Orders: propio SELECT" ON orders FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Orders: anon INSERT" ON orders FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Orders: auth INSERT propio" ON orders FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Orders: anon INSERT guest" ON orders FOR INSERT TO anon WITH CHECK (user_id IS NULL AND session_key IS NOT NULL AND session_key != '');
 CREATE POLICY "Orders: propio UPDATE" ON orders FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "Orders: admin todo" ON orders FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Order Items
 CREATE POLICY "Order Items: propio ver" ON order_items FOR SELECT USING (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND (orders.user_id = auth.uid() OR orders.user_id IS NULL)));
-CREATE POLICY "Order Items: INSERT" ON order_items FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Order Items: INSERT propio" ON order_items FOR INSERT TO anon, authenticated WITH CHECK (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND ((auth.uid() IS NOT NULL AND orders.user_id = auth.uid()) OR (auth.uid() IS NULL AND orders.user_id IS NULL AND orders.session_key IS NOT NULL))));
 CREATE POLICY "Order Items: admin todo" ON order_items FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Transactions

@@ -142,7 +142,6 @@ export default async function AdminProductsPage() {
                         </Link>
                         <form action={deleteProduct.bind(null, p.id)}>
                           <DeleteButton
-                            action={deleteProduct.bind(null, p.id)}
                             label="Eliminar"
                             confirmMessage="¿Eliminar producto?"
                           />

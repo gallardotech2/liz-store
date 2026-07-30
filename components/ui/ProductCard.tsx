@@ -99,7 +99,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
               {"★".repeat(Math.round(product.rating))}
               {"☆".repeat(5 - Math.round(product.rating))}
             </span>
-            <span className="text-[#888888]">({product.ratingCount})</span>
+            <span className="text-[#6B6B6B]">({product.ratingCount})</span>
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
@@ -108,7 +108,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </span>
           {hasDiscount && (
             <>
-              <span className="text-base text-[#888888] line-through inline-flex items-center gap-0.5">
+              <span className="text-base text-[#6B6B6B] line-through inline-flex items-center gap-0.5">
                 {formatCurrency(product.price)}
               </span>
               <span className="text-[12px] text-white bg-[#E74C3C] px-2 py-0.5 rounded font-semibold">

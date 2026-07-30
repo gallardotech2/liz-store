@@ -56,7 +56,7 @@ export default async function SolicitudesPage() {
         {!requests || requests.length === 0 ? (
           <div className="text-center py-16">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#DDD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <p className="text-[#888888]">No tienes solicitudes por WhatsApp</p>
+            <p className="text-[#6B6B6B]">No tienes solicitudes por WhatsApp</p>
             <Link href="/productos" className="text-primary font-semibold no-underline hover:underline text-sm mt-2 inline-block">
               Explorar productos
             </Link>
@@ -70,7 +70,7 @@ export default async function SolicitudesPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <span className="text-[13px] text-[#888888]">Código</span>
+                    <span className="text-[13px] text-[#6B6B6B]">Código</span>
                     <p className="font-semibold text-[#2D2D2D]">{req.reference_code}</p>
                   </div>
                   <span className={`text-[12px] px-2.5 py-1 rounded font-semibold ${STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"}`}>
@@ -79,7 +79,7 @@ export default async function SolicitudesPage() {
                 </div>
 
                 <div className="flex items-center gap-3 py-2 border-t border-[#F5F5F5]">
-                  <div className="w-16 h-16 rounded-[8px] bg-[#FFFBF9] flex items-center justify-center text-[12px] text-[#888888] overflow-hidden shrink-0">
+                  <div className="w-16 h-16 rounded-[8px] bg-[#FFFBF9] flex items-center justify-center text-[12px] text-[#6B6B6B] overflow-hidden shrink-0">
                     {req.product_image ? (
                       <img src={req.product_image} alt={req.product_name} className="w-full h-full object-cover" />
                     ) : (
@@ -89,12 +89,12 @@ export default async function SolicitudesPage() {
                   <div className="flex-1">
                     <p className="text-[14px] text-[#2D2D2D] font-medium">{req.product_name}</p>
                     {req.product_price != null && (
-                      <p className="text-[13px] text-[#888888]">{formatCurrency(req.product_price)}</p>
+                      <p className="text-[13px] text-[#6B6B6B]">{formatCurrency(req.product_price)}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#F5F5F5] text-[13px] text-[#888888]">
+                <div className="mt-4 pt-3 border-t border-[#F5F5F5] text-[13px] text-[#6B6B6B]">
                   {new Date(req.created_at).toLocaleDateString("es-BO", {
                     year: "numeric",
                     month: "long",

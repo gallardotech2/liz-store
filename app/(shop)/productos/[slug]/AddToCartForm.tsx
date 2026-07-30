@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { addToCartAction } from "@/app/(shop)/carrito/actions"
@@ -15,9 +15,6 @@ interface AddToCartFormProps {
 
 export function AddToCartForm({
   productId,
-  productName,
-  productSlug,
-  price,
   stock,
 }: AddToCartFormProps) {
   const [quantity, setQuantity] = useState(1)

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
+import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 export const metadata: Metadata = {
   title: "Preguntas Frecuentes | Liz Store",
@@ -82,7 +83,7 @@ export default function FaqPage() {
           <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
             Preguntas Frecuentes
           </h1>
-          <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+          <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
             Resolvemos las dudas más comunes para que tu experiencia de compra
             sea fácil y segura.
           </p>
@@ -99,7 +100,7 @@ export default function FaqPage() {
             ¿No encontraste tu respuesta? Escríbenos y te ayudamos.
           </p>
           <a
-            href="https://wa.me/59176426643"
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#25D366] text-white text-sm font-semibold no-underline hover:bg-[#1DA851] transition-colors"

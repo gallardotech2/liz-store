@@ -6,6 +6,7 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import {
   parseCart,
+  signCartData,
   addToCart,
   updateQuantity,
   removeFromCart,
@@ -62,7 +63,7 @@ export async function addToCartAction(formData: FormData) {
     quantity,
   )
 
-  cookieStore.set(CART_COOKIE, JSON.stringify(updatedCart), {
+  cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
@@ -81,7 +82,7 @@ export async function removeFromCartAction(formData: FormData) {
   const cart = parseCart(cookieStore.get(CART_COOKIE)?.value)
   const updatedCart = removeFromCart(cart, productId)
 
-  cookieStore.set(CART_COOKIE, JSON.stringify(updatedCart), {
+  cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
@@ -116,7 +117,7 @@ export async function updateQuantityAction(formData: FormData) {
   const cart = parseCart(cookieStore.get(CART_COOKIE)?.value)
   const updatedCart = updateQuantity(cart, productId, safeQuantity)
 
-  cookieStore.set(CART_COOKIE, JSON.stringify(updatedCart), {
+  cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",

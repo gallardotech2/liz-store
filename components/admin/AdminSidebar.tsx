@@ -22,7 +22,6 @@ import {
 
 interface AdminSidebarProps {
   userName: string
-  userEmail: string
   sidebarOpen: boolean
   onClose: () => void
 }
@@ -54,7 +53,7 @@ const navGroups = [
   },
 ]
 
-export function AdminSidebar({ userName, userEmail, sidebarOpen, onClose }: AdminSidebarProps) {
+export function AdminSidebar({ userName, sidebarOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const initial = userName.charAt(0).toUpperCase()

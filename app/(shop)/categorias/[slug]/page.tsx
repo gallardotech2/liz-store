@@ -129,7 +129,7 @@ export default async function CategoryDetailPage({
   return (
     <>
       <div className="max-w-7xl mx-auto px-4">
-        <div className="breadcrumbs py-5 text-[14px] text-[#888888]">
+        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B]">
           <Link href="/" className="text-primary no-underline hover:underline">
             Inicio
           </Link>{" "}
@@ -167,7 +167,7 @@ export default async function CategoryDetailPage({
               {category.name}
             </h1>
             {category.description && (
-              <p className="text-[#888888] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
                 {category.description}
               </p>
             )}
@@ -233,7 +233,7 @@ export default async function CategoryDetailPage({
               <h2 className="text-[#2D2D2D] mb-3 font-serif text-2xl">
                 Próximamente
               </h2>
-              <p className="text-[#888888] mb-6">
+              <p className="text-[#6B6B6B] mb-6">
                 Estamos preparando nuevos productos para esta categoría.
               </p>
               <Link href="/productos" prefetch={false}>

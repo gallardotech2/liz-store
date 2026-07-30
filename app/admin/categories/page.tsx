@@ -94,7 +94,6 @@ export default async function AdminCategoriesPage() {
                       </Link>
                       <form action={deleteCategory.bind(null, cat.id)}>
                         <DeleteButton
-                          action={deleteCategory.bind(null, cat.id)}
                           label="Eliminar"
                           confirmMessage="¿Eliminar categoría?"
                         />

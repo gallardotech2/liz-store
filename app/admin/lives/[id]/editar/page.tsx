@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { DeleteButton } from "@/components/admin/DeleteButton"
-import { ImageDropzone } from "@/components/admin/ImageDropzone"
 import {
   updateLiveSession,
   deleteLiveSession,
@@ -11,7 +10,7 @@ import {
   removeProductFromLiveSession,
   setCurrentLiveProduct,
 } from "../../actions"
-import { ArrowLeftIcon, BroadcastIcon, PlayCircleIcon, PauseIcon, StopIcon, XIcon } from "@/components/admin/Icons"
+import { ArrowLeftIcon, BroadcastIcon, PlayCircleIcon, PauseIcon, StopIcon } from "@/components/admin/Icons"
 
 export const revalidate = 0
 
@@ -254,7 +253,6 @@ export default async function EditLiveSessionPage({ params }: LiveSessionPagePro
                         </form>
                         <form action={removeProductFromLiveSession.bind(null, liveSessionId, lp.product_id)}>
                           <DeleteButton
-                            action={removeProductFromLiveSession.bind(null, liveSessionId, lp.product_id)}
                             label="Quitar"
                             confirmMessage="¿Quitar este producto de la sesión?"
                           />
@@ -275,7 +273,6 @@ export default async function EditLiveSessionPage({ params }: LiveSessionPagePro
           <div className="mt-6 pt-4 border-t border-white/12">
             <form action={deleteLiveSession.bind(null, liveSessionId)}>
               <DeleteButton
-                action={deleteLiveSession.bind(null, liveSessionId)}
                 label="Eliminar sesión"
                 confirmMessage="¿Eliminar esta sesión en vivo permanentemente?"
               />

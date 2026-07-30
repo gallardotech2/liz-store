@@ -65,7 +65,7 @@ export default async function PerfilPage() {
           {!requests || requests.length === 0 ? (
             <div className="text-center py-10 bg-white rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[rgba(255,142,159,0.05)]">
               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#DDD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-              <p className="text-[#888888] text-sm">No tienes compras aún</p>
+              <p className="text-[#6B6B6B] text-sm">No tienes compras aún</p>
               <Link href="/productos" className="text-primary font-semibold no-underline hover:underline text-sm mt-2 inline-block">
                 Explorar productos
               </Link>
@@ -78,7 +78,7 @@ export default async function PerfilPage() {
                   className="bg-white rounded-[16px] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[rgba(255,142,159,0.05)]"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[12px] text-[#888888]">Código:</span>
+                    <span className="text-[12px] text-[#6B6B6B]">Código:</span>
                     <span className={`text-[11px] px-2.5 py-1 rounded font-semibold ${STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"}`}>
                       {STATUS_LABELS[req.status] || req.status}
                     </span>
@@ -95,11 +95,11 @@ export default async function PerfilPage() {
                       <p className="text-[14px] font-semibold text-[#2D2D2D] truncate">{req.product_name}</p>
                       <p className="text-[12px] text-primary font-mono font-bold tracking-wider">{req.reference_code}</p>
                       {req.product_price != null && (
-                        <p className="text-[12px] text-[#888888]">{formatCurrency(req.product_price)}</p>
+                        <p className="text-[12px] text-[#6B6B6B]">{formatCurrency(req.product_price)}</p>
                       )}
                     </div>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-[#F5F5F5] text-[11px] text-[#888888]">
+                  <div className="mt-3 pt-2.5 border-t border-[#F5F5F5] text-[11px] text-[#6B6B6B]">
                     {new Date(req.created_at).toLocaleDateString("es-BO", {
                       year: "numeric",
                       month: "long",

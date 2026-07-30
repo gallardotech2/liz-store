@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { DeleteButton } from "@/components/admin/DeleteButton"
 import { deleteLiveSession, startLiveSession, pauseLiveSession, endLiveSession } from "./actions"
-import { BroadcastIcon, PlayCircleIcon, PauseIcon, StopIcon, EditIcon } from "@/components/admin/Icons"
+import { BroadcastIcon, PlayCircleIcon, PauseIcon, StopIcon } from "@/components/admin/Icons"
 
 export const revalidate = 0
 
@@ -169,7 +169,6 @@ export default async function AdminLivesPage() {
                         )}
                         <form action={deleteLiveSession.bind(null, s.id)}>
                           <DeleteButton
-                            action={deleteLiveSession.bind(null, s.id)}
                             label="Eliminar"
                             confirmMessage="¿Eliminar esta sesión en vivo?"
                           />

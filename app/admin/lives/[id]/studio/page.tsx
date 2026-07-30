@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { BroadcastIcon, MicIcon, MicOffIcon, CameraIcon, CameraOffIcon, SettingsIcon, XIcon, MessageSquareIcon, HeartIcon, EyeIcon, ShoppingBagIcon, ArrowLeftIcon, PlayCircleIcon, PauseIcon, StopIcon } from "@/components/admin/Icons"
+import { BroadcastIcon, MicIcon, MicOffIcon, CameraIcon, CameraOffIcon, XIcon, MessageSquareIcon, HeartIcon, EyeIcon, ShoppingBagIcon, ArrowLeftIcon, PlayCircleIcon, PauseIcon, StopIcon } from "@/components/admin/Icons"
 import { Button } from "@/components/ui/Button"
 import Link from "next/link"
 import { cn } from "@/lib/utils"

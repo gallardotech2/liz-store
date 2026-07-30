@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { clearCartCookie } from "@/lib/cart"
+import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 export const metadata = {
   title: "Pedido Confirmado | Liz Store",
@@ -46,7 +47,7 @@ export default async function OrderSuccessPage({
           <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
             ¡Pedido Confirmado!
           </h1>
-          <p className="text-[#888888] text-[15px] leading-[1.7] max-w-md mx-auto">
+          <p className="text-[#6B6B6B] text-[15px] leading-[1.7] max-w-md mx-auto">
             Gracias por tu compra. Te hemos enviado un resumen del pedido
             para que puedas dar seguimiento.
           </p>
@@ -55,22 +56,22 @@ export default async function OrderSuccessPage({
         <div className="bg-white rounded-[16px] p-8 shadow-[0_1px_3px_rgba(0,0,0,0.08)] text-left mb-8">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#EEE]">
             <div>
-              <div className="text-[13px] text-[#888888]">Pedido</div>
+              <div className="text-[13px] text-[#6B6B6B]">Pedido</div>
               <div className="font-semibold text-[#2D2D2D]">#{order.id}</div>
             </div>
             <div className="text-right">
-              <div className="text-[13px] text-[#888888]">Total</div>
+              <div className="text-[13px] text-[#6B6B6B]">Total</div>
               <div className="font-semibold text-primary">Bs. {Number(order.total).toFixed(2)}</div>
             </div>
           </div>
 
           <div className="mb-6">
-            <div className="text-[13px] text-[#888888] mb-3">Productos</div>
+            <div className="text-[13px] text-[#6B6B6B] mb-3">Productos</div>
             <div className="space-y-3">
               {(items ?? []).map((item: any) => (
                 <div key={item.id} className="flex justify-between items-center">
                   <div className="text-sm text-[#2D2D2D]">
-                    {item.product?.name ?? "Producto"} <span className="text-[#888888]">x{item.quantity}</span>
+                    {item.product?.name ?? "Producto"} <span className="text-[#6B6B6B]">x{item.quantity}</span>
                   </div>
                   <div className="text-sm font-medium">Bs. {(item.unit_price * item.quantity).toFixed(2)}</div>
                 </div>
@@ -80,17 +81,17 @@ export default async function OrderSuccessPage({
 
           <div className="border-t border-[#EEE] pt-4 space-y-2">
             <div className="flex justify-between text-[14px]">
-              <span className="text-[#888888]">Subtotal</span>
+              <span className="text-[#6B6B6B]">Subtotal</span>
               <span>Bs. {Number(order.subtotal).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-[14px]">
-              <span className="text-[#888888]">Envío</span>
+              <span className="text-[#6B6B6B]">Envío</span>
               <span>{Number(order.shipping) === 0 ? <span className="text-[#27AE60] font-semibold">GRATIS</span> : `Bs. ${Number(order.shipping).toFixed(2)}`}</span>
             </div>
             {order.payment_method === "pago_directo" && (
               <div className="mt-4 p-4 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">
                 <div className="text-[13px] font-semibold text-[#2D2D2D] mb-2">Pago Directo</div>
-                <p className="text-[12px] text-[#888888] leading-[1.6]">
+                <p className="text-[12px] text-[#6B6B6B] leading-[1.6]">
                   Una vez confirmemos tu pago, procesaremos tu pedido. Si elegiste transferencia, por favor envía el comprobante a nuestro WhatsApp.
                 </p>
               </div>
@@ -107,7 +108,7 @@ export default async function OrderSuccessPage({
             Volver al inicio
           </Link>
           <a
-            href="https://wa.me/59176426643"
+            href="https://wa.me/${WHATSAPP_NUMBER}"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#25D366] text-white text-sm font-semibold no-underline hover:bg-[#1DA851] transition-colors"

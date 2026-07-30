@@ -1005,3 +1005,71 @@ GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
 */
+
+-- ============================================================
+-- Fix 0015: Endurecer RLS orders — validar ownership en INSERT
+-- Fecha ejecución: 2026-07-29
+-- Estado: EJECUTADO
+-- Descripción: Prevenir que usuarios autenticados creen pedidos con user_id ajeno
+--              y que inserts en order_items validen que el order pertenece al usuario
+-- ============================================================
+/*
+DROP POLICY IF EXISTS "Orders: anon INSERT" ON orders;
+
+CREATE POLICY "Orders: auth INSERT propio" ON orders
+  FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Orders: anon INSERT guest" ON orders
+  FOR INSERT TO anon
+  WITH CHECK (user_id IS NULL AND session_key IS NOT NULL AND session_key != '');
+
+DROP POLICY IF EXISTS "Order Items: INSERT" ON order_items;
+
+CREATE POLICY "Order Items: INSERT propio" ON order_items
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM orders
+      WHERE orders.id = order_items.order_id
+        AND (
+          (auth.uid() IS NOT NULL AND orders.user_id = auth.uid())
+          OR
+          (auth.uid() IS NULL AND orders.user_id IS NULL AND orders.session_key IS NOT NULL)
+        )
+    )
+  );
+*/
+
+-- ============================================================
+-- Fix 0016: Índice compuesto products(category_id, is_active)
+-- Fecha ejecución: 2026-07-29
+-- Estado: EJECUTADO
+-- Descripción: Optimizar queries que filtran por categoría + estado activo
+-- ============================================================
+/*
+CREATE INDEX IF NOT EXISTS idx_products_category_active ON products(category_id, is_active);
+*/
+
+-- ============================================================
+-- Fix 0017: order_items.product_id NOT NULL + RESTRICT
+-- Fecha ejecución: 2026-07-29
+-- Estado: EJECUTADO
+-- Descripción: F11 — Prevenir huérfanos si se borra un producto. ON DELETE RESTRICT preserva historial.
+-- ============================================================
+/*
+ALTER TABLE order_items
+  DROP CONSTRAINT IF EXISTS order_items_product_id_fkey,
+  ALTER COLUMN product_id SET NOT NULL,
+  ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT;
+*/
+
+-- ============================================================
+-- Fix 0018: reviews — DROP UNIQUE constraint
+-- Fecha ejecución: 2026-07-29
+-- Estado: EJECUTADO
+-- Descripción: F12 — Permitir que usuarios actualicen su review en lugar de crear una nueva
+-- ============================================================
+/*
+ALTER TABLE reviews DROP CONSTRAINT IF EXISTS reviews_product_id_user_id_key;
+*/

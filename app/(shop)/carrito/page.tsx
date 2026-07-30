@@ -40,7 +40,7 @@ export default async function CartPage() {
             <h2 className="text-[#2D2D2D] mb-3 font-serif text-2xl">
               Tu carrito está vacío
             </h2>
-            <p className="text-[#888888] mb-6">
+            <p className="text-[#6B6B6B] mb-6">
               Explora nuestro catálogo y encuentra las piezas que más te gusten.
             </p>
             <Link href="/productos" prefetch={false}>
@@ -176,11 +176,11 @@ export default async function CartPage() {
               Resumen del pedido
             </h3>
             <div className="flex justify-between mb-3 text-[15px]">
-              <span className="text-[#888888]">Subtotal</span>
+              <span className="text-[#6B6B6B]">Subtotal</span>
               <span>{formatCurrency(summary.subtotal)}</span>
             </div>
             <div className="flex justify-between mb-3 text-[15px]">
-              <span className="text-[#888888]">Envío</span>
+              <span className="text-[#6B6B6B]">Envío</span>
               <span>
                 {summary.shipping === 0 ? (
                   <span className="text-[#27AE60] font-semibold">GRATIS</span>
@@ -195,7 +195,7 @@ export default async function CartPage() {
             </div>
             {summary.freeShippingRemaining > 0 && (
               <div className="text-center text-[13px] text-[#27AE60] mt-3 pt-2.5 pb-2.5 px-2.5 bg-[rgba(39,174,96,0.08)] rounded-[8px]">
-                ✦ Agrega {formatCurrency(summary.freeShippingRemaining)} más para
+                Agrega {formatCurrency(summary.freeShippingRemaining)} más para
                 envío gratis
               </div>
             )}
@@ -207,7 +207,7 @@ export default async function CartPage() {
             </Link>
             <Link
               href="/productos"
-              className="block text-center mt-3 text-sm text-[#888888] no-underline hover:text-primary"
+              className="block text-center mt-3 text-sm text-[#6B6B6B] no-underline hover:text-primary"
               prefetch={false}
             >
               Seguir comprando

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
+import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 interface WhatsAppOrderButtonProps {
   productId: number
@@ -45,7 +46,7 @@ export function WhatsAppOrderButton({
       }
 
       const msg = `Hola, quiero solicitar el producto: ${productName}. Código: ${data.referenceCode}`
-      const whatsappUrl = `https://wa.me/59176426643?text=${encodeURIComponent(msg)}`
+      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
       window.open(whatsappUrl, "_blank")
 
       router.push("/perfil/solicitudes")

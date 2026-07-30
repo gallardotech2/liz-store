@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/ui/ProductCard"
 import { formatCurrency } from "@/lib/utils"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
+import { sanitizeHTML } from "@/lib/sanitize"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -61,8 +62,6 @@ export default async function ProductDetailPage({
   const supabase = await createClient()
   const s = supabase as any
 
-  const { data: { user } } = await supabase.auth.getUser()
-
   const { data: product } = await s
     .from("products")
     .select(
@@ -114,24 +113,27 @@ export default async function ProductDetailPage({
 
   const cat = Array.isArray(p.category) ? p.category[0] : p.category
 
-  const { data: reviews } = await s
-    .from("reviews")
-    .select("id, title, content, rating, is_verified, created_at")
-    .eq("product_id", p.id)
-    .eq("is_approved", true)
-    .limit(10)
+  const [reviewsResult, relatedRaw] = await Promise.all([
+    s
+      .from("reviews")
+      .select("id, title, content, rating, is_verified, created_at")
+      .eq("product_id", p.id)
+      .eq("is_approved", true)
+      .limit(10),
+    s
+      .from("products")
+      .select(
+        "id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
+      )
+      .eq("is_active", true)
+      .eq("category_id", p.category_id)
+      .neq("id", p.id)
+      .limit(4),
+  ])
 
-  const { data: relatedRaw } = await s
-    .from("products")
-    .select(
-      "id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
-    )
-    .eq("is_active", true)
-    .eq("category_id", p.category_id)
-    .neq("id", p.id)
-    .limit(4)
+  const reviews = reviewsResult.data
 
-  const relatedData = (relatedRaw ?? []) as Array<{
+  const relatedData = ((relatedRaw as { data?: unknown[] })?.data ?? []) as Array<{
     id: number
     name: string
     slug: string
@@ -166,7 +168,7 @@ export default async function ProductDetailPage({
   return (
     <>
       <div className="max-w-7xl mx-auto px-4">
-        <div className="breadcrumbs py-5 text-[14px] text-[#888888]">
+        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B]">
           <Link href="/" className="text-primary no-underline hover:underline">
             Inicio
           </Link>{" "}
@@ -235,7 +237,7 @@ export default async function ProductDetailPage({
                     {"★".repeat(Math.round(p.rating))}
                     {"☆".repeat(5 - Math.round(p.rating))}
                   </span>
-                  <span className="text-[#888888]">
+                  <span className="text-[#6B6B6B]">
                     {p.rating} ({p.rating_count} reseñas)
                   </span>
                 </div>
@@ -247,7 +249,7 @@ export default async function ProductDetailPage({
                 </span>
                 {hasDiscount && (
                   <>
-                    <span className="text-xl text-[#888888] line-through inline-flex items-center gap-0.5">
+                    <span className="text-xl text-[#6B6B6B] line-through inline-flex items-center gap-0.5">
                       {formatCurrency(p.price)}
                     </span>
                     <span className="text-[12px] text-white bg-[#E74C3C] px-2 py-0.5 rounded font-semibold">
@@ -272,7 +274,7 @@ export default async function ProductDetailPage({
               </div>
 
               {p.short_description && (
-                <div className="my-6 leading-[1.8] text-[#888888]">
+                <div className="my-6 leading-[1.8] text-[#6B6B6B]">
                   {p.short_description}
                 </div>
               )}
@@ -293,7 +295,7 @@ export default async function ProductDetailPage({
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Escudo Pago
                   </h4>
-                  <p className="text-[13px] text-[#888888] leading-[1.6]">
+                  <p className="text-[13px] text-[#6B6B6B] leading-[1.6]">
                     Tu dinero está protegido y solo se liberará cuando confirmes
                     que recibiste tu pedido. Compra con total tranquilidad.
                   </p>
@@ -306,13 +308,13 @@ export default async function ProductDetailPage({
                     Descripción
                   </h3>
                   <div
-                    className="leading-[1.8] text-[#888888]"
-                    dangerouslySetInnerHTML={{ __html: p.long_description }}
+                    className="leading-[1.8] text-[#6B6B6B]"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(p.long_description) }}
                   />
                 </div>
               )}
 
-              <div className="mt-5 text-[13px] text-[#888888]">
+              <div className="mt-5 text-[13px] text-[#6B6B6B]">
                 <strong>SKU:</strong> {p.sku}
               </div>
             </div>
@@ -385,7 +387,7 @@ export default async function ProductDetailPage({
                         <div className="font-semibold text-sm text-[#2D2D2D]">
                           Cliente
                         </div>
-                        <div className="text-[12px] text-[#888888]">
+                        <div className="text-[12px] text-[#6B6B6B]">
                           {review.is_verified
                             ? "✓ Compra verificada"
                             : "Compra verificada"}

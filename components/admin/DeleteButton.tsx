@@ -4,11 +4,9 @@ import { useState } from "react"
 import { useFormStatus } from "react-dom"
 
 export function DeleteButton({
-  action,
   label = "Eliminar",
   confirmMessage = "¿Eliminar?",
 }: {
-  action: () => void
   label?: string
   confirmMessage?: string
 }) {
