@@ -1,44 +1,38 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useFormStatus } from "react-dom"
 import { createClient } from "@/lib/supabase/client"
-import { getStoreProfile, updateStoreWhatsAppNumber } from "@/lib/queries/store-profile"
+import { getStoreProfile } from "@/lib/queries/store-profile"
+import { updateStoreWhatsApp } from "./actions"
+
+function SaveButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-4 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold border-none cursor-pointer hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {pending ? "Guardando..." : "Guardar"}
+    </button>
+  )
+}
 
 export default function AdminStorePage() {
-  const [profileId, setProfileId] = useState<number | null>(null)
   const [whatsappNumber, setWhatsappNumber] = useState("")
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [success, setSuccess] = useState("")
-  const [error, setError] = useState("")
 
   const load = useCallback(async () => {
     const supabase = createClient()
     const profile = await getStoreProfile(supabase as never)
     if (profile) {
-      setProfileId(profile.id)
       setWhatsappNumber(profile.whatsapp_number ?? "")
     }
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    if (profileId === null) return
-    setSaving(true)
-    setSuccess("")
-    setError("")
-    const supabase = createClient()
-    const { error: err } = await updateStoreWhatsAppNumber(supabase as never, profileId, whatsappNumber.trim())
-    if (err) {
-      setError("Error al guardar")
-    } else {
-      setSuccess("Número de WhatsApp actualizado")
-    }
-    setSaving(false)
-  }
 
   if (loading) {
     return (
@@ -57,23 +51,14 @@ export default function AdminStorePage() {
         </p>
       </div>
 
-      {success && (
-        <div className="mb-4 text-[13px] text-[#27AE60] bg-[rgba(39,174,96,0.1)] px-4 py-2.5 rounded-xl">
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="mb-4 text-[13px] text-[#E74C3C] bg-[rgba(231,76,60,0.1)] px-4 py-2.5 rounded-xl">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSave} className="bg-[#1E1E2E] rounded-2xl border border-white/10 p-5 max-w-xl">
+      <form action={updateStoreWhatsApp} className="bg-[#1E1E2E] rounded-2xl border border-white/10 p-5 max-w-xl">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[13px] text-[#ABB2BF] font-medium">
+          <label htmlFor="whatsapp_number" className="text-[13px] text-[#ABB2BF] font-medium">
             WhatsApp para pedidos
           </label>
           <input
+            id="whatsapp_number"
+            name="whatsapp_number"
             type="tel"
             value={whatsappNumber}
             onChange={(e) => setWhatsappNumber(e.target.value)}
@@ -85,13 +70,7 @@ export default function AdminStorePage() {
             el carrito y el checkout. Se eliminan espacios y guiones automáticamente.
           </p>
         </div>
-        <button
-          type="submit"
-          disabled={saving}
-          className="mt-4 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold border-none cursor-pointer hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? "Guardando..." : "Guardar"}
-        </button>
+        <SaveButton />
       </form>
     </div>
   )
