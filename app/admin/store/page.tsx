@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useFormStatus } from "react-dom"
 import { createClient } from "@/lib/supabase/client"
 import { getStoreProfile } from "@/lib/queries/store-profile"
@@ -23,16 +23,24 @@ export default function AdminStorePage() {
   const [whatsappNumber, setWhatsappNumber] = useState("")
   const [loading, setLoading] = useState(true)
 
-  const load = useCallback(async () => {
-    const supabase = createClient()
-    const profile = await getStoreProfile(supabase as never)
-    if (profile) {
-      setWhatsappNumber(profile.whatsapp_number ?? "")
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const supabase = createClient()
+        const profile = await getStoreProfile(supabase as never)
+        if (!cancelled && profile) {
+          setWhatsappNumber(profile.whatsapp_number ?? "")
+        }
+      } catch {
+        // Si falla la lectura, el formulario igual se muestra
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
-    setLoading(false)
+    load()
+    return () => { cancelled = true }
   }, [])
-
-  useEffect(() => { load() }, [load])
 
   if (loading) {
     return (
