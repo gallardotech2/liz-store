@@ -5,9 +5,6 @@ export async function POST(request: Request) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: "Debes iniciar sesión" }, { status: 401 })
-  }
 
   const body = await request.json()
   const { items, name, phone, deliveryMethod, addressText, reference, notes } = body
@@ -25,7 +22,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("whatsapp_requests")
     .insert({
-      user_id: user.id,
+      user_id: user?.id ?? null,
       product_id: Number(firstItem.id),
       product_name: itemSummary,
       product_image: firstItem.image || "",

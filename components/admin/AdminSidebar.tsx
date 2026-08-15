@@ -36,6 +36,7 @@ const navGroups = [
       { href: "/admin/payment-methods", label: "Pagos", icon: <CreditCardIcon /> },
       { href: "/admin/pickup-points", label: "Puntos de entrega", icon: <MapPinIcon /> },
       { href: "/admin/social-links", label: "Redes Sociales", icon: <MessageCircleIcon /> },
+      { href: "/admin/store", label: "Tienda", icon: <CogIcon /> },
     ],
   },
   {

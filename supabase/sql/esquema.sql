@@ -237,6 +237,7 @@ CREATE TABLE store_profiles (
   reviews_count INTEGER DEFAULT 0 CHECK (reviews_count >= 0),
   customers_served INTEGER DEFAULT 0 CHECK (customers_served >= 0),
   qr_code TEXT,
+  whatsapp_number TEXT DEFAULT '',
   account_name TEXT DEFAULT 'Liz Store',
   account_number TEXT DEFAULT '',
   bank_name TEXT DEFAULT 'Banco Nacional',
@@ -316,7 +317,7 @@ CREATE POLICY "Pickup Points: admin todo" ON pickup_points
 -- WhatsApp Requests (seguimiento de pedidos)
 CREATE TABLE whatsapp_requests (
   id SERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   product_name TEXT NOT NULL,
   product_image TEXT DEFAULT '',

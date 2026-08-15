@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
-import { WHATSAPP_NUMBER } from "@/lib/constants"
+import { createClient } from "@/lib/supabase/server"
+import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 
 export const metadata: Metadata = {
   title: "Preguntas Frecuentes | Liz Store",
@@ -72,7 +73,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   )
 }
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const supabase = await createClient()
+  const whatsappNumber = await getOrderWhatsAppNumber(supabase)
+
   return (
     <section className="py-15">
       <div className="max-w-3xl mx-auto px-4">
@@ -100,7 +104,7 @@ export default function FaqPage() {
             ¿No encontraste tu respuesta? Escríbenos y te ayudamos.
           </p>
           <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#25D366] text-white text-sm font-semibold no-underline hover:bg-[#1DA851] transition-colors"

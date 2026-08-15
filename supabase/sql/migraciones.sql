@@ -1073,3 +1073,16 @@ ALTER TABLE order_items
 /*
 ALTER TABLE reviews DROP CONSTRAINT IF EXISTS reviews_product_id_user_id_key;
 */
+
+-- ============================================================
+-- Fix 0003: WhatsApp de pedidos editable en admin + pedidos de visitantes
+-- Fecha ejecución: 2026-08-14
+-- Estado: EJECUTADO
+-- Descripción: Agrega columna whatsapp_number a store_profiles para
+--   configurar desde admin/Tienda el número que recibe los pedidos.
+--   Permite whatsapp_requests sin usuario (pedidos de visitantes).
+-- ============================================================
+/*
+ALTER TABLE store_profiles ADD COLUMN whatsapp_number TEXT DEFAULT '';
+ALTER TABLE whatsapp_requests ALTER COLUMN user_id DROP NOT NULL;
+*/

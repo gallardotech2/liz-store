@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
+import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 import { CheckoutForm } from "./CheckoutForm"
 import { OrderSummary } from "./OrderSummary"
 
@@ -87,6 +88,8 @@ export default async function CheckoutPage() {
     .eq("is_active", true)
     .order("order", { ascending: true })
 
+  const whatsappNumber = await getOrderWhatsAppNumber(supabase)
+
   return (
     <section className="py-15">
       <div className="max-w-7xl mx-auto px-4">
@@ -122,6 +125,7 @@ export default async function CheckoutPage() {
             paymentMethods={(paymentMethods ?? []) as any[]}
             qrPayments={(qrPayments ?? []) as any[]}
             pickupPoints={(pickupPoints ?? []) as any[]}
+            whatsappNumber={whatsappNumber}
           />
           <OrderSummary items={mergedItems} />
         </div>

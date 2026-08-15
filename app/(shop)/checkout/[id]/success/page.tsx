@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { clearCartCookie } from "@/lib/cart"
-import { WHATSAPP_NUMBER } from "@/lib/constants"
+import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 
 export const metadata = {
   title: "Pedido Confirmado | Liz Store",
@@ -36,6 +36,8 @@ export default async function OrderSuccessPage({
 
   const cookieStore = await cookies()
   clearCartCookie(cookieStore)
+
+  const whatsappNumber = await getOrderWhatsAppNumber(supabase)
 
   return (
     <section className="py-15">
@@ -108,7 +110,7 @@ export default async function OrderSuccessPage({
             Volver al inicio
           </Link>
           <a
-            href="https://wa.me/${WHATSAPP_NUMBER}"
+            href={`https://wa.me/${whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#25D366] text-white text-sm font-semibold no-underline hover:bg-[#1DA851] transition-colors"

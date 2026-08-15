@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
-import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 interface CartItem {
   id: string
@@ -67,9 +66,10 @@ interface CheckoutFormProps {
   paymentMethods: PaymentMethodInfo[]
   qrPayments: QrPaymentInfo[]
   pickupPoints: PickupPoint[]
+  whatsappNumber: string
 }
 
-export function CheckoutForm({ items, totals, storeProfile, user, profile, paymentMethods, qrPayments, pickupPoints }: CheckoutFormProps) {
+export function CheckoutForm({ items, totals, storeProfile, user, profile, paymentMethods, qrPayments, pickupPoints, whatsappNumber }: CheckoutFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "home">("pickup")
@@ -138,7 +138,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
 
   function sendWhatsAppMsg() {
     const msg = buildWhatsAppMessage()
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`
     window.open(whatsappUrl, "_blank")
   }
 
@@ -148,56 +148,54 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
 
     setLoading(true)
 
+    let code = ""
     try {
-      if (user) {
-        const res = await fetch("/api/whatsapp-request/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: items.map((i) => ({
-              id: i.id,
-              name: i.name,
-              price: i.price,
-              quantity: i.quantity,
-              image: i.image,
-            })),
-            name: name.trim(),
-            phone,
-            deliveryMethod,
-            addressText: deliveryMethod === "home" ? "Pendiente de coordinar" : (() => { const p = pickupPoints.find(p => p.name === pickupLocation); return p ? `${p.name} - ${p.address}` : pickupLocation })(),
-            reference: "",
-            notes,
-            paymentMethod,
-          }),
-        })
+      const res = await fetch("/api/whatsapp-request/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((i) => ({
+            id: i.id,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+            image: i.image,
+          })),
+          name: name.trim(),
+          phone,
+          deliveryMethod,
+          addressText: deliveryMethod === "home" ? "Pendiente de coordinar" : (() => { const p = pickupPoints.find(p => p.name === pickupLocation); return p ? `${p.name} - ${p.address}` : pickupLocation })(),
+          reference: "",
+          notes,
+          paymentMethod,
+        }),
+      })
 
-        const data = await res.json()
+      const data = await res.json()
 
-        if (!res.ok) {
-          setError(data.error || "Error al crear la solicitud")
-          setLoading(false)
-          return
-        }
-
-        setReferenceCode(data.referenceCode)
+      if (!res.ok) {
+        setError(data.error || "Error al crear la solicitud")
+      } else {
+        code = data.referenceCode || ""
       }
-
-      const msg = buildWhatsAppMessage()
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
-      sessionStorage.setItem("liz_whatsapp_sent", "1")
-      window.open(whatsappUrl, "_blank")
-
-      setStatus(user ? "success" : "confirm")
     } catch {
-      setError("Error de conexión")
-    } finally {
-      setLoading(false)
+      // No bloquear el pedido: se abre WhatsApp igualmente
     }
+
+    if (code) setReferenceCode(code)
+
+    const msg = buildWhatsAppMessage()
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`
+    sessionStorage.setItem("liz_whatsapp_sent", "1")
+    window.open(whatsappUrl, "_blank")
+
+    setStatus("success")
+    setLoading(false)
   }
 
   return (
     <>
-      {status === "success" && user && (
+      {status === "success" && (
         <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4">
           <div
             className="bg-white rounded-[20px] p-8 max-w-md w-full text-center shadow-2xl"
@@ -222,13 +220,15 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => router.push("/perfil/historial")}
-              className="w-full py-3.5 px-6 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold text-sm border-none cursor-pointer hover:-translate-y-0.5 transition-all mb-3 flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-              Ver pedido
-            </button>
+            {user && (
+              <button
+                onClick={() => router.push("/perfil/historial")}
+                className="w-full py-3.5 px-6 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold text-sm border-none cursor-pointer hover:-translate-y-0.5 transition-all mb-3 flex items-center justify-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Ver pedido
+              </button>
+            )}
             <button
               onClick={() => {
                 sendWhatsAppMsg()

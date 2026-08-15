@@ -12,9 +12,10 @@ interface FooterCategory {
 
 interface FooterProps {
   categories?: FooterCategory[]
+  whatsappNumber?: string
 }
 
-export function Footer({ categories = [] }: FooterProps) {
+export function Footer({ categories = [], whatsappNumber = "" }: FooterProps) {
   return (
     <>
       <section className="bg-gradient-to-br from-primary to-primary-dark py-20 text-center text-white">
@@ -115,7 +116,7 @@ export function Footer({ categories = [] }: FooterProps) {
                   </a>
                 </li>
                 <li className="mb-2.5">
-                  <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="text-[rgba(255,255,255,0.7)] no-underline text-sm transition-colors duration-300 hover:text-[#C9A96E]">
+                  <a href={`https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="text-[rgba(255,255,255,0.7)] no-underline text-sm transition-colors duration-300 hover:text-[#C9A96E]">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="inline mr-2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                     +591 76426643
                   </a>
