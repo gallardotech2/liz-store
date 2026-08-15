@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, type DragEvent } from "react"
+import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
 
 interface ImageDropzoneProps {
   name: string
@@ -14,6 +15,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: Im
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasFile, setHasFile] = useState(false)
+  const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const maxSize = maxSizeMB * 1024 * 1024
@@ -32,9 +34,19 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: Im
     return true
   }
 
-  function handleFile(file: File) {
+  async function handleFile(file: File) {
     if (!validate(file)) return
-    setPreview(URL.createObjectURL(file))
+
+    let outFile = file
+    if (imageIsCompressible(file)) {
+      setIsCompressing(true)
+      const result = await compressImage(file)
+      if (result.compressed) outFile = result.file
+      setIsCompressing(false)
+    }
+
+    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    setPreview(URL.createObjectURL(outFile))
     setHasFile(true)
   }
 
@@ -47,12 +59,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: Im
     e.preventDefault()
     setIsDragging(false)
     const f = e.dataTransfer.files?.[0]
-    if (f) {
-      handleFile(f)
-      const dt = new DataTransfer()
-      dt.items.add(f)
-      if (fileRef.current) fileRef.current.files = dt.files
-    }
+    if (f) void handleFile(f)
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
@@ -139,7 +146,9 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: Im
             {preview ? "Quitar selección" : "Eliminar imagen"}
           </button>
           {hasFile && (
-            <span className="text-[11px] text-[#27AE60]">✓ Nueva imagen seleccionada</span>
+            <span className="text-[11px] text-[#27AE60]">
+              {isCompressing ? "Comprimiendo imagen…" : "✓ Nueva imagen seleccionada (se comprime al guardar)"}
+            </span>
           )}
         </div>
       )}

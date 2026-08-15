@@ -5,12 +5,50 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { uploadImage, deleteImage } from "@/lib/supabase/storage"
 
+function abbreviateName(name: string): string {
+  const words = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+
+  let prefix: string
+  if (words.length === 0) prefix = "SKU"
+  else if (words.length === 1) prefix = words[0].slice(0, 4)
+  else prefix = words.slice(0, 3).map((w) => w[0]).join("")
+  return prefix.toUpperCase()
+}
+
+function generateSku(name: string): string {
+  const digits = Math.floor(1000 + Math.random() * 9000)
+  return `${abbreviateName(name)}-${digits}`
+}
+
+async function generateUniqueSku(supabase: any, name: string): Promise<string> {
+  for (let i = 0; i < 5; i++) {
+    const candidate = generateSku(name)
+    const { data } = await supabase
+      .from("products")
+      .select("id")
+      .eq("sku", candidate)
+      .maybeSingle()
+    if (!data) return candidate
+  }
+  return generateSku(name)
+}
+
+async function resolveSku(supabase: any, rawSku: string | null, name: string): Promise<string> {
+  const trimmed = (rawSku ?? "").trim()
+  return trimmed || (await generateUniqueSku(supabase, name))
+}
+
 export async function createProduct(formData: FormData) {
   const supabase = await createClient()
 
   const name = formData.get("name") as string
   const slug = formData.get("slug") as string
-  const sku = formData.get("sku") as string
+  const sku = await resolveSku(supabase, formData.get("sku") as string | null, name)
   const category_id = Number(formData.get("category_id"))
   const price = Number(formData.get("price"))
   const discount_price = formData.get("discount_price")
@@ -71,7 +109,7 @@ export async function updateProduct(id: number, formData: FormData) {
 
   const name = formData.get("name") as string
   const slug = formData.get("slug") as string
-  const sku = formData.get("sku") as string
+  const sku = await resolveSku(supabase, formData.get("sku") as string | null, name)
   const category_id = Number(formData.get("category_id"))
   const price = Number(formData.get("price"))
   const discount_price = formData.get("discount_price")

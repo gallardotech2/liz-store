@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { ImageDropzone } from "./ImageDropzone"
 import { addProductImage, deleteProductImage, setMainProductImage } from "@/app/admin/products/actions"
+import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
 
 interface CategoryOption {
   id: number
@@ -54,6 +55,26 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, "")
 }
 
+function abbreviateName(name: string): string {
+  const words = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+
+  let prefix: string
+  if (words.length === 0) prefix = "SKU"
+  else if (words.length === 1) prefix = words[0].slice(0, 4)
+  else prefix = words.slice(0, 3).map((w) => w[0]).join("")
+  return prefix.toUpperCase()
+}
+
+function generateSku(name: string): string {
+  const digits = Math.floor(1000 + Math.random() * 9000)
+  return `${abbreviateName(name)}-${digits}`
+}
+
 function SubmitBtn() {
   const { pending } = useFormStatus()
   return (
@@ -67,7 +88,35 @@ function AddImageForm({ productId }: { productId: number }) {
   const { pending } = useFormStatus()
   const [preview, setPreview] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
+  const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 5 * 1024 * 1024) {
+      setImageError("La imagen no debe superar los 5MB")
+      e.target.value = ""
+      return
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
+      setImageError("Formato no soportado. Usa JPG, PNG o WEBP")
+      e.target.value = ""
+      return
+    }
+
+    let outFile = f
+    if (imageIsCompressible(f)) {
+      setIsCompressing(true)
+      const result = await compressImage(f)
+      if (result.compressed) outFile = result.file
+      setIsCompressing(false)
+    }
+
+    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    setImageError(null)
+    setPreview(URL.createObjectURL(outFile))
+  }
 
   return (
     <form
@@ -86,23 +135,7 @@ function AddImageForm({ productId }: { productId: number }) {
             accept="image/jpeg,image/png,image/webp"
             required
             className="text-xs text-[#ABB2BF] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-none file:bg-primary file:text-white file:text-xs file:font-semibold file:cursor-pointer hover:file:bg-primary-dark transition-colors cursor-pointer"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) {
-                if (f.size > 5 * 1024 * 1024) {
-                  setImageError("La imagen no debe superar los 5MB")
-                  e.target.value = ""
-                  return
-                }
-                if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
-                  setImageError("Formato no soportado. Usa JPG, PNG o WEBP")
-                  e.target.value = ""
-                  return
-                }
-                setImageError(null)
-                setPreview(URL.createObjectURL(f))
-              }
-            }}
+            onChange={handleImageChange}
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -125,6 +158,9 @@ function AddImageForm({ productId }: { productId: number }) {
           {pending ? "Subiendo..." : "Agregar"}
         </button>
       </div>
+      {isCompressing && (
+        <p className="text-[#ABB2BF] text-[12px] mt-2">Comprimiendo imagen…</p>
+      )}
       {preview && (
         <div className="mt-3">
           <img src={preview} alt="Vista previa" className="w-20 h-20 rounded-xl object-cover border border-white/12" />
@@ -167,17 +203,26 @@ function SetMainForm({ imageId, productId }: { imageId: number; productId: numbe
 
 export function ProductForm({ categories, initialData, action }: ProductFormProps) {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!initialData?.slug)
+  const [skuManuallyEdited, setSkuManuallyEdited] = useState(!!initialData?.sku)
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
+  const skuRef = useRef<HTMLInputElement>(null)
 
   const handleNameChange = useCallback(() => {
-    if (slugManuallyEdited) return
     const name = nameRef.current?.value ?? ""
-    const slug = slugRef.current
-    if (slug) {
-      slug.value = slugify(name)
+    if (!slugManuallyEdited) {
+      const slug = slugRef.current
+      if (slug) {
+        slug.value = slugify(name)
+      }
     }
-  }, [slugManuallyEdited])
+    if (!skuManuallyEdited) {
+      const sku = skuRef.current
+      if (sku) {
+        sku.value = generateSku(name)
+      }
+    }
+  }, [slugManuallyEdited, skuManuallyEdited])
 
   const handleSlugChange = useCallback(() => {
     setSlugManuallyEdited(true)
@@ -224,13 +269,15 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="sku" className="text-[13px] text-[#ABB2BF] font-medium">
-            SKU *
+            SKU (automático)
           </label>
           <input
+            ref={skuRef}
             id="sku"
             name="sku"
-            required
+            placeholder="Se genera con el nombre"
             defaultValue={initialData?.sku ?? ""}
+            onChange={() => setSkuManuallyEdited(true)}
             className="px-3.5 py-2.5 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors"
           />
         </div>
