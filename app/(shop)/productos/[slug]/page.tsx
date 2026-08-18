@@ -7,7 +7,8 @@ import { ProductCard } from "@/components/ui/ProductCard"
 import { formatCurrency } from "@/lib/utils"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
-import { sanitizeHTML } from "@/lib/sanitize"
+import { DescriptionText } from "@/components/ui/DescriptionText"
+import { DescriptionCollapse } from "@/components/ui/DescriptionCollapse"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -274,9 +275,10 @@ export default async function ProductDetailPage({
               </div>
 
               {p.short_description && (
-                <div className="my-6 leading-[1.8] text-[#6B6B6B]">
-                  {p.short_description}
-                </div>
+                <DescriptionText
+                  text={p.short_description}
+                  className="my-6 leading-[1.8] text-[#6B6B6B]"
+                />
               )}
 
               {p.stock > 0 && (
@@ -307,9 +309,9 @@ export default async function ProductDetailPage({
                   <h3 className="font-sans text-lg mb-3 text-[#2D2D2D]">
                     Descripción
                   </h3>
-                  <div
+                  <DescriptionCollapse
+                    text={p.long_description}
                     className="leading-[1.8] text-[#6B6B6B]"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(p.long_description) }}
                   />
                 </div>
               )}
