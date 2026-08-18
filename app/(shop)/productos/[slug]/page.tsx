@@ -7,7 +7,6 @@ import { ProductCard } from "@/components/ui/ProductCard"
 import { formatCurrency } from "@/lib/utils"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
-import { DescriptionText } from "@/components/ui/DescriptionText"
 import { DescriptionCollapse } from "@/components/ui/DescriptionCollapse"
 import type { Metadata } from "next"
 
@@ -275,7 +274,7 @@ export default async function ProductDetailPage({
               </div>
 
               {p.short_description && (
-                <DescriptionText
+                <DescriptionCollapse
                   text={p.short_description}
                   className="my-6 leading-[1.8] text-[#6B6B6B]"
                 />
