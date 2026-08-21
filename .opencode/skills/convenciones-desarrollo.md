@@ -9,7 +9,7 @@ description: Convenciones generales de código, estilo, imports, y buenas práct
 
 | Tecnología | Versión | Rol |
 |------------|---------|-----|
-| Next.js | 16.2.10 | Framework (App Router) |
+| Next.js | 16.3.1 | Framework (App Router) |
 | React | 19.2.4 | UI Library |
 | Tailwind CSS | 4.x | Estilos |
 | TypeScript | 5.x | Tipado estricto |
@@ -84,3 +84,30 @@ components/
 - `cn()` de `lib/utils.ts` para merge de clases condicionales
 - Fragmentos `<>...</>` o `<></>` para múltiples elementos sin wrapper
 - SVG inline para iconos (librería `react-icons` disponible como fallback)
+
+## Seguridad
+
+### Server Actions Admin
+Todas las Server Actions del panel admin **deben** iniciar con `await requireAdmin()`:
+```tsx
+import { requireAdmin } from "@/lib/supabase/admin-auth"
+
+export async function createProduct(formData: FormData) {
+  await requireAdmin()
+  // ... lógica
+}
+```
+- Helper en `lib/supabase/admin-auth.ts` usa `forbidden()` de Next.js 16+
+- Verifica auth (`getUser()`) + role admin (`profiles.role`)
+- **NUNCA** usar `SUPABASE_SERVICE_ROLE_KEY` en Server Actions de admin
+
+### Cookie del Carrito
+- Cookie `liz_cart` tiene firma HMAC SHA-256 server-side (`signCartData()`)
+- Protección contra manipulación de precios/cantidades
+- Legible por JavaScript (no httpOnly) para badge del Header
+
+### Checkout Validation
+- Enums validados: `deliveryMethod` ("pickup" | "home"), `paymentMethod` ("escudo" | "direct")
+- Phone: regex `/^\d{7,15}$/` (solo dígitos)
+- Coordenadas: rango válido para Bolivia (lat -22 a -9, lng -70 a -57)
+- Notes: máximo 500 caracteres

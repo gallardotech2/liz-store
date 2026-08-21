@@ -57,6 +57,8 @@ description: Flujo de trabajo del proyecto Escudo Market: branching, commits, re
 - No introducir XSS (sanitizar `dangerouslySetInnerHTML`)
 - No deshabilitar zoom en viewport (`userScalable: false` es issue conocido)
 - No romper accesibilidad (contraste, focus, touch targets)
+- Server Actions admin requieren `await requireAdmin()` al inicio
+- Cookie del carrito tiene HMAC SHA-256 — no manipular sin firma
 
 ## Git
 
@@ -75,6 +77,8 @@ git commit -m "docs: actualiza README con nueva paleta"
 - [ ] Los cambios están dentro del alcance definido
 - [ ] La identidad visual se respeta
 - [ ] El responsive funciona correctamente
+- [ ] Server Actions admin tienen `requireAdmin()`
+- [ ] No se usa `SUPABASE_SERVICE_ROLE_KEY` en Server Actions
 
 ## Deploy
 

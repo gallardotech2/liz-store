@@ -88,8 +88,9 @@ Secciones:
 
 ### Badge carrito
 - Actualización en tiempo real mediante `useSyncExternalStore` + evento `cart:changed` + polling 5s
-- Lee contador desde cookie `liz_cart` (NO httpOnly)
+- Lee contador desde cookie `liz_cart` via `document.cookie` (no httpOnly, pero tiene firma HMAC server-side)
 - Se actualiza al agregar, eliminar, cambiar cantidad, navegar, cambiar de pestaña
+- El cookie tiene firma HMAC SHA-256 (`signCartData()`) — la manipulación server-side es rechazada
 
 ### Reglas
 - `prefetch={false}` en todos los links de navegación

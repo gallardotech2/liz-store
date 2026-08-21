@@ -43,11 +43,28 @@ app/admin/
 
 ## Autenticación
 
+### Layout Guard
 `app/admin/layout.tsx` verifica:
 1. Sesión activa (Supabase auth)
 2. Role `admin` en tabla `profiles`
 3. Si no es admin: redirige a home
 4. Si no hay sesión: redirige a `/auth/login`
+
+### Server Action Guard (`requireAdmin()`)
+**TODAS** las Server Actions de admin deben iniciar con `await requireAdmin()`:
+```tsx
+import { requireAdmin } from "@/lib/supabase/admin-auth"
+
+export async function createProduct(formData: FormData) {
+  await requireAdmin()
+  const supabase = await createClient()
+  // ... lógica
+}
+```
+- Helper en `lib/supabase/admin-auth.ts`
+- Usa `forbidden()` de Next.js 16+ (retorna 403)
+- Verifica: `supabase.auth.getUser()` → `profiles.role === 'admin'`
+- **Protege contra invocación directa vía POST** (Server Actions son endpoints independientes del layout)
 
 ## Tema Oscuro
 
@@ -89,4 +106,4 @@ app/admin/
 4. **No usar librerías de charts** — SVG inline es suficiente.
 5. **DeleteButton** con confirmación en 2 pasos.
 6. **Imágenes** subir a Supabase Storage mediante `ImageDropzone`.
-7. **NO** exponer service role key en Server Actions — usar `createClient()` con cookies.
+7. **NO** exponer service role key en Server Actions — usar `createClient()` con cookies + `requireAdmin()`.

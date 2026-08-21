@@ -13,6 +13,7 @@ description: Convenciones para el uso de Supabase en Escudo Market: clientes, qu
 | `lib/supabase/server.ts` | `createClient()` | Cliente servidor (Server Components, Server Actions) con `createServerClient` + cookies de `next/headers` |
 | `lib/supabase/static.ts` | `createStaticClient()` | Cliente estático (generación de rutas, build time) con `createClient` de `@supabase/supabase-js` |
 | `lib/supabase/middleware.ts` | `updateSession()` | Middleware de Next.js para refresh de sesión |
+| `lib/supabase/admin-auth.ts` | `requireAdmin()` | Verifica auth + role admin, usa `forbidden()` de Next.js 16+ |
 | `lib/supabase/storage.ts` | `uploadImage()`, `deleteImage()` | Subida/eliminación de imágenes a Storage (server-side, usa service role) |
 
 ## Patrón de Queries
@@ -94,5 +95,6 @@ NEXT_PUBLIC_SITE_URL=...
 
 ### Seguridad
 - `SUPABASE_SERVICE_ROLE_KEY` no debe estar versionada en el repositorio.
-- La cookie del carrito (`liz_cart`) NO es httpOnly para permitir lectura client-side del contador. Solo contiene IDs de producto y cantidades, no datos sensibles.
+- Server Actions de admin usan `createClient()` (anon key) + `requireAdmin()` — **nunca** service role key.
+- La cookie del carrito (`liz_cart`) tiene firma HMAC SHA-256 server-side (`signCartData()`). Es legible por JS (no httpOnly) para el badge del Header, pero la firma previene manipulación.
 - El cliente browser (`client.ts`) usa anon key con RLS — no expone service role.

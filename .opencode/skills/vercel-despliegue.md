@@ -26,6 +26,7 @@ export const dynamicParams = true // Permitir rutas no pre-renderizadas
 
 ```ts
 const nextConfig = {
+  allowedDevOrigins: ['192.168.0.29', '10.29.170.130', '192.168.0.27'],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**.supabase.co" },
@@ -34,6 +35,9 @@ const nextConfig = {
   },
   experimental: {
     optimizePackageImports: ["@supabase/supabase-js"],
+    serverActions: {
+      bodySizeLimit: "4mb",
+    },
   },
 }
 ```
@@ -41,8 +45,20 @@ const nextConfig = {
 ### Reglas
 1. **Remote patterns** en `images.remotePatterns` para cualquier nuevo host de imágenes.
 2. **`optimizePackageImports`** para paquetes grandes (solo Supabase actualmente).
-3. **No deshabilitar** ESLint en build (mantener calidad).
-4. **Variables de entorno** configuradas en dashboard de Vercel.
+3. **`bodySizeLimit: "4mb"`** para Server Actions (imágenes de productos móviles).
+4. **No deshabilitar** ESLint en build (mantener calidad).
+5. **Variables de entorno** configuradas en dashboard de Vercel.
+
+## Security Headers (`vercel.json`)
+
+Headers configurados en `vercel.json` (aplicados a todas las rutas):
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+- `Content-Security-Policy`: sin `'unsafe-eval'` en producción
 
 ## Optimizaciones
 
