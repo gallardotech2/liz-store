@@ -586,6 +586,32 @@ CREATE POLICY "Storage live: anon SELECT" ON storage.objects FOR SELECT TO anon,
 CREATE POLICY "Storage live: admin INSERT" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'live' AND ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'));
 
 -- =========================================================================
+-- RPC FUNCTIONS
+-- =========================================================================
+
+-- Incrementar total_interested en live_sessions
+CREATE OR REPLACE FUNCTION increment_session_interested(session_id INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE live_sessions
+  SET total_interested = total_interested + 1,
+      updated_at = now()
+  WHERE id = session_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Incrementar total_products_shown en live_sessions
+CREATE OR REPLACE FUNCTION increment_session_shown(session_id INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE live_sessions
+  SET total_products_shown = total_products_shown + 1,
+      updated_at = now()
+  WHERE id = session_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =========================================================================
 -- GRANTS (column-level)
 -- =========================================================================
 GRANT USAGE ON SCHEMA auth TO authenticator;

@@ -1086,3 +1086,32 @@ ALTER TABLE reviews DROP CONSTRAINT IF EXISTS reviews_product_id_user_id_key;
 ALTER TABLE store_profiles ADD COLUMN whatsapp_number TEXT DEFAULT '';
 ALTER TABLE whatsapp_requests ALTER COLUMN user_id DROP NOT NULL;
 */
+
+-- ============================================================
+-- Fix 0004: RPC functions para live sessions
+-- Fecha ejecución: 2026-08-21
+-- Estado: EJECUTADO
+-- Descripción: Crea increment_session_interested y increment_session_shown
+--   para tracking de interés de productos en sesiones en vivo.
+-- ============================================================
+/*
+CREATE OR REPLACE FUNCTION increment_session_interested(session_id INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE live_sessions
+  SET total_interested = total_interested + 1,
+      updated_at = now()
+  WHERE id = session_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION increment_session_shown(session_id INTEGER)
+RETURNS void AS $$
+BEGIN
+  UPDATE live_sessions
+  SET total_products_shown = total_products_shown + 1,
+      updated_at = now()
+  WHERE id = session_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+*/
