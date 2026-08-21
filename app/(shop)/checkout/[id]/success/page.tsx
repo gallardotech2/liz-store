@@ -21,6 +21,8 @@ export default async function OrderSuccessPage({
 
   if (isNaN(orderId)) notFound()
 
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: order } = await (supabase as any)
     .from("orders")
     .select("*")
@@ -28,6 +30,7 @@ export default async function OrderSuccessPage({
     .single()
 
   if (!order) notFound()
+  if (order.user_id && order.user_id !== user?.id) notFound()
 
   const { data: items } = await (supabase as any)
     .from("order_items")

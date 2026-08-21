@@ -3,9 +3,11 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/supabase/admin-auth"
 import { uploadImage, deleteImage } from "@/lib/supabase/storage"
 
 export async function createCategory(formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const name = formData.get("name") as string
@@ -35,6 +37,7 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(id: number, formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const name = formData.get("name") as string
@@ -88,6 +91,7 @@ export async function updateCategory(id: number, formData: FormData) {
 }
 
 export async function deleteCategory(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { data: cat } = await (supabase as any)

@@ -48,6 +48,8 @@ export interface CreateOrderInput {
   notes: string
 }
 
+const PHONE_RE = /^\d{7,15}$/
+
 export function validateCheckoutData(
   data: CheckoutFormData,
 ): Record<string, string> {
@@ -55,12 +57,38 @@ export function validateCheckoutData(
 
   if (!data.name?.trim()) {
     errors.name = "Ingresa tu nombre"
+  } else if (data.name.trim().length > 100) {
+    errors.name = "El nombre es demasiado largo"
+  }
+
+  if (!data.phone?.trim()) {
+    errors.phone = "Ingresa tu número de teléfono"
+  } else if (!PHONE_RE.test(data.phone.trim())) {
+    errors.phone = "El teléfono debe tener entre 7 y 15 dígitos"
+  }
+
+  if (data.deliveryMethod !== "pickup" && data.deliveryMethod !== "home") {
+    errors.deliveryMethod = "Método de envío no válido"
+  }
+
+  if (data.paymentMethod !== "escudo" && data.paymentMethod !== "direct") {
+    errors.paymentMethod = "Método de pago no válido"
   }
 
   if (data.deliveryMethod === "home") {
     if (!data.deliveryLatitude || !data.deliveryLongitude) {
       errors.location = "Selecciona tu ubicación en el mapa"
+    } else {
+      const lat = Number(data.deliveryLatitude)
+      const lng = Number(data.deliveryLongitude)
+      if (isNaN(lat) || isNaN(lng) || lat < -22 || lat > -9 || lng < -70 || lng > -57) {
+        errors.location = "Ubicación no válida"
+      }
     }
+  }
+
+  if (data.notes && data.notes.length > 500) {
+    errors.notes = "Las notas son demasiado largas (máximo 500 caracteres)"
   }
 
   return errors

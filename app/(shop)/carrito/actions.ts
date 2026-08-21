@@ -64,6 +64,7 @@ export async function addToCartAction(formData: FormData) {
   )
 
   cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
@@ -83,6 +84,7 @@ export async function removeFromCartAction(formData: FormData) {
   const updatedCart = removeFromCart(cart, productId)
 
   cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
@@ -118,6 +120,7 @@ export async function updateQuantityAction(formData: FormData) {
   const updatedCart = updateQuantity(cart, productId, safeQuantity)
 
   cookieStore.set(CART_COOKIE, signCartData(updatedCart), {
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
@@ -206,6 +209,7 @@ export async function checkoutAction(formData: FormData) {
   })
 
   cookieStore.set(CART_COOKIE, "", {
+    httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",

@@ -1,16 +1,14 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/supabase/admin-auth"
 
 export async function updateStoreWhatsApp(formData: FormData) {
+  await requireAdmin()
   const whatsapp_number = String(formData.get("whatsapp_number") ?? "").trim()
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!serviceKey) throw new Error("Falta SUPABASE_SERVICE_ROLE_KEY")
-
-  const supabase = createClient(url, serviceKey)
+  const supabase = await createClient()
 
   const { data: row } = await supabase
     .from("store_profiles")
@@ -18,7 +16,7 @@ export async function updateStoreWhatsApp(formData: FormData) {
     .limit(1)
     .maybeSingle()
 
-  const id = row?.id
+  const id = (row as unknown as { id: number | null })?.id
   if (id == null) throw new Error("No se encontró el perfil de la tienda")
 
   const { error } = await supabase

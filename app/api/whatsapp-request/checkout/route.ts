@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
+  const clientIp = getClientIp(request)
+  const { allowed } = checkRateLimit(`whatsapp:checkout:${clientIp}`)
+  if (!allowed) {
+    return NextResponse.json({ error: "Demasiados intentos. Espera un minuto." }, { status: 429 })
+  }
+
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()

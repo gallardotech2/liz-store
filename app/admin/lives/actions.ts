@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/supabase/admin-auth"
 
 export async function createLiveSession(formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const title = formData.get("title") as string
@@ -35,6 +37,7 @@ export async function createLiveSession(formData: FormData) {
 }
 
 export async function updateLiveSession(id: number, formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const title = formData.get("title") as string
@@ -61,6 +64,7 @@ export async function updateLiveSession(id: number, formData: FormData) {
 }
 
 export async function deleteLiveSession(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { data: products } = await (supabase as any)
@@ -98,6 +102,7 @@ export async function deleteLiveSession(id: number) {
 }
 
 export async function addProductToLiveSession(liveSessionId: number, formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const product_id = Number(formData.get("product_id"))
@@ -117,6 +122,7 @@ export async function addProductToLiveSession(liveSessionId: number, formData: F
 }
 
 export async function removeProductFromLiveSession(liveSessionId: number, productId: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { error } = await (supabase as any)
@@ -133,6 +139,7 @@ export async function removeProductFromLiveSession(liveSessionId: number, produc
 }
 
 export async function startLiveSession(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { error } = await (supabase as any)
@@ -150,6 +157,7 @@ export async function startLiveSession(id: number) {
 }
 
 export async function pauseLiveSession(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { error } = await (supabase as any)
@@ -164,6 +172,7 @@ export async function pauseLiveSession(id: number) {
 }
 
 export async function endLiveSession(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { error } = await (supabase as any)
@@ -181,6 +190,7 @@ export async function endLiveSession(id: number) {
 }
 
 export async function setCurrentLiveProduct(id: number, productId: number | null) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { error } = await (supabase as any)

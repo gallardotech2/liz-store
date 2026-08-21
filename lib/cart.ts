@@ -149,7 +149,13 @@ export function calculateCartTotal(cart: CartData): CartSummary {
 }
 
 export function clearCartCookie(cookieStore: any) {
-  cookieStore.set(CART_COOKIE, "", { maxAge: 0, path: "/" })
+  cookieStore.set(CART_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 0,
+    path: "/",
+  })
 }
 
 function round(n: number): number {

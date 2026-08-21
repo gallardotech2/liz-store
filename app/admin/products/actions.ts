@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { requireAdmin } from "@/lib/supabase/admin-auth"
 import { uploadImage, deleteImage } from "@/lib/supabase/storage"
 
 function abbreviateName(name: string): string {
@@ -44,6 +45,7 @@ async function resolveSku(supabase: any, rawSku: string | null, name: string): P
 }
 
 export async function createProduct(formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const name = formData.get("name") as string
@@ -105,6 +107,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: number, formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const name = formData.get("name") as string
@@ -179,6 +182,7 @@ export async function updateProduct(id: number, formData: FormData) {
 }
 
 export async function deleteProduct(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { data: images } = await (supabase as any)
@@ -198,6 +202,7 @@ export async function deleteProduct(id: number) {
 }
 
 export async function addProductImage(productId: number, formData: FormData) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const imageFile = formData.get("image") as File | null
@@ -229,6 +234,7 @@ export async function addProductImage(productId: number, formData: FormData) {
 }
 
 export async function deleteProductImage(id: number) {
+  await requireAdmin()
   const supabase = await createClient()
 
   const { data: img } = await (supabase as any)
@@ -249,6 +255,7 @@ export async function deleteProductImage(id: number) {
 }
 
 export async function setMainProductImage(id: number, productId: number) {
+  await requireAdmin()
   const supabase = await createClient()
   const s = supabase as any
 

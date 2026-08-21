@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { removeFromCart, parseCart, CART_COOKIE } from "@/lib/cart"
+import { removeFromCartAction } from "@/app/(shop)/carrito/actions"
 
 interface OrderItem {
   id: string
@@ -21,29 +21,28 @@ interface OrderSummaryProps {
 export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
   const router = useRouter()
   const [items, setItems] = useState(initialItems)
+  const [, startTransition] = useTransition()
 
   const subtotal = useMemo(() =>
     items.reduce((s, i) => s + i.price * i.quantity, 0),
   [items])
 
   function handleRemove(productId: string) {
-    const raw = document.cookie
-      .split("; ")
-      .find((r) => r.startsWith(`${CART_COOKIE}=`))
-      ?.split("=")[1]
-    const cart = parseCart(raw ? decodeURIComponent(raw) : null)
-    const updated = removeFromCart(cart, productId)
+    const formData = new FormData()
+    formData.append("productId", productId)
 
-    document.cookie = `${CART_COOKIE}=${encodeURIComponent(JSON.stringify(updated))}; path=/; max-age=${60 * 60 * 24 * 30}`
+    startTransition(async () => {
+      await removeFromCartAction(formData)
 
-    const updatedItems = items.filter((i) => i.id !== productId)
-    if (updatedItems.length === 0) {
-      router.push("/carrito")
-      return
-    }
+      const updatedItems = items.filter((i) => i.id !== productId)
+      if (updatedItems.length === 0) {
+        router.push("/carrito")
+        return
+      }
 
-    setItems(updatedItems)
-    router.refresh()
+      setItems(updatedItems)
+      router.refresh()
+    })
   }
 
   return (
