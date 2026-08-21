@@ -100,48 +100,48 @@ export interface ProfilesTable {
 export interface AddressesTable {
   Row: {
     id: number
-    userId: string
+    user_id: string
     name: string
     phone: string
     street: string
     colony: string
     city: string
     state: string
-    zipCode: string
+    zip_code: string
     references: string
-    isDefault: boolean
-    createdAt: string
-    updatedAt: string
+    is_default: boolean
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    userId: string
+    user_id: string
     name: string
     phone: string
     street: string
     colony: string
     city: string
     state: string
-    zipCode: string
+    zip_code: string
     references?: string
-    isDefault?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_default?: boolean
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    userId?: string
+    user_id?: string
     name?: string
     phone?: string
     street?: string
     colony?: string
     city?: string
     state?: string
-    zipCode?: string
+    zip_code?: string
     references?: string
-    isDefault?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_default?: boolean
+    created_at?: string
+    updated_at?: string
   }
 }
 
@@ -153,10 +153,10 @@ export interface CategoriesTable {
     description: string
     image: string | null
     icon: string
-    isActive: boolean
+    is_active: boolean
     order: number
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
@@ -165,10 +165,10 @@ export interface CategoriesTable {
     description?: string
     image?: string | null
     icon?: string
-    isActive?: boolean
+    is_active?: boolean
     order?: number
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
@@ -177,10 +177,10 @@ export interface CategoriesTable {
     description?: string
     image?: string | null
     icon?: string
-    isActive?: boolean
+    is_active?: boolean
     order?: number
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
@@ -190,252 +190,252 @@ export interface ProductsTable {
     name: string
     slug: string
     sku: string
-    categoryId: number
+    category_id: number
     price: number
-    discountPrice: number | null
+    discount_price: number | null
     stock: number
-    shortDescription: string
-    longDescription: string
+    short_description: string
+    long_description: string
     specifications: Json
-    isActive: boolean
-    isFeatured: boolean
-    isNew: boolean
+    is_active: boolean
+    is_featured: boolean
+    is_new: boolean
     rating: number
-    ratingCount: number
-    salesCount: number
-    metaDescription: string
-    metaKeywords: string
-    createdAt: string
-    updatedAt: string
+    rating_count: number
+    sales_count: number
+    meta_description: string
+    meta_keywords: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
     name: string
     slug: string
     sku: string
-    categoryId: number
+    category_id: number
     price: number
-    discountPrice?: number | null
+    discount_price?: number | null
     stock?: number
-    shortDescription?: string
-    longDescription?: string
+    short_description?: string
+    long_description?: string
     specifications?: Json
-    isActive?: boolean
-    isFeatured?: boolean
-    isNew?: boolean
+    is_active?: boolean
+    is_featured?: boolean
+    is_new?: boolean
     rating?: number
-    ratingCount?: number
-    salesCount?: number
-    metaDescription?: string
-    metaKeywords?: string
-    createdAt?: string
-    updatedAt?: string
+    rating_count?: number
+    sales_count?: number
+    meta_description?: string
+    meta_keywords?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
     name?: string
     slug?: string
     sku?: string
-    categoryId?: number
+    category_id?: number
     price?: number
-    discountPrice?: number | null
+    discount_price?: number | null
     stock?: number
-    shortDescription?: string
-    longDescription?: string
+    short_description?: string
+    long_description?: string
     specifications?: Json
-    isActive?: boolean
-    isFeatured?: boolean
-    isNew?: boolean
+    is_active?: boolean
+    is_featured?: boolean
+    is_new?: boolean
     rating?: number
-    ratingCount?: number
-    salesCount?: number
-    metaDescription?: string
-    metaKeywords?: string
-    createdAt?: string
-    updatedAt?: string
+    rating_count?: number
+    sales_count?: number
+    meta_description?: string
+    meta_keywords?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface ProductImagesTable {
   Row: {
     id: number
-    productId: number
+    product_id: number
     image: string
-    altText: string
-    isMain: boolean
+    alt_text: string
+    is_main: boolean
     order: number
-    createdAt: string
+    created_at: string
   }
   Insert: {
     id?: number
-    productId: number
+    product_id: number
     image: string
-    altText?: string
-    isMain?: boolean
+    alt_text?: string
+    is_main?: boolean
     order?: number
-    createdAt?: string
+    created_at?: string
   }
   Update: {
     id?: number
-    productId?: number
+    product_id?: number
     image?: string
-    altText?: string
-    isMain?: boolean
+    alt_text?: string
+    is_main?: boolean
     order?: number
-    createdAt?: string
+    created_at?: string
   }
 }
 
 export interface OrdersTable {
   Row: {
     id: number
-    userId: string | null
+    user_id: string | null
     sessionKey: string | null
-    orderNumber: string
+    order_number: string
     status: OrderStatus
     subtotal: number
-    shippingCost: number
+    shipping_cost: number
     discount: number
     total: number
-    shippingAddress: Json | null
+    shipping_address: Json | null
     notes: string
-    isPaid: boolean
-    paidAt: string | null
-    paymentMethod: string
-    deliveryLatitude: number | null
-    deliveryLongitude: number | null
-    deliveryAddressText: string
-    deliveryReference: string
-    createdAt: string
-    updatedAt: string
+    is_paid: boolean
+    paid_at: string | null
+    payment_method: string
+    delivery_latitude: number | null
+    delivery_longitude: number | null
+    delivery_address_text: string
+    delivery_reference: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    userId?: string | null
+    user_id?: string | null
     sessionKey?: string | null
-    orderNumber: string
+    order_number: string
     status?: OrderStatus
     subtotal: number
-    shippingCost?: number
+    shipping_cost?: number
     discount?: number
     total: number
-    shippingAddress?: Json | null
+    shipping_address?: Json | null
     notes?: string
-    isPaid?: boolean
-    paidAt?: string | null
-    paymentMethod?: string
-    deliveryLatitude?: number | null
-    deliveryLongitude?: number | null
-    deliveryAddressText?: string
-    deliveryReference?: string
-    createdAt?: string
-    updatedAt?: string
+    is_paid?: boolean
+    paid_at?: string | null
+    payment_method?: string
+    delivery_latitude?: number | null
+    delivery_longitude?: number | null
+    delivery_address_text?: string
+    delivery_reference?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    userId?: string | null
+    user_id?: string | null
     sessionKey?: string | null
-    orderNumber?: string
+    order_number?: string
     status?: OrderStatus
     subtotal?: number
-    shippingCost?: number
+    shipping_cost?: number
     discount?: number
     total?: number
-    shippingAddress?: Json | null
+    shipping_address?: Json | null
     notes?: string
-    isPaid?: boolean
-    paidAt?: string | null
-    paymentMethod?: string
-    deliveryLatitude?: number | null
-    deliveryLongitude?: number | null
-    deliveryAddressText?: string
-    deliveryReference?: string
-    createdAt?: string
-    updatedAt?: string
+    is_paid?: boolean
+    paid_at?: string | null
+    payment_method?: string
+    delivery_latitude?: number | null
+    delivery_longitude?: number | null
+    delivery_address_text?: string
+    delivery_reference?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface OrderItemsTable {
   Row: {
     id: number
-    orderId: number
-    productId: number | null
-    productName: string
-    productSku: string
-    productImage: string
+    order_id: number
+    product_id: number | null
+    product_name: string
+    product_sku: string
+    product_image: string
     quantity: number
     price: number
     subtotal: number
-    createdAt: string
+    created_at: string
   }
   Insert: {
     id?: number
-    orderId: number
-    productId?: number | null
-    productName: string
-    productSku: string
-    productImage?: string
+    order_id: number
+    product_id?: number | null
+    product_name: string
+    product_sku: string
+    product_image?: string
     quantity: number
     price: number
     subtotal: number
-    createdAt?: string
+    created_at?: string
   }
   Update: {
     id?: number
-    orderId?: number
-    productId?: number | null
-    productName?: string
-    productSku?: string
-    productImage?: string
+    order_id?: number
+    product_id?: number | null
+    product_name?: string
+    product_sku?: string
+    product_image?: string
     quantity?: number
     price?: number
     subtotal?: number
-    createdAt?: string
+    created_at?: string
   }
 }
 
 export interface TransactionsTable {
   Row: {
     id: number
-    orderId: number
-    userId: string | null
+    order_id: number
+    user_id: string | null
     amount: number
     status: TransactionStatus
-    paymentMethod: string
-    transactionId: string
-    heldAt: string
-    releasedAt: string | null
+    payment_method: string
+    transaction_id: string
+    held_at: string
+    released_at: string | null
     notes: string
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    orderId: number
-    userId?: string | null
+    order_id: number
+    user_id?: string | null
     amount: number
     status?: TransactionStatus
-    paymentMethod?: string
-    transactionId?: string
-    heldAt?: string
-    releasedAt?: string | null
+    payment_method?: string
+    transaction_id?: string
+    held_at?: string
+    released_at?: string | null
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    orderId?: number
-    userId?: string | null
+    order_id?: number
+    user_id?: string | null
     amount?: number
     status?: TransactionStatus
-    paymentMethod?: string
-    transactionId?: string
-    heldAt?: string
-    releasedAt?: string | null
+    payment_method?: string
+    transaction_id?: string
+    held_at?: string
+    released_at?: string | null
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
@@ -446,11 +446,11 @@ export interface PaymentMethodsTable {
     code: string
     description: string
     icon: string
-    isActive: boolean
+    is_active: boolean
     order: number
     config: Json
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
@@ -458,11 +458,11 @@ export interface PaymentMethodsTable {
     code: string
     description?: string
     icon?: string
-    isActive?: boolean
+    is_active?: boolean
     order?: number
     config?: Json
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
@@ -470,95 +470,95 @@ export interface PaymentMethodsTable {
     code?: string
     description?: string
     icon?: string
-    isActive?: boolean
+    is_active?: boolean
     order?: number
     config?: Json
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface QRPaymentsTable {
   Row: {
     id: number
-    paymentMethodId: number
+    payment_methodId: number
     qrType: QRType
     qrImage: string | null
     qrCode: string
     accountName: string
     accountNumber: string
     bankName: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    paymentMethodId: number
+    payment_methodId: number
     qrType: QRType
     qrImage?: string | null
     qrCode?: string
     accountName?: string
     accountNumber?: string
     bankName?: string
-    isActive?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_active?: boolean
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    paymentMethodId?: number
+    payment_methodId?: number
     qrType?: QRType
     qrImage?: string | null
     qrCode?: string
     accountName?: string
     accountNumber?: string
     bankName?: string
-    isActive?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_active?: boolean
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface ReviewsTable {
   Row: {
     id: number
-    productId: number
-    userId: string | null
+    product_id: number
+    user_id: string | null
     sessionKey: string | null
     title: string
     content: string
     rating: number
-    isVerified: boolean
+    is_verified: boolean
     isApproved: boolean
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    productId: number
-    userId?: string | null
+    product_id: number
+    user_id?: string | null
     sessionKey?: string | null
     title?: string
     content?: string
     rating: number
-    isVerified?: boolean
+    is_verified?: boolean
     isApproved?: boolean
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    productId?: number
-    userId?: string | null
+    product_id?: number
+    user_id?: string | null
     sessionKey?: string | null
     title?: string
     content?: string
     rating?: number
-    isVerified?: boolean
+    is_verified?: boolean
     isApproved?: boolean
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
@@ -567,19 +567,19 @@ export interface ReviewImagesTable {
     id: number
     reviewId: number
     image: string
-    createdAt: string
+    created_at: string
   }
   Insert: {
     id?: number
     reviewId: number
     image: string
-    createdAt?: string
+    created_at?: string
   }
   Update: {
     id?: number
     reviewId?: number
     image?: string
-    createdAt?: string
+    created_at?: string
   }
 }
 
@@ -598,8 +598,8 @@ export interface StoreProfilesTable {
     accountName: string
     accountNumber: string
     bankName: string
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
@@ -615,8 +615,8 @@ export interface StoreProfilesTable {
     accountName?: string
     accountNumber?: string
     bankName?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
@@ -632,137 +632,137 @@ export interface StoreProfilesTable {
     accountName?: string
     accountNumber?: string
     bankName?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface LiveSessionsTable {
   Row: {
     id: number
-    storeId: number | null
+    store_id: number | null
     title: string
     status: LiveSessionStatus
-    startedAt: string | null
-    endedAt: string | null
+    started_at: string | null
+    ended_at: string | null
     duration: string | null
-    currentProductId: number | null
-    totalProductsShown: number
-    totalProductsSold: number
-    totalReserved: number
-    totalInterested: number
-    totalLikes: number
-    totalFollowers: number
+    current_product_id: number | null
+    total_products_shown: number
+    total_products_sold: number
+    total_reserved: number
+    total_interested: number
+    total_likes: number
+    total_followers: number
     notes: string
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    storeId?: number | null
+    store_id?: number | null
     title: string
     status?: LiveSessionStatus
-    startedAt?: string | null
-    endedAt?: string | null
+    started_at?: string | null
+    ended_at?: string | null
     duration?: string | null
-    currentProductId?: number | null
-    totalProductsShown?: number
-    totalProductsSold?: number
-    totalReserved?: number
-    totalInterested?: number
-    totalLikes?: number
-    totalFollowers?: number
+    current_product_id?: number | null
+    total_products_shown?: number
+    total_products_sold?: number
+    total_reserved?: number
+    total_interested?: number
+    total_likes?: number
+    total_followers?: number
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    storeId?: number | null
+    store_id?: number | null
     title?: string
     status?: LiveSessionStatus
-    startedAt?: string | null
-    endedAt?: string | null
+    started_at?: string | null
+    ended_at?: string | null
     duration?: string | null
-    currentProductId?: number | null
-    totalProductsShown?: number
-    totalProductsSold?: number
-    totalReserved?: number
-    totalInterested?: number
-    totalLikes?: number
-    totalFollowers?: number
+    current_product_id?: number | null
+    total_products_shown?: number
+    total_products_sold?: number
+    total_reserved?: number
+    total_interested?: number
+    total_likes?: number
+    total_followers?: number
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface LiveSessionProductsTable {
   Row: {
-    liveSessionId: number
-    productId: number
+    live_session_id: number
+    product_id: number
   }
   Insert: {
-    liveSessionId: number
-    productId: number
+    live_session_id: number
+    product_id: number
   }
   Update: {
-    liveSessionId?: number
-    productId?: number
+    live_session_id?: number
+    product_id?: number
   }
 }
 
 export interface LiveProductsTable {
   Row: {
     id: number
-    sessionId: number
-    productId: number
+    session_id: number
+    product_id: number
     status: LiveProductStatus
     order: number
-    addedAt: string
-    createdAt: string
+    added_at: string
+    created_at: string
   }
   Insert: {
     id?: number
-    sessionId: number
-    productId: number
+    session_id: number
+    product_id: number
     status?: LiveProductStatus
     order?: number
-    addedAt?: string
-    createdAt?: string
+    added_at?: string
+    created_at?: string
   }
   Update: {
     id?: number
-    sessionId?: number
-    productId?: number
+    session_id?: number
+    product_id?: number
     status?: LiveProductStatus
     order?: number
-    addedAt?: string
-    createdAt?: string
+    added_at?: string
+    created_at?: string
   }
 }
 
 export interface ProductInterestsTable {
   Row: {
     id: number
-    sessionId: number
-    productId: number
+    session_id: number
+    product_id: number
     action: ProductInterestAction
-    createdAt: string
+    created_at: string
   }
   Insert: {
     id?: number
-    sessionId: number
-    productId: number
+    session_id: number
+    product_id: number
     action: ProductInterestAction
-    createdAt?: string
+    created_at?: string
   }
   Update: {
     id?: number
-    sessionId?: number
-    productId?: number
+    session_id?: number
+    product_id?: number
     action?: ProductInterestAction
-    createdAt?: string
+    created_at?: string
   }
 }
 
@@ -772,108 +772,108 @@ export interface PickupPointsTable {
     name: string
     address: string
     schedule: string
-    googleMapsUrl: string
-    isActive: boolean
+    google_maps_url: string
+    is_active: boolean
     order: number
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
     name: string
     address?: string
     schedule?: string
-    googleMapsUrl?: string
-    isActive?: boolean
+    google_maps_url?: string
+    is_active?: boolean
     order?: number
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
     name?: string
     address?: string
     schedule?: string
-    googleMapsUrl?: string
-    isActive?: boolean
+    google_maps_url?: string
+    is_active?: boolean
     order?: number
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface AdminAuthorizedTable {
   Row: {
     id: number
-    userId: string
+    user_id: string
     email: string
     role: string
     otpEnabled: boolean
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
+    is_active: boolean
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    userId: string
+    user_id: string
     email: string
     role?: string
     otpEnabled?: boolean
-    isActive?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_active?: boolean
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    userId?: string
+    user_id?: string
     email?: string
     role?: string
     otpEnabled?: boolean
-    isActive?: boolean
-    createdAt?: string
-    updatedAt?: string
+    is_active?: boolean
+    created_at?: string
+    updated_at?: string
   }
 }
 
 export interface WhatsappRequestsTable {
   Row: {
     id: number
-    userId: string
-    productId: number
-    productName: string
-    productImage: string
-    productPrice: number | null
-    referenceCode: string
+    user_id: string
+    product_id: number
+    product_name: string
+    product_image: string
+    product_price: number | null
+    reference_code: string
     status: WhatsappRequestStatus
     notes: string
-    createdAt: string
-    updatedAt: string
+    created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
-    userId: string
-    productId: number
-    productName: string
-    productImage?: string
-    productPrice?: number | null
-    referenceCode: string
+    user_id: string
+    product_id: number
+    product_name: string
+    product_image?: string
+    product_price?: number | null
+    reference_code: string
     status?: WhatsappRequestStatus
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
-    userId?: string
-    productId?: number
-    productName?: string
-    productImage?: string
-    productPrice?: number | null
-    referenceCode?: string
+    user_id?: string
+    product_id?: number
+    product_name?: string
+    product_image?: string
+    product_price?: number | null
+    reference_code?: string
     status?: WhatsappRequestStatus
     notes?: string
-    createdAt?: string
-    updatedAt?: string
+    created_at?: string
+    updated_at?: string
   }
 }
 
@@ -883,24 +883,24 @@ export interface SocialLinksTable {
     platform: string
     label: string
     url: string
-    isActive: boolean
-    updatedAt: string
+    is_active: boolean
+    updated_at: string
   }
   Insert: {
     id?: number
     platform: string
     label: string
     url?: string
-    isActive?: boolean
-    updatedAt?: string
+    is_active?: boolean
+    updated_at?: string
   }
   Update: {
     id?: number
     platform?: string
     label?: string
     url?: string
-    isActive?: boolean
-    updatedAt?: string
+    is_active?: boolean
+    updated_at?: string
   }
 }
 

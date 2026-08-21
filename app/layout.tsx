@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Playfair_Display, Inter, Great_Vibes, Cinzel } from "next/font/google"
+import { Analytics } from "@vercel/analytics/react"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -46,6 +47,14 @@ export const metadata: Metadata = {
     siteName: "Liz Store",
     title: "Liz Store — Bisutería y Accesorios Elegantes",
     description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro y confiable.",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Liz Store — Bisutería y Accesorios Elegantes",
+      },
+    ],
   },
   robots: {
     index: true,
@@ -65,6 +74,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#FDF8F6] text-[#4A4A4A] font-sans overflow-x-hidden" suppressHydrationWarning>
         {children}
+        <Analytics />
       </body>
     </html>
   )
