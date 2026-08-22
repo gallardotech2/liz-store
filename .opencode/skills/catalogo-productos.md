@@ -121,6 +121,40 @@ description: Convenciones para el catálogo y detalle de productos de Escudo Mar
 )}
 ```
 
+## Textos Homepage (actualizado 2026-08-22)
+
+**Archivo:** `app/(shop)/page.tsx`
+
+### Hero
+- **Título:** "Tu estilo merece brillar"
+- **Subtítulo:** "Descubre piezas que transforman un look sencillo en uno que roba miradas."
+
+### Categorías
+- **Label:** "Categorías"
+- **Título:** "El detalle que buscas"
+- **Subtítulo:** "Descubre piezas para cada ocasión y encuentra la que va contigo."
+
+### Destacados
+- **Label:** "Destacados"
+- **Título:** "Las favoritas"
+- **Subtítulo:** "Descubre las piezas que están marcando tendencia."
+
+### Recién llegados
+- **Label:** "Novedades"
+- **Título:** "Recién llegados"
+- **Subtítulo:** "Mira las nuevas piezas que tenemos para ti."
+
+### Beneficios (íconos FaShieldAlt, FaTruck, FaGem, FaHeart)
+- **Envío Seguro:** "Realizamos envíos seguros y rápidos a todo el país."
+- **Calidad Seleccionada:** "Trabajamos con piezas cuidadosamente seleccionadas."
+- **Atención Personalizada:** "Te brindamos asistencia durante tu proceso de compra."
+
+### Footer (`components/layout/Footer.tsx`)
+- **Descripción:** "Detalles que hablan de ti. Piezas seleccionadas para acompañarte en cada ocasión."
+
+### ⚠️ Regla estricta
+Al modificar textos del homepage: **SOLO cambiar el contenido textual**. No tocar botones, IDs, links, clases CSS, ni estructura HTML. El usuario se enoja si se modifica algo que no sea el texto literal.
+
 ## Reglas
 
 1. **ISR** siempre que sea posible (`revalidate: 3600`).
