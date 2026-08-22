@@ -110,11 +110,10 @@ export default async function HomePage() {
               <HeroSocialIcons />
             </div>
             <h1 className="text-[clamp(36px,5vw,64px)] leading-[1.1] mb-5 text-[#2D2D2D] font-serif">
-              Bisutería con <span className="text-primary">Estilo</span>,<br />
-              Confianza <span className="text-primary">Elegante</span>
+              Tu estilo merece <span className="text-primary">brillar</span>
             </h1>
             <p className="text-lg text-[#6B6B6B] mb-9 leading-[1.8] max-w-[480px] max-md:mx-auto">
-              Descubre accesorios que realzan tu belleza. Cada pieza está seleccionada para ti.
+              Descubre piezas que transforman un look sencillo en uno que roba miradas.
             </p>
             <div className="flex gap-4 flex-wrap max-md:justify-center">
               <Link href="/productos">
@@ -151,10 +150,10 @@ export default async function HomePage() {
                 Categorías
               </div>
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
-                Explora por categoría
+                El detalle que buscas
               </h2>
               <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
-                Descubre nuestra colección organizada para encontrar tu estilo perfecto.
+                Descubre piezas para cada ocasión y encuentra la que va contigo.
               </p>
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
@@ -174,10 +173,10 @@ export default async function HomePage() {
                 Destacados
               </div>
               <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
-                Los más vendidos
+                Las favoritas
               </h2>
               <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
-                Nuestros clientes aman estas piezas. Tú también las amarás.
+                Descubre las piezas que están marcando tendencia.
               </p>
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
@@ -205,7 +204,7 @@ export default async function HomePage() {
                 Recién llegados
               </h2>
               <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
-                Las últimas tendencias en bisutería que debes tener.
+                Mira las nuevas piezas que tenemos para ti.
               </p>
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
@@ -284,25 +283,25 @@ export default async function HomePage() {
               </div>
               <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Envío Seguro</h4>
               <p className="text-sm text-[#6B6B6B] leading-[1.6]">
-                Empaquetamos con amor. Envíos rápidos a todo el país.
+                Realizamos envíos seguros y rápidos a todo el país.
               </p>
             </div>
             <div className="p-5 flex flex-col items-center">
               <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaGem className="text-[26px]" />
               </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Calidad Premium</h4>
+              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Calidad Seleccionada</h4>
               <p className="text-sm text-[#6B6B6B] leading-[1.6]">
-                Solo trabajamos con materiales que realzan tu belleza natural.
+                Trabajamos con piezas cuidadosamente seleccionadas.
               </p>
             </div>
             <div className="p-5 flex flex-col items-center">
               <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaHeart className="text-[26px]" />
               </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Amor al Detalle</h4>
+              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Atención Personalizada</h4>
               <p className="text-sm text-[#6B6B6B] leading-[1.6]">
-                Cada pieza es seleccionada cuidadosamente para ti.
+                Te brindamos asistencia durante tu proceso de compra.
               </p>
             </div>
           </div>

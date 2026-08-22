@@ -52,7 +52,7 @@ export function Footer({ categories = [], whatsappNumber = "" }: FooterProps) {
                 <span className="font-['Cinzel',serif] text-[14px] text-white font-medium tracking-[2px] uppercase">Store</span>
               </h3>
               <p className="text-sm leading-[1.8]">
-                Bisutería y accesorios elegantes en Bolivia. Tu estilo merece lo mejor, con la confianza de un pago completamente seguro.
+                Detalles que hablan de ti. Piezas seleccionadas para acompañarte en cada ocasión.
               </p>
               <div className="flex gap-3 mt-5">
                 <SocialIcons />
