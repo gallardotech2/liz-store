@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Playfair_Display, Inter, Great_Vibes, Cinzel } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
+import { CookieConsent } from "@/components/ui/CookieConsent"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -74,6 +75,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#FDF8F6] text-[#4A4A4A] font-sans overflow-x-hidden" suppressHydrationWarning>
         {children}
+        <CookieConsent />
         <Analytics />
       </body>
     </html>

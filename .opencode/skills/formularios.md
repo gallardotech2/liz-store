@@ -70,3 +70,28 @@ className="border border-[#DDD] rounded-[8px] p-2.5 text-base font-semibold"
 7. **NO** usar `useState` para formularios simples — dejar que el form data se maneje nativamente.
 8. **Max-width** en inputs numéricos: `w-15` (60px).
 9. **Selects** en filtros con estilo consistente: shadow, white bg, rounded.
+
+## Formularios de Autenticación
+
+Patrón: Client Components con `useState` para error/loading.
+
+### Login (`app/auth/login/page.tsx`)
+- Email + Password + Google OAuth (GoogleButton)
+- Link "¿Olvidaste tu contraseña?" → `/auth/reset-password`
+- Link "Regístrate aquí" → `/auth/registro`
+- Error message en alert box rojo
+
+### Reset Password (`app/auth/reset-password/page.tsx`)
+- Campo email → `resetPasswordForEmail()`
+- Mensaje de confirmación tras envío
+- Botón "Volver al login"
+
+### Update Password (`app/auth/update-password/page.tsx`)
+- Intercambia code por sesión → `updateUser({ password })`
+- Redirige a login con mensaje de éxito
+
+### Convenciones
+- NO usar `useFormStatus()` en auth (Supabase client es async, no Server Action)
+- Validación client-side con `useState` + regex
+- Loading state con `useState` + spinner SVG
+- Errores de Supabase mostrar directamente al usuario

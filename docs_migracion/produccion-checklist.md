@@ -1,65 +1,63 @@
 # Checklist de Producción — Liz Store
 
-## Estado: Pendiente
-## Fecha de creación: 2026-08-20
+## Estado: En progreso
+## Última actualización: 2026-08-21 (Páginas legales completadas)
 
 ---
 
 ## CRÍTICO (obligatorio para lanzar)
 
-- [ ] **Sitemap + robots.txt** (30 min)
-  - Crear `app/sitemap.ts` con todas las rutas públicas
-  - Crear `app/robots.ts` con Allow/Disallow
-  - Sin esto Google no indexa el sitio
+- [x] **Sitemap + robots.txt** (30 min)
+  - `app/sitemap.ts` — genera URLs dinámicas desde Supabase
+  - `app/robots.ts` — bloquea `/admin/`, `/api/`, `/perfil/`, `/checkout/`
 
-- [ ] **Páginas legales** (3-4 hrs)
-  - Crear `/privacidad` — Política de privacidad (Ley 1646 Bolivia)
-  - Crear `/terminos` — Términos y condiciones
-  - Agregar links en Footer
+- [x] **Páginas legales** (3-4 hrs)
+  - `app/(shop)/privacidad/page.tsx` — Política de privacidad (11 secciones, Ley 1646 Bolivia)
+  - `app/(shop)/terminos/page.tsx` — Términos y condiciones (7 secciones, cláusulas MVP)
+  - Links agregados en Footer (Ayuda)
 
-- [ ] **Cookie Consent** (2-3 hrs)
-  - Banner de consentimiento de cookies
-  - Obligatorio: Supabase auth + carrito usan cookies
-  - Guardar preferencia en localStorage
+- [x] **Cookie Consent** (2-3 hrs)
+  - `components/ui/CookieConsent.tsx` — banner con aceptar/rechazar
+  - Guarda preferencia en `localStorage` (`liz_cookie_consent`)
+  - Cookies esenciales (auth + carrito) siempre activas
+  - Agregado en `app/layout.tsx`
 
-- [ ] **RPC functions faltantes** (15 min)
-  - Crear `increment_session_interested` en Supabase
-  - Crear `increment_session_shown` en Supabase
-  - Sin estas funciones, los lives fallan (lib/live.ts las llama)
+- [x] **RPC functions faltantes** (15 min)
+  - `increment_session_interested` y `increment_session_shown` ejecutados en Supabase Dashboard
+  - Fix 0004 registrado en migraciones.sql
 
-- [ ] **Fix TypeScript types** (1-2 hrs)
-  - 20 de 21 tablas usan camelCase en types/database.ts
-  - La DB usa snake_case — falso type safety
-  - Regenerar types con `supabase gen types typescript`
+- [x] **Fix TypeScript types** (1-2 hrs)
+  - 40+ campos camelCase → snake_case en types/database.ts
+  - Coincide con schema real de Supabase
 
-- [ ] **Analytics** (20 min)
-  - `npm install @vercel/analytics`
-  - Agregar `<Analytics />` en `app/layout.tsx`
+- [x] **Analytics** (20 min)
+  - `@vercel/analytics` instalado y `<Analytics />` en layout.tsx
 
-- [ ] **Error monitoring** (1-2 hrs)
-  - Instalar Sentry (`@sentry/nextjs`)
-  - Configurar DSN en .env
-  - Crear `sentry.client.config.ts`, `sentry.server.config.ts`
+- [x] **Error monitoring** (1-2 hrs)
+  - `@sentry/nextjs` instalado y configurado
+  - `sentry.client.config.ts` + `sentry.server.config.ts` creados
+  - `next.config.ts` envuelto con `withSentryConfig()`
+  - `app/error.tsx` captura excepciones con Sentry
+  - CSP en `vercel.json` actualizado para Sentry
+  - **Pendiente:** Agregar `NEXT_PUBLIC_SENTRY_DSN` en `.env.local`
 
-- [ ] **404 page** (30 min)
-  - Crear `app/not-found.tsx` con diseño de la marca
-  - Link a home y catálogo
+- [x] **404 page** (30 min)
+  - `app/not-found.tsx` — diseño de marca, links a home y catálogo
 
 ---
 
 ## ALTO (debería tener antes de lanzar)
 
-- [ ] **Open Graph image** (20 min)
-  - Agregar `openGraph.images` en `app/layout.tsx`
-  - Crear imagen OG (1200x630px) con logo de la marca
+- [x] **Open Graph image** (20 min)
+  - `openGraph.images` agregado en metadata de layout.tsx
+  - Pendiente: crear imagen `public/og.png` (1200x630px)
 
 - [ ] **JSON-LD** (1-2 hrs)
   - Structured data: Product, Organization, BreadcrumbList, FAQPage
   - Agregar en `<head>` via `next/script`
 
-- [ ] **Global error.tsx** (30 min)
-  - Crear `app/error.tsx` para el shop
-  - Actualmente solo existe `app/admin/error.tsx`
+- [x] **Global error.tsx** (30 min)
+  - `app/error.tsx` — error boundary global para el shop
 
 - [ ] **Email transaccional** (3-4 hrs)
   - Instalar Resend o SendGrid

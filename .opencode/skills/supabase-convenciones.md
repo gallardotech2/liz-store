@@ -98,3 +98,29 @@ NEXT_PUBLIC_SITE_URL=...
 - Server Actions de admin usan `createClient()` (anon key) + `requireAdmin()` — **nunca** service role key.
 - La cookie del carrito (`liz_cart`) tiene firma HMAC SHA-256 server-side (`signCartData()`). Es legible por JS (no httpOnly) para el badge del Header, pero la firma previene manipulación.
 - El cliente browser (`client.ts`) usa anon key con RLS — no expone service role.
+
+## Autenticación
+
+### Password Reset (resetPasswordForEmail)
+```tsx
+// Client Component — Solicitar reset
+const { error } = await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${origin}/auth/update-password`,
+})
+```
+
+### Flujo completo
+1. `/auth/reset-password` → formulario email → `resetPasswordForEmail()`
+2. Supabase envía email con link a `/auth/update-password?code=...`
+3. `/auth/update-password` → `exchangeCodeForSession(code)` → `updateUser({ password })`
+4. Redirige a `/auth/login` con mensaje de éxito
+
+### Configuración en Supabase Dashboard
+- **Authentication → Email Templates → Password Reset**
+- URL de redirección: `https://liz-store.vercel.app/auth/update-password`
+
+### Reglas
+- Formularios auth SIEMPRE son Client Components (`"use client"`)
+- Usan `useState` para manejar error/loading states
+- NO usar Server Actions para auth (Supabase client maneja esto)
+- Callback route existente: `app/auth/callback/route.ts`

@@ -73,3 +73,9 @@ export async function myAction(formData: FormData) {
 - `<form action={serverAction}>` sobre `onSubmit` (App Router pattern)
 - `useFormStatus()` para pending states
 - Errores inline con diseño consistente (ver skill `formularios`)
+
+### Auth Components
+- Formularios auth SIEMPRE son Client Components (`"use client"`)
+- Usan `useState` para error/loading (no `useFormStatus`)
+- Supabase client maneja auth, NO Server Actions
+- Ejemplos: `app/auth/login/page.tsx`, `app/auth/reset-password/page.tsx`

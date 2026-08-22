@@ -130,6 +130,15 @@ export default function LoginPage() {
             error={passwordError}
           />
 
+          <div className="flex justify-end mb-5">
+            <Link
+              href="/auth/reset-password"
+              className="text-[13px] text-primary font-semibold no-underline hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
           {error && (
             <div
               role="alert"

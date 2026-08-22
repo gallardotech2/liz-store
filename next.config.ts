@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import { withSentryConfig } from "@sentry/nextjs"
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.0.29', '10.29.170.130', '192.168.0.27'],
@@ -12,7 +13,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.pinimg.com",
       },
-
     ],
   },
   experimental: {
@@ -23,4 +23,9 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+})

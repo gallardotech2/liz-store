@@ -93,7 +93,8 @@ export function Footer({ categories = [], whatsappNumber = "" }: FooterProps) {
                   ...(ESCUDO_PAGO_ENABLED
                     ? [{ href: "#", label: "Escudo Pago" }]
                     : []),
-                  { href: "#", label: "Términos y condiciones" },
+                  { href: "/privacidad", label: "Política de privacidad" },
+                  { href: "/terminos", label: "Términos y condiciones" },
                 ].map((link) => (
                   <li key={link.label} className="mb-2.5">
                     <Link
