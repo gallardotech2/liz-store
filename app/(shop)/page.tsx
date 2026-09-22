@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { ProductCard } from "@/components/ui/ProductCard"
@@ -10,6 +11,12 @@ import { HeroSocialIcons } from "@/components/layout/HeroSocialIcons"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 
 export const revalidate = 3600
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+}
 
 export default async function HomePage() {
   const supabase = await createClient()

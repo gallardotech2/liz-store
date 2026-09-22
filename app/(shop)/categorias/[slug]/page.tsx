@@ -44,6 +44,9 @@ export async function generateMetadata({
   return {
     title: cat.name,
     description: cat.description || undefined,
+    alternates: {
+      canonical: `/categorias/${slug}`,
+    },
   }
 }
 

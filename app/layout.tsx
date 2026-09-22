@@ -36,6 +36,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://lizstore.site"),
   title: {
     template: "%s | Liz Store",
     default: "Liz Store — Bisutería y Accesorios Elegantes",
@@ -48,14 +49,6 @@ export const metadata: Metadata = {
     siteName: "Liz Store",
     title: "Liz Store — Bisutería y Accesorios Elegantes",
     description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro y confiable.",
-    images: [
-      {
-        url: "/og.png",
-        width: 1200,
-        height: 630,
-        alt: "Liz Store — Bisutería y Accesorios Elegantes",
-      },
-    ],
   },
   robots: {
     index: true,

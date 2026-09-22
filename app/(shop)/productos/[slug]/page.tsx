@@ -49,6 +49,9 @@ export async function generateMetadata({
     title: prod.name,
     description: prod.meta_description || undefined,
     keywords: prod.meta_keywords || undefined,
+    alternates: {
+      canonical: `/productos/${slug}`,
+    },
   }
 }
 
