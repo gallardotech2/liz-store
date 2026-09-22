@@ -23,6 +23,14 @@ export const metadata: Metadata = {
     title: "Liz Store — Bisutería y Accesorios Elegantes",
     description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro y confiable.",
     url: "/",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Liz Store — Bisutería y Accesorios Elegantes",
+      },
+    ],
   },
 }
 

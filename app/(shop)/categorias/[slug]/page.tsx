@@ -54,6 +54,14 @@ export async function generateMetadata({
       title: cat.name,
       description: cat.description || undefined,
       url: `/categorias/${slug}`,
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: "Liz Store — Bisutería y Accesorios Elegantes",
+        },
+      ],
     },
   }
 }
