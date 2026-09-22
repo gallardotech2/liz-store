@@ -47,6 +47,14 @@ export async function generateMetadata({
     alternates: {
       canonical: `/categorias/${slug}`,
     },
+    openGraph: {
+      type: "website",
+      locale: "es_BO",
+      siteName: "Liz Store",
+      title: cat.name,
+      description: cat.description || undefined,
+      url: `/categorias/${slug}`,
+    },
   }
 }
 

@@ -52,6 +52,14 @@ export async function generateMetadata({
     alternates: {
       canonical: `/productos/${slug}`,
     },
+    openGraph: {
+      type: "website",
+      locale: "es_BO",
+      siteName: "Liz Store",
+      title: prod.name,
+      description: prod.meta_description || undefined,
+      url: `/productos/${slug}`,
+    },
   }
 }
 

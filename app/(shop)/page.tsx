@@ -16,6 +16,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  openGraph: {
+    type: "website",
+    locale: "es_BO",
+    siteName: "Liz Store",
+    title: "Liz Store — Bisutería y Accesorios Elegantes",
+    description: "Tienda boliviana de bisutería y accesorios elegantes. Pago seguro y confiable.",
+    url: "/",
+  },
 }
 
 export default async function HomePage() {
