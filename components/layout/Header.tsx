@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useSyncExternalStore, useCallback } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { parseCart, CART_COOKIE } from "@/lib/cart"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 interface HeaderCategory {
@@ -32,45 +32,19 @@ export function Header({
   categories = [],
   storeProfile = null,
   activeLive = null,
-  cartCount: _cartCount = 0,
+  cartCount = 0,
 }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const router = useRouter()
 
-  const getCartSnapshot = useCallback(() => {
-    if (typeof window === "undefined") return _cartCount
-    const raw = document.cookie
-      .split("; ")
-      .find((r) => r.startsWith(`${CART_COOKIE}=`))
-      ?.split("=")[1]
-    if (!raw) return 0
-    try {
-      return Object.keys(parseCart(decodeURIComponent(raw))).length
-    } catch {
-      return 0
-    }
-  }, [_cartCount])
-
-  const subscribeToCart = useCallback((callback: () => void) => {
-    window.addEventListener("cart:changed", callback)
-    window.addEventListener("focus", callback)
-    window.addEventListener("storage", callback)
-    const interval = setInterval(callback, 5000)
-    return () => {
-      window.removeEventListener("cart:changed", callback)
-      window.removeEventListener("focus", callback)
-      window.removeEventListener("storage", callback)
-      clearInterval(interval)
-    }
-  }, [])
-
-  const localCartCount = useSyncExternalStore(
-    subscribeToCart,
-    getCartSnapshot,
-    () => 0,
-  )
+  useEffect(() => {
+    const onCartChanged = () => router.refresh()
+    window.addEventListener("cart:changed", onCartChanged)
+    return () => window.removeEventListener("cart:changed", onCartChanged)
+  }, [router])
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -260,9 +234,9 @@ export function Header({
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
               </svg>
-              {localCartCount > 0 && (
+              {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-semibold">
-                  {localCartCount}
+                  {cartCount}
                 </span>
               )}
             </Link>
