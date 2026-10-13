@@ -39,7 +39,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   const s = supabase as any
 
-  const [categoriesResult, featuredResult, newResult, testimonialsResult, _storeProfileResult, productCounts] =
+  const [categoriesResult, featuredResult, newResult, testimonialsResult, productCounts] =
     await Promise.all([
       s.from("categories").select("*").eq("is_active", true).order("order"),
       s
@@ -55,7 +55,6 @@ export default async function HomePage() {
         .eq("is_new", true)
         .limit(8),
       s.from("reviews").select("id, rating, content").eq("is_approved", true).limit(6),
-      s.from("store_profiles").select("*").maybeSingle(),
       s.from("products").select("category_id").eq("is_active", true),
     ])
 

@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { unstable_cache } from "next/cache"
+import { createStaticClient } from "@/lib/supabase/static"
 
 export function getCategories(client: SupabaseClient, onlyActive = true) {
   let query = client
@@ -28,3 +30,18 @@ export function getCategoryIdBySlug(client: SupabaseClient, slug: string) {
     .eq("is_active", true)
     .single()
 }
+
+export const getShopCategoriesMenu = unstable_cache(
+  async (): Promise<Array<{ name: string; slug: string }>> => {
+    const supabase = createStaticClient()
+    const { data } = await supabase
+      .from("categories")
+      .select("name, slug")
+      .eq("is_active", true)
+      .order("order")
+      .limit(10)
+    return (data ?? []) as Array<{ name: string; slug: string }>
+  },
+  ["shop-categories-menu"],
+  { revalidate: 3600, tags: ["categories"] },
+)

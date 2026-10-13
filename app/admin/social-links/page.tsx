@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { getAllSocialLinks, updateSocialLink } from "@/lib/queries/social-links"
+import { getAllSocialLinks } from "@/lib/queries/social-links"
 import type { SocialLink } from "@/lib/queries/social-links"
+import { saveSocialLink } from "./actions"
 
 const PLATFORM_COLORS: Record<string, string> = {
   facebook: "#1877F2",
@@ -33,13 +34,12 @@ export default function AdminSocialLinksPage() {
     setSavingId(id)
     setSuccess("")
     setError("")
-    const supabase = createClient()
-    const { error: err } = await updateSocialLink(supabase, id, { url })
-    if (err) {
-      setError("Error al guardar")
-    } else {
+    try {
+      await saveSocialLink(id, url)
       setSuccess("URL actualizada")
       load()
+    } catch {
+      setError("Error al guardar")
     }
     setSavingId(null)
   }

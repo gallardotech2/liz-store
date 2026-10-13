@@ -73,8 +73,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "home">("pickup")
-  const defaultPickup = pickupPoints.length > 0 ? pickupPoints[0].name : ""
-  const [pickupLocation, setPickupLocation] = useState(defaultPickup)
+  const [pickupLocation, setPickupLocation] = useState("")
   const defaultMethod = paymentMethods.length > 0 ? paymentMethods[0].code : "pago_directo"
   const [paymentMethod, setPaymentMethod] = useState(defaultMethod)
   const [name, setName] = useState("")
@@ -83,6 +82,8 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const [error, setError] = useState("")
   const [highlightName, setHighlightName] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
+  const [highlightPickup, setHighlightPickup] = useState(false)
+  const pickupRef = useRef<HTMLDivElement>(null)
   const [referenceCode, setReferenceCode] = useState("")
   const [status, setStatus] = useState<"form" | "confirm" | "success">("form")
   const finalTotal = totals.subtotal
@@ -136,6 +137,13 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
       setHighlightName(true)
       nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
       window.setTimeout(() => setHighlightName(false), 2500)
+      return false
+    }
+    if (deliveryMethod === "pickup" && pickupPoints.length > 0 && !pickupLocation.trim()) {
+      setError("Selecciona un punto de recogida antes de continuar")
+      setHighlightPickup(true)
+      pickupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      window.setTimeout(() => setHighlightPickup(false), 2500)
       return false
     }
     return true
@@ -380,7 +388,18 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         </div>
 
         {deliveryMethod === "pickup" && (
-          <div className="mb-6 p-5 rounded-xl bg-[#FDF8F6] dark:bg-surface">
+          <div
+            ref={pickupRef}
+            className={`mb-6 p-5 rounded-xl bg-[#FDF8F6] dark:bg-surface transition-all duration-300 ${
+              highlightPickup ? "ring-4 ring-[#E74C3C]/25 border border-[#E74C3C]" : ""
+            }`}
+          >
+            {highlightPickup && (
+              <p className="text-[13px] font-medium text-[#E74C3C] dark:text-[#FF8A80] mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Selecciona un punto antes de continuar.
+              </p>
+            )}
             <p className="text-[14px] text-[#6B6B6B] dark:text-ink-soft mb-4">
               Selecciona el punto de recogida más cercano a ti.
             </p>
@@ -396,14 +415,22 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                         ? "bg-white dark:bg-surface-raised border border-primary"
                         : "bg-white dark:bg-surface-raised border border-[#EEE] dark:border-line hover:border-[#DDD] dark:hover:border-line"
                     }`}
-                    onClick={() => setPickupLocation(point.name)}
+                    onClick={() => {
+                      setPickupLocation(point.name)
+                      if (highlightPickup) setHighlightPickup(false)
+                      if (error) setError("")
+                    }}
                   >
                     <input
                       type="radio"
                       name="pickup_location"
                       value={point.name}
                       checked={pickupLocation === point.name}
-                      onChange={() => setPickupLocation(point.name)}
+                      onChange={() => {
+                        setPickupLocation(point.name)
+                        if (highlightPickup) setHighlightPickup(false)
+                        if (error) setError("")
+                      }}
                       className="mt-0.5 accent-primary"
                     />
                     <div className="flex-1">

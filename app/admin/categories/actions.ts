@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
@@ -33,6 +33,7 @@ export async function createCategory(formData: FormData) {
   }
 
   revalidatePath("/admin/categories")
+  updateTag("categories")
   redirect("/admin/categories")
 }
 
@@ -87,6 +88,7 @@ export async function updateCategory(id: number, formData: FormData) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
+  updateTag("categories")
   redirect("/admin/categories")
 }
 
@@ -109,4 +111,5 @@ export async function deleteCategory(id: number) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
+  updateTag("categories")
 }
