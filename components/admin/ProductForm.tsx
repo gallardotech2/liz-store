@@ -37,6 +37,7 @@ interface ProductFormProps {
     is_active: boolean
     is_featured: boolean
     is_new: boolean
+    is_offer: boolean
     meta_description: string
     meta_keywords: string
     images?: ProductImage[]
@@ -94,8 +95,8 @@ function AddImageForm({ productId }: { productId: number }) {
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    if (f.size > 5 * 1024 * 1024) {
-      setImageError("La imagen no debe superar los 5MB")
+    if (f.size > 12 * 1024 * 1024) {
+      setImageError("La imagen no debe superar los 12MB")
       e.target.value = ""
       return
     }
@@ -412,6 +413,15 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
               className="w-4 h-4 rounded border-white/12 bg-[#2A2D35] accent-primary"
             />
             Nuevo
+          </label>
+          <label className="flex items-center gap-2.5 text-sm text-[#ABB2BF] cursor-pointer">
+            <input
+              type="checkbox"
+              name="is_offer"
+              defaultChecked={initialData?.is_offer ?? false}
+              className="w-4 h-4 rounded border-white/12 bg-[#2A2D35] accent-primary"
+            />
+            En oferta
           </label>
         </div>
 

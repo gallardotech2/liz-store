@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Playfair_Display, Inter, Great_Vibes, Cinzel } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { CookieConsent } from "@/components/ui/CookieConsent"
+import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -56,6 +57,8 @@ export const metadata: Metadata = {
   },
 }
 
+const themeInitScript = `(function(){try{var t=localStorage.getItem('theme')||'system';var m=window.matchMedia('(prefers-color-scheme: dark)').matches;var d=t==='dark'||(t==='system'&&m);document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();`
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -65,9 +68,13 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${playfair.variable} ${inter.variable} ${greatVibes.variable} ${cinzel.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[#FDF8F6] text-[#4A4A4A] font-sans overflow-x-hidden" suppressHydrationWarning>
-        {children}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-[#FDF8F6] dark:bg-page text-[#4A4A4A] dark:text-ink font-sans overflow-x-hidden" suppressHydrationWarning>
+        <ThemeProvider>{children}</ThemeProvider>
         <CookieConsent />
         <Analytics />
       </body>

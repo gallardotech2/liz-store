@@ -37,7 +37,7 @@ export function GoogleButton({ label = "Continuar con Google" }: GoogleButtonPro
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="relative w-full inline-flex items-center justify-center gap-3 px-4 py-3 rounded-[8px] border border-[#DDD] bg-white text-[15px] font-semibold text-[#5F6368] transition-colors duration-200 hover:bg-[#F8F8F8] active:bg-[#F0F0F0] disabled:opacity-60 disabled:cursor-not-allowed"
+      className="relative w-full inline-flex items-center justify-center gap-3 px-4 py-3 rounded-[8px] border border-[#DDD] dark:border-line bg-white dark:bg-surface-raised text-[15px] font-semibold text-[#5F6368] dark:text-ink-soft transition-colors duration-200 hover:bg-[#F8F8F8] dark:hover:bg-surface-elevated active:bg-[#F0F0F0] dark:active:bg-surface-elevated disabled:opacity-60 disabled:cursor-not-allowed"
     >
       {loading ? (
         <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

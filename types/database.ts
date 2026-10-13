@@ -200,6 +200,7 @@ export interface ProductsTable {
     is_active: boolean
     is_featured: boolean
     is_new: boolean
+    is_offer: boolean
     rating: number
     rating_count: number
     sales_count: number
@@ -223,6 +224,7 @@ export interface ProductsTable {
     is_active?: boolean
     is_featured?: boolean
     is_new?: boolean
+    is_offer?: boolean
     rating?: number
     rating_count?: number
     sales_count?: number
@@ -246,6 +248,7 @@ export interface ProductsTable {
     is_active?: boolean
     is_featured?: boolean
     is_new?: boolean
+    is_offer?: boolean
     rating?: number
     rating_count?: number
     sales_count?: number

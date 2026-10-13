@@ -29,7 +29,7 @@ export function AddToCartForm({
       formData.set("productId", String(productId))
       formData.set("quantity", String(quantity))
       await addToCartAction(formData)
-      router.push("/checkout")
+      router.push("/checkout#datos-contacto")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ocurrió un error. Intenta de nuevo.")
     } finally {
@@ -53,14 +53,17 @@ export function AddToCartForm({
     }
   }
 
+  const decrement = () => setQuantity(Math.max(1, quantity - 1))
+  const increment = () => setQuantity(Math.min(stock, quantity + 1))
+
   return (
     <>
-      <div className="product-quantity flex items-center gap-3 my-6">
+      <div className="product-quantity flex items-center gap-3 my-6 max-md:hidden">
         <span className="font-semibold text-sm">Cantidad:</span>
         <button
           type="button"
-          className="w-10 h-10 rounded-full border border-[rgb(251,132,150)] bg-white cursor-pointer text-lg transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
-          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+          className="w-10 h-10 rounded-full border border-[rgb(251,132,150)] bg-white dark:bg-surface-raised cursor-pointer text-lg transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
+          onClick={decrement}
           disabled={quantity <= 1}
         >
           −
@@ -75,19 +78,19 @@ export function AddToCartForm({
               Math.min(stock, Math.max(1, parseInt(e.target.value) || 1)),
             )
           }
-          className="w-15 text-center border border-[#DDD] rounded-[8px] p-2.5 text-base font-semibold"
+          className="w-15 text-center border border-[#DDD] dark:border-line rounded-[8px] p-2.5 text-base font-semibold"
         />
         <button
           type="button"
-          className="w-10 h-10 rounded-full border border-[rgb(251,132,150)] bg-white cursor-pointer text-lg transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
-          onClick={() => setQuantity(Math.min(stock, quantity + 1))}
+          className="w-10 h-10 rounded-full border border-[rgb(251,132,150)] bg-white dark:bg-surface-raised cursor-pointer text-lg transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
+          onClick={increment}
           disabled={quantity >= stock}
         >
           +
         </button>
       </div>
 
-      <div className="product-buttons flex gap-3 my-6 max-md:flex-col max-md:items-stretch">
+      <div className="product-buttons flex gap-3 my-6 max-md:flex-col max-md:items-stretch max-md:hidden">
         <form action={addAndGo} className="contents">
           <Button variant="buy" type="submit" disabled={loading} className="flex-1 max-md:w-full">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -96,7 +99,7 @@ export function AddToCartForm({
         </form>
 
         <form action={addAndStay} className="contents">
-          <Button variant="primary" type="submit" disabled={loading} className="flex-1 max-md:w-full">
+          <Button variant="cart" type="submit" disabled={loading} className="flex-1 max-md:w-full">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             {loading ? "Agregando..." : "Agregar al carrito"}
           </Button>
@@ -104,11 +107,83 @@ export function AddToCartForm({
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-[rgba(231,76,60,0.08)] border border-[rgba(231,76,60,0.2)] text-[#E74C3C] text-[13px] mt-2">
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-[rgba(231,76,60,0.08)] border border-[rgba(231,76,60,0.2)] text-[#E74C3C] dark:text-[#FF8A80] text-[13px] mt-2 max-md:hidden">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           {error}
         </div>
       )}
+
+      <div className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] bg-white dark:bg-surface-elevated shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)] pb-[env(safe-area-inset-bottom)] rounded-t-xl rounded-b-0">
+        {error && (
+          <div className="px-4 pt-2 text-[12px] text-[#E74C3C] dark:text-[#FF8A80]">
+            {error}
+          </div>
+        )}
+        <div className="flex flex-col gap-2 px-3.5 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="font-semibold text-[13px] shrink-0">
+              Cantidad:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label="Disminuir cantidad"
+                className="w-8 h-8 rounded-full border border-[rgb(251,132,150)] bg-white dark:bg-surface-raised cursor-pointer text-base transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
+                onClick={decrement}
+                disabled={quantity <= 1}
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={quantity}
+                min={1}
+                max={stock}
+                onChange={(e) =>
+                  setQuantity(
+                    Math.min(stock, Math.max(1, parseInt(e.target.value) || 1)),
+                  )
+                }
+                aria-label="Cantidad"
+                className="w-11 text-center border border-[#DDD] dark:border-line rounded-[8px] p-1.5 text-sm font-semibold"
+              />
+              <button
+                type="button"
+                aria-label="Aumentar cantidad"
+                className="w-8 h-8 rounded-full border border-[rgb(251,132,150)] bg-white dark:bg-surface-raised cursor-pointer text-base transition-all duration-300 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40"
+                onClick={increment}
+                disabled={quantity >= stock}
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div className="flex items-stretch gap-2">
+            <form action={addAndGo} className="contents">
+              <Button
+                variant="buy"
+                type="submit"
+                size="sm"
+                disabled={loading}
+                className="flex-1 min-w-0 px-2"
+              >
+                {loading ? "Procesando..." : "Comprar ahora"}
+              </Button>
+            </form>
+            <form action={addAndStay} className="contents">
+              <Button
+                variant="cart"
+                type="submit"
+                size="sm"
+                disabled={loading}
+                className="flex-1 min-w-0 px-2"
+              >
+                {loading ? "Agregando..." : "Agregar al carrito"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
     </>
   )
 }

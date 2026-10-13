@@ -2,17 +2,60 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { DeleteButton } from "@/components/admin/DeleteButton"
+import { AdminProductFilters } from "@/components/admin/AdminProductFilters"
 import { deleteProduct } from "./actions"
 
 export const revalidate = 0
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const params = await searchParams
+  const q = (params.q as string) || ""
+  const categoryId = (params.cat as string) || ""
+  const sort = (params.sort as string) || "recent"
+  const stock = (params.stock as string) || ""
+
   const supabase = await createClient()
 
-  const { data: products } = await (supabase as any)
+  const { data: categories } = await (supabase as any)
+    .from("categories")
+    .select("id, name")
+    .order("name")
+
+  let query = (supabase as any)
     .from("products")
-    .select("id, name, slug, sku, price, discount_price, stock, is_active, is_featured, is_new, category:categories(name)")
-    .order("id", { ascending: false })
+    .select("id, name, slug, sku, price, discount_price, stock, is_active, is_featured, is_new, is_offer, category:categories(name)")
+
+  if (q.trim()) {
+    query = query.ilike("name", `%${q.trim()}%`)
+  }
+  if (categoryId) {
+    query = query.eq("category_id", Number(categoryId))
+  }
+  if (stock === "in_stock") {
+    query = query.gt("stock", 0)
+  } else if (stock === "out_of_stock") {
+    query = query.eq("stock", 0)
+  }
+
+  switch (sort) {
+    case "name_asc":
+      query = query.order("name", { ascending: true })
+      break
+    case "price_asc":
+      query = query.order("price", { ascending: true })
+      break
+    case "price_desc":
+      query = query.order("price", { ascending: false })
+      break
+    default:
+      query = query.order("id", { ascending: false })
+  }
+
+  const { data: products } = await query
 
   const raw = (products ?? []) as Array<{
     id: number
@@ -25,6 +68,7 @@ export default async function AdminProductsPage() {
     is_active: boolean
     is_featured: boolean
     is_new: boolean
+    is_offer: boolean
     category: { name: string } | { name: string }[]
   }>
 
@@ -56,6 +100,14 @@ export default async function AdminProductsPage() {
           <Button variant="primary" size="sm">+ Nuevo producto</Button>
         </Link>
       </div>
+
+      <AdminProductFilters
+        q={q}
+        categoryId={categoryId}
+        sort={sort}
+        stock={stock}
+        categories={(categories as { id: number; name: string }[]) || []}
+      />
 
       <div className="bg-secondary-light border border-white/12 rounded-[16px] overflow-hidden">
         <div className="overflow-x-auto">
@@ -125,6 +177,9 @@ export default async function AdminProductsPage() {
                         )}
                         {p.is_new && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#03C9D7]" title="Nuevo" />
+                        )}
+                        {p.is_offer && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#E74C3C]" title="En oferta" />
                         )}
                         {!p.is_active && (
                           <span className="text-[#9CA3B8] text-[12px]">Inactivo</span>

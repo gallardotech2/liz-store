@@ -1115,3 +1115,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 */
+
+-- ============================================================
+-- Fix 0019: Agregar columna is_offer a products (sección Ofertas)
+-- Fecha ejecución: 2026-10-12
+-- Estado: EJECUTADO
+-- Descripción: Permite marcar un producto como "En oferta" desde el admin
+--   (estado: Activo / Destacado / Nuevo / En oferta) y mostrarlo
+--   automáticamente en la sección /ofertas (Android y PC).
+-- ============================================================
+/*
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_offer BOOLEAN DEFAULT false;
+*/

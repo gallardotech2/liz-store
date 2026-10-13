@@ -14,17 +14,17 @@ export default function TerminosPage() {
           <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
             Legal
           </div>
-          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
             Términos y Condiciones
           </h1>
-          <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto">
             Al realizar una compra en Liz Store, aceptas los siguientes términos
             y condiciones que rigen nuestra relación comercial.
           </p>
         </div>
 
         <div className="bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)] rounded-xl p-4 mb-8">
-          <p className="text-[#4A4A4A] text-[13px] font-semibold mb-3">
+          <p className="text-[#4A4A4A] dark:text-ink text-[13px] font-semibold mb-3">
             Fecha de vigencia: 21 de agosto de 2026
           </p>
           <nav className="flex flex-wrap gap-2">
@@ -38,7 +38,7 @@ export default function TerminosPage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="px-3 py-1.5 rounded-full bg-white text-[#4A4A4A] text-[12px] font-medium border border-[rgba(0,0,0,0.08)] no-underline hover:border-primary hover:text-primary transition-colors"
+                className="px-3 py-1.5 rounded-full bg-white dark:bg-surface-raised text-[#4A4A4A] dark:text-ink text-[12px] font-medium border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.12)] no-underline hover:border-primary hover:text-primary transition-colors"
               >
                 {link.label}
               </a>
@@ -46,9 +46,9 @@ export default function TerminosPage() {
           </nav>
         </div>
 
-        <div className="space-y-8 text-[#4A4A4A] text-[15px] leading-[1.8]">
+        <div className="space-y-8 text-[#4A4A4A] dark:text-ink text-[15px] leading-[1.8]">
           <section id="introduccion">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               1. Introducción
             </h2>
             <p>
@@ -60,12 +60,12 @@ export default function TerminosPage() {
           </section>
 
           <section id="pagos">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               2. Procesamiento de Pedidos y Políticas de Pago
             </h2>
             <div className="space-y-4">
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Método de pago exclusivo
                 </h3>
                 <p>
@@ -77,7 +77,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Validación y despacho
                 </h3>
                 <p>
@@ -89,7 +89,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Precios y disponibilidad
                 </h3>
                 <p>
@@ -105,12 +105,12 @@ export default function TerminosPage() {
           </section>
 
           <section id="logistica">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               3. Logística, Entregas en Paquetería y Responsabilidad Legal
             </h2>
             <div className="space-y-4">
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Traspaso de titularidad y entrega efectiva
                 </h3>
                 <p>
@@ -125,7 +125,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Costos de retiro
                 </h3>
                 <p>
@@ -138,7 +138,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Tiempos de retiro y recargos
                 </h3>
                 <p>
@@ -151,7 +151,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Política estricta de abandono
                 </h3>
                 <p>
@@ -165,7 +165,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Exención por fuerza mayor
                 </h3>
                 <p>
@@ -180,12 +180,12 @@ export default function TerminosPage() {
           </section>
 
           <section id="devoluciones">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               4. Políticas de Devolución, Reembolsos y Garantías
             </h2>
             <div className="space-y-4">
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Días y horarios de gestión
                 </h3>
                 <p>
@@ -197,7 +197,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Criterios estrictos de evaluación
                 </h3>
                 <p>
@@ -212,7 +212,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   Desgaste y mal uso
                 </h3>
                 <p>
@@ -229,7 +229,7 @@ export default function TerminosPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               5. Propiedad Intelectual y Uso de Marca
             </h2>
             <p>
@@ -244,12 +244,12 @@ export default function TerminosPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               6. Cláusulas Adicionales de Seguridad y Administración
             </h2>
             <div className="space-y-4">
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   6a. Régimen de Emprendimiento (Fase MVP) y Comprobantes
                 </h3>
                 <div className="space-y-2">
@@ -275,7 +275,7 @@ export default function TerminosPage() {
                 </div>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   6b. Capacidad Legal y Edad Mínima
                 </h3>
                 <p>
@@ -286,7 +286,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   6c. Sincronización de Stock y Reembolsos Automáticos
                 </h3>
                 <p>
@@ -299,7 +299,7 @@ export default function TerminosPage() {
                 </p>
               </div>
               <div>
-                <h3 className="text-[#2D2D2D] font-semibold mb-1.5">
+                <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold mb-1.5">
                   6d. Prevención de Fraudes y Conducta del Usuario
                 </h3>
                 <p>
@@ -315,7 +315,7 @@ export default function TerminosPage() {
           </section>
 
           <section id="aceptacion">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               7. Aceptación de los Términos
             </h2>
             <p>
@@ -326,7 +326,7 @@ export default function TerminosPage() {
             </p>
           </section>
 
-          <div className="text-center text-sm text-[#6B6B6B] pt-6 border-t border-[rgba(0,0,0,0.08)]">
+          <div className="text-center text-sm text-[#6B6B6B] dark:text-ink-soft pt-6 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.12)]">
             Última actualización: Agosto 2026
           </div>
         </div>

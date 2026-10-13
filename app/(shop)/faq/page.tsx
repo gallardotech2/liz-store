@@ -48,8 +48,8 @@ const FAQS = [
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
-    <details className="group bg-white rounded-[16px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 open:shadow-[0_4px_15px_rgba(255,142,159,0.12)] open:border-[rgb(251,132,150)]">
-      <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[#2D2D2D] font-semibold text-[15px] font-sans">
+    <details className="group bg-white dark:bg-surface-raised rounded-[16px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 open:shadow-[0_4px_15px_rgba(255,142,159,0.12)] open:border-[rgb(251,132,150)]">
+      <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[#2D2D2D] dark:text-ink-strong font-semibold text-[15px] font-sans">
         {q}
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -66,7 +66,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </summary>
-      <p className="text-[#4A4A4A] text-[14px] leading-[1.8] mt-3 mb-0">
+      <p className="text-[#4A4A4A] dark:text-ink text-[14px] leading-[1.8] mt-3 mb-0">
         {a}
       </p>
     </details>
@@ -84,10 +84,10 @@ export default async function FaqPage() {
           <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
             Ayuda
           </div>
-          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
             Preguntas Frecuentes
           </h1>
-          <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto">
             Resolvemos las dudas más comunes para que tu experiencia de compra
             sea fácil y segura.
           </p>
@@ -99,8 +99,8 @@ export default async function FaqPage() {
           ))}
         </div>
 
-        <div className="mt-10 text-center bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[16px] p-7.5 border border-[rgba(255,142,159,0.2)]">
-          <p className="text-[#4A4A4A] text-[15px] mb-4">
+        <div className="mt-10 text-center bg-gradient-to-br from-[#FDF8F6] dark:from-surface to-[#F5E6E8] dark:to-surface-elevated rounded-[16px] p-7.5 border border-[rgba(255,142,159,0.2)]">
+          <p className="text-[#4A4A4A] dark:text-ink text-[15px] mb-4">
             ¿No encontraste tu respuesta? Escríbenos y te ayudamos.
           </p>
           <a

@@ -10,7 +10,7 @@ interface ImageDropzoneProps {
   maxSizeMB?: number
 }
 
-export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 5 }: ImageDropzoneProps) {
+export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: ImageDropzoneProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)

@@ -36,6 +36,7 @@ export default async function EditProductPage({
     is_active: boolean
     is_featured: boolean
     is_new: boolean
+    is_offer: boolean
     meta_description: string
     meta_keywords: string
   }

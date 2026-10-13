@@ -1,8 +1,10 @@
 import { cookies } from "next/headers"
 import { Header } from "./Header"
 import { Footer } from "./Footer"
+import { BottomNav } from "./BottomNav"
 import { createClient } from "@/lib/supabase/server"
 import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
+import { getWhatsappGroupLink } from "@/lib/queries/social-links"
 import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
 
 interface ShopLayoutProps {
@@ -13,6 +15,7 @@ interface ShopLayoutProps {
 export async function ShopLayout({ children, categories = [] }: ShopLayoutProps) {
   const supabase = await createClient()
   const whatsappNumber = await getOrderWhatsAppNumber(supabase)
+  const whatsappGroupUrl = await getWhatsappGroupLink(supabase)
   const cookieStore = await cookies()
   const cartCount = calculateCartTotal(
     parseCart(cookieStore.get(CART_COOKIE)?.value),
@@ -22,7 +25,13 @@ export async function ShopLayout({ children, categories = [] }: ShopLayoutProps)
     <>
       <Header categories={categories} cartCount={cartCount} />
       <main className="flex-1">{children}</main>
-      <Footer categories={categories} whatsappNumber={whatsappNumber} />
+      <Footer
+        categories={categories}
+        whatsappNumber={whatsappNumber}
+        whatsappGroupUrl={whatsappGroupUrl}
+      />
+      <div className="md:hidden h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
+      <BottomNav cartCount={cartCount} />
     </>
   )
 }

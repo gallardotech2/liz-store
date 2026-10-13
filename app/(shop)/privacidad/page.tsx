@@ -14,10 +14,10 @@ export default function PrivacidadPage() {
           <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
             Legal
           </div>
-          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
             Política de Privacidad
           </h1>
-          <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto">
             En Liz Store valoramos tu confianza. Al ser un emprendimiento digital
             en Bolivia, nos comprometemos a manejar tu información personal con
             total transparencia y seguridad.
@@ -25,7 +25,7 @@ export default function PrivacidadPage() {
         </div>
 
         <div className="bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)] rounded-xl p-4 mb-8">
-          <p className="text-[#4A4A4A] text-[13px] font-semibold mb-3">
+          <p className="text-[#4A4A4A] dark:text-ink text-[13px] font-semibold mb-3">
             Fecha de vigencia: 21 de agosto de 2026
           </p>
           <nav className="flex flex-wrap gap-2">
@@ -39,7 +39,7 @@ export default function PrivacidadPage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="px-3 py-1.5 rounded-full bg-white text-[#4A4A4A] text-[12px] font-medium border border-[rgba(0,0,0,0.08)] no-underline hover:border-primary hover:text-primary transition-colors"
+                className="px-3 py-1.5 rounded-full bg-white dark:bg-surface-raised text-[#4A4A4A] dark:text-ink text-[12px] font-medium border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.12)] no-underline hover:border-primary hover:text-primary transition-colors"
               >
                 {link.label}
               </a>
@@ -47,9 +47,9 @@ export default function PrivacidadPage() {
           </nav>
         </div>
 
-        <div className="space-y-8 text-[#4A4A4A] text-[15px] leading-[1.8]">
+        <div className="space-y-8 text-[#4A4A4A] dark:text-ink text-[15px] leading-[1.8]">
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               1. Responsable del Tratamiento de Datos
             </h2>
             <p>
@@ -60,7 +60,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section id="datos">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               2. ¿Qué datos recolectamos?
             </h2>
             <p className="mb-3">
@@ -82,7 +82,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section id="finalidad">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               3. Finalidad del Tratamiento
             </h2>
             <p className="mb-3">
@@ -103,7 +103,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               4. Base Legal
             </h2>
             <p>
@@ -116,7 +116,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section id="cookies">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               5. Uso de Cookies
             </h2>
             <p>
@@ -129,7 +129,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section id="derechos">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               6. Tus Derechos (Derechos ARCO)
             </h2>
             <p className="mb-3">
@@ -156,7 +156,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               7. Seguridad de tu Información
             </h2>
             <p>
@@ -168,7 +168,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               8. Compartición con Terceros
             </h2>
             <p>
@@ -181,7 +181,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               9. Retención de los Datos
             </h2>
             <p>
@@ -193,7 +193,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               10. Cambios en esta Política
             </h2>
             <p>
@@ -205,7 +205,7 @@ export default function PrivacidadPage() {
           </section>
 
           <section id="contacto">
-            <h2 className="text-[#2D2D2D] font-serif text-xl mb-3">
+            <h2 className="text-[#2D2D2D] dark:text-ink-strong font-serif text-xl mb-3">
               11. ¿Cómo contactarnos?
             </h2>
             <p className="mb-3">
@@ -237,7 +237,7 @@ export default function PrivacidadPage() {
             </ul>
           </section>
 
-          <div className="text-center text-sm text-[#6B6B6B] pt-6 border-t border-[rgba(0,0,0,0.08)]">
+          <div className="text-center text-sm text-[#6B6B6B] dark:text-ink-soft pt-6 border-t border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.12)]">
             Última actualización: Agosto 2026
           </div>
         </div>

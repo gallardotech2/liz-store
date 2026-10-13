@@ -13,33 +13,34 @@ interface FooterCategory {
 interface FooterProps {
   categories?: FooterCategory[]
   whatsappNumber?: string
+  whatsappGroupUrl?: string
 }
 
-export function Footer({ categories = [], whatsappNumber = "" }: FooterProps) {
+export function Footer({ categories = [], whatsappNumber = "", whatsappGroupUrl = "" }: FooterProps) {
+  const groupUrl =
+    whatsappGroupUrl.trim() || `https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}`
   return (
     <>
       <section className="bg-gradient-to-br from-primary to-primary-dark py-20 text-center text-white">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-white text-[clamp(28px,3vw,38px)] font-serif mb-4">
-            Únete a nuestra comunidad
+            Únete a nuestro grupo de WhatsApp
           </h2>
-          <p className="text-base opacity-90 mb-7.5 max-w-[500px] mx-auto">
-            Recibe las últimas tendencias en bisutería y ofertas exclusivas directamente en tu correo.
+          <p className="text-base opacity-90 mb-8 max-w-[520px] mx-auto">
+            Recibe las últimas tendencias en bisutería y ofertas exclusivas directamente en tu
+            WhatsApp. ¡Sé de las primeras en enterarte de todo!
           </p>
-          <form onSubmit={(e) => e.preventDefault()} className="flex max-w-[500px] mx-auto rounded-full overflow-hidden bg-white max-md:flex-col max-md:rounded-lg">
-            <input
-              type="email"
-              placeholder="Tu mejor correo electrónico"
-              required
-              className="flex-1 border-none px-6 py-4 text-[15px] text-[#4A4A4A] outline-none font-sans"
-            />
-            <button
-              type="submit"
-              className="bg-[#2D2D2D] text-white border-none px-8 py-4 font-semibold cursor-pointer transition-colors duration-300 font-sans whitespace-nowrap hover:bg-primary hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:bg-primary-dark"
-            >
-              Suscribirse
-            </button>
-          </form>
+          <a
+            href={groupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2.5 rounded-full font-semibold transition-all duration-300 font-sans whitespace-nowrap no-underline cursor-pointer border-none px-10 py-4 text-base bg-[#25D366] text-white shadow-[0_4px_15px_rgba(37,211,102,0.35)] hover:-translate-y-0.5 hover:bg-[#128C7E] hover:shadow-[0_8px_25px_rgba(18,140,126,0.4)]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            Unirme al grupo
+          </a>
         </div>
       </section>
 

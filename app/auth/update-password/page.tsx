@@ -70,17 +70,17 @@ export default function UpdatePasswordPage() {
   if (success) {
     return (
       <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
-        <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)] text-center">
+        <div className="bg-white dark:bg-surface-raised rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)] text-center">
           <div className="w-16 h-16 rounded-full bg-[rgba(37,211,102,0.1)] flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <h1 className="text-[26px] sm:text-[28px] font-serif mb-3 text-[#2D2D2D]">
+          <h1 className="text-[26px] sm:text-[28px] font-serif mb-3 text-[#2D2D2D] dark:text-ink-strong">
             Contraseña actualizada
           </h1>
-          <p className="text-[#6B6B6B] text-[15px] mb-7 leading-relaxed">
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-[15px] mb-7 leading-relaxed">
             Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión con tu nueva contraseña.
           </p>
           <Link
@@ -97,11 +97,11 @@ export default function UpdatePasswordPage() {
   if (!ready) {
     return (
       <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
-        <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)] text-center">
+        <div className="bg-white dark:bg-surface-raised rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)] text-center">
           <svg className="animate-spin mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff8e9f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12a9 9 0 1 1-6.219-8.56" />
           </svg>
-          <p className="text-[#6B6B6B] text-[15px]">Verificando enlace...</p>
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-[15px]">Verificando enlace...</p>
         </div>
       </section>
     )
@@ -109,17 +109,17 @@ export default function UpdatePasswordPage() {
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
-      <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
-        <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D]">
+      <div className="bg-white dark:bg-surface-raised rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
+        <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D] dark:text-ink-strong">
           Nueva contraseña
         </h1>
-        <p className="text-center text-[#6B6B6B] mb-7 sm:mb-7.5 text-[15px]">
+        <p className="text-center text-[#6B6B6B] dark:text-ink-soft mb-7 sm:mb-7.5 text-[15px]">
           Ingresa tu nueva contraseña para completar el proceso.
         </p>
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-5">
-            <label htmlFor="password" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+            <label htmlFor="password" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
               Nueva contraseña
             </label>
             <input
@@ -140,18 +140,18 @@ export default function UpdatePasswordPage() {
               className={`w-full px-4 py-3 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)] ${
                 passwordError
                   ? "border-[#E74C3C] focus:border-[#E74C3C]"
-                  : "border-[#DDD] focus:border-primary"
+                  : "border-[#DDD] dark:border-line focus:border-primary"
               }`}
             />
             {passwordError && (
-              <p id="password-error" className="mt-1.5 text-[13px] text-[#E74C3C]">
+              <p id="password-error" className="mt-1.5 text-[13px] text-[#E74C3C] dark:text-[#FF8A80]">
                 {passwordError}
               </p>
             )}
           </div>
 
           <div className="mb-5">
-            <label htmlFor="confirmPassword" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+            <label htmlFor="confirmPassword" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
               Confirmar contraseña
             </label>
             <input
@@ -172,11 +172,11 @@ export default function UpdatePasswordPage() {
               className={`w-full px-4 py-3 border rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)] ${
                 confirmPasswordError
                   ? "border-[#E74C3C] focus:border-[#E74C3C]"
-                  : "border-[#DDD] focus:border-primary"
+                  : "border-[#DDD] dark:border-line focus:border-primary"
               }`}
             />
             {confirmPasswordError && (
-              <p id="confirm-error" className="mt-1.5 text-[13px] text-[#E74C3C]">
+              <p id="confirm-error" className="mt-1.5 text-[13px] text-[#E74C3C] dark:text-[#FF8A80]">
                 {confirmPasswordError}
               </p>
             )}
@@ -185,7 +185,7 @@ export default function UpdatePasswordPage() {
           {error && (
             <div
               role="alert"
-              className="mb-4 p-3 rounded-[8px] bg-[#FFF0F0] border border-[#FFD0D0] text-[#E74C3C] text-[13px]"
+              className="mb-4 p-3 rounded-[8px] bg-[#FFF0F0] dark:bg-[#2A1618] border border-[#FFD0D0] dark:border-[#4A2A2C] text-[#E74C3C] dark:text-[#FF8A80] text-[13px]"
             >
               {error}
             </div>

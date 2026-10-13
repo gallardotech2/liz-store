@@ -49,34 +49,34 @@ export default async function OrderSuccessPage({
           <div className="w-20 h-20 rounded-full bg-[rgba(39,174,96,0.1)] flex items-center justify-center mx-auto mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#27AE60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
-          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
             ¡Pedido Confirmado!
           </h1>
-          <p className="text-[#6B6B6B] text-[15px] leading-[1.7] max-w-md mx-auto">
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-[15px] leading-[1.7] max-w-md mx-auto">
             Gracias por tu compra. Te hemos enviado un resumen del pedido
             para que puedas dar seguimiento.
           </p>
         </div>
 
-        <div className="bg-white rounded-[16px] p-8 shadow-[0_1px_3px_rgba(0,0,0,0.08)] text-left mb-8">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#EEE]">
+        <div className="bg-white dark:bg-surface-raised rounded-[16px] p-8 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] text-left mb-8">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-[#EEE] dark:border-line">
             <div>
-              <div className="text-[13px] text-[#6B6B6B]">Pedido</div>
-              <div className="font-semibold text-[#2D2D2D]">#{order.id}</div>
+              <div className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">Pedido</div>
+              <div className="font-semibold text-[#2D2D2D] dark:text-ink-strong">#{order.id}</div>
             </div>
             <div className="text-right">
-              <div className="text-[13px] text-[#6B6B6B]">Total</div>
+              <div className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">Total</div>
               <div className="font-semibold text-primary">Bs. {Number(order.total).toFixed(2)}</div>
             </div>
           </div>
 
           <div className="mb-6">
-            <div className="text-[13px] text-[#6B6B6B] mb-3">Productos</div>
+            <div className="text-[13px] text-[#6B6B6B] dark:text-ink-soft mb-3">Productos</div>
             <div className="space-y-3">
               {(items ?? []).map((item: any) => (
                 <div key={item.id} className="flex justify-between items-center">
-                  <div className="text-sm text-[#2D2D2D]">
-                    {item.product?.name ?? "Producto"} <span className="text-[#6B6B6B]">x{item.quantity}</span>
+                  <div className="text-sm text-[#2D2D2D] dark:text-ink-strong">
+                    {item.product?.name ?? "Producto"} <span className="text-[#6B6B6B] dark:text-ink-soft">x{item.quantity}</span>
                   </div>
                   <div className="text-sm font-medium">Bs. {(item.unit_price * item.quantity).toFixed(2)}</div>
                 </div>
@@ -84,19 +84,19 @@ export default async function OrderSuccessPage({
             </div>
           </div>
 
-          <div className="border-t border-[#EEE] pt-4 space-y-2">
+          <div className="border-t border-[#EEE] dark:border-line pt-4 space-y-2">
             <div className="flex justify-between text-[14px]">
-              <span className="text-[#6B6B6B]">Subtotal</span>
+              <span className="text-[#6B6B6B] dark:text-ink-soft">Subtotal</span>
               <span>Bs. {Number(order.subtotal).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-[14px]">
-              <span className="text-[#6B6B6B]">Envío</span>
+              <span className="text-[#6B6B6B] dark:text-ink-soft">Envío</span>
               <span>{Number(order.shipping) === 0 ? <span className="text-[#27AE60] font-semibold">GRATIS</span> : `Bs. ${Number(order.shipping).toFixed(2)}`}</span>
             </div>
             {order.payment_method === "pago_directo" && (
               <div className="mt-4 p-4 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">
-                <div className="text-[13px] font-semibold text-[#2D2D2D] mb-2">Pago Directo</div>
-                <p className="text-[12px] text-[#6B6B6B] leading-[1.6]">
+                <div className="text-[13px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-2">Pago Directo</div>
+                <p className="text-[12px] text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                   Una vez confirmemos tu pago, procesaremos tu pedido. Si elegiste transferencia, por favor envía el comprobante a nuestro WhatsApp.
                 </p>
               </div>

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #171717;
@@ -13,6 +15,23 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+
+  /* Escala de superficies modo oscuro (jerarquía 4 niveles).
+     Negros tomados de trabajahoy-v2 (base #0d0b0e) + su transparencia en componentes.
+     Se usan detrás de la variante dark: (p. ej. dark:bg-surface-raised).
+     Se activan cuando <html> tiene la clase .dark (ver ThemeProvider). */
+  --color-page: #0d0b0e;
+  --color-surface: #171318;
+  --color-surface-raised: #1c1720;
+  --color-surface-elevated: #211c24;
+  --color-line: #2a2330;
+  --color-line-faint: #211c24;
+  --color-line-strong: #3a3040;
+  --color-ink: #cbc5d1;
+  --color-ink-strong: #f2eef3;
+  --color-ink-soft: #9b94a2;
+  --color-interactive: #2a2330;
+
   --font-sans: "Open Sans", var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -21,6 +40,21 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: #0d0b0e;
+  --color-foreground: #f2eef3;
+}
+
+.dark body {
+  background: #0d0b0e;
+  color: #f2eef3;
 }
 
 @keyframes slide-in-right {

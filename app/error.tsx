@@ -24,10 +24,10 @@ export default function GlobalError({
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h1 className="text-2xl font-serif text-[#2D2D2D] mb-3">
+        <h1 className="text-2xl font-serif text-[#2D2D2D] dark:text-ink-strong mb-3">
           Algo salió mal
         </h1>
-        <p className="text-[#6B6B6B] text-sm mb-8 leading-relaxed">
+        <p className="text-[#6B6B6B] dark:text-ink-soft text-sm mb-8 leading-relaxed">
           Ocurrió un error inesperado. Por favor intenta de nuevo.
         </p>
         <button

@@ -7,7 +7,7 @@ function getSupabaseAdmin() {
 }
 
 const BUCKET = "product-images"
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 12 * 1024 * 1024 // 12MB (se comprime antes de subir; safety net)
 const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",

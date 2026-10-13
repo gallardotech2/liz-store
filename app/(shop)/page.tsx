@@ -4,11 +4,12 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { ProductCard } from "@/components/ui/ProductCard"
-import { CategoryCard } from "@/components/ui/CategoryCard"
 import { formatCurrency } from "@/lib/utils"
 import { FaShieldAlt, FaTruck, FaGem, FaHeart } from "react-icons/fa"
 import { HeroSocialIcons } from "@/components/layout/HeroSocialIcons"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
+import { PersonalizedCategories } from "@/components/shop/PersonalizedCategories"
+import { ScrollNudge } from "@/components/shop/ScrollNudge"
 
 export const revalidate = 3600
 
@@ -121,7 +122,7 @@ export default async function HomePage() {
   const testimonials = (testimonialsResult.data ?? []) as { id: number; rating: number; content: string }[]
   return (
     <>
-      <section className="relative min-h-[85vh] max-md:min-h-[70vh] flex items-center bg-gradient-to-br from-[#FDF8F6] via-[#F5E6E8] to-[#FDF8F6] overflow-hidden">
+      <section className="relative min-h-[85vh] max-md:min-h-[70vh] max-md:hidden flex items-center bg-gradient-to-br from-[#FDF8F6] dark:from-surface via-[#F5E6E8] dark:via-surface-elevated to-[#FDF8F6] dark:to-surface overflow-hidden">
         <div className="absolute -top-1/2 -right-1/5 w-[800px] h-[800px] bg-[radial-gradient(circle,rgba(255,142,159,0.08)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="absolute -bottom-1/3 -left-1/10 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(201,169,110,0.06)_0%,transparent_70%)] rounded-full pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between flex-wrap w-full">
@@ -132,10 +133,10 @@ export default async function HomePage() {
               </span>
               <HeroSocialIcons />
             </div>
-            <h1 className="text-[clamp(36px,5vw,64px)] leading-[1.1] mb-5 text-[#2D2D2D] font-serif">
+            <h1 className="text-[clamp(36px,5vw,64px)] leading-[1.1] mb-5 text-[#2D2D2D] dark:text-ink-strong font-serif">
               Tu estilo merece <span className="text-primary">brillar</span>
             </h1>
-            <p className="text-lg text-[#6B6B6B] mb-9 leading-[1.8] max-w-[480px] max-md:mx-auto">
+            <p className="text-lg text-[#6B6B6B] dark:text-ink-soft mb-9 leading-[1.8] max-w-[480px] max-md:mx-auto">
               Descubre piezas que transforman un look sencillo en uno que roba miradas.
             </p>
             <div className="flex gap-4 flex-wrap max-md:justify-center">
@@ -151,7 +152,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="relative z-10 flex-1 flex justify-center items-center p-10 max-md:p-0">
-            <div className="relative w-full max-w-[480px] aspect-[4/5] rounded-[24px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.1)]">
+            <div className="relative w-full max-w-[480px] aspect-[4/5] rounded-[24px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
               <Image
                 src="https://i.pinimg.com/736x/43/fd/13/43fd130b0822988b8c7700611cc6100a.jpg"
                 alt="Bisutería elegante"
@@ -166,90 +167,140 @@ export default async function HomePage() {
       </section>
 
       {categories.length > 0 && (
-        <section className="py-20" id="categorias">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
-                Categorías
-              </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
-                El detalle que buscas
-              </h2>
-              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
-                Descubre piezas para cada ocasión y encuentra la que va contigo.
-              </p>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5">
-              {categories.map((cat) => (
-                <CategoryCard key={cat.slug} category={cat} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <PersonalizedCategories categories={categories} />
       )}
 
       {featuredProducts.length > 0 && (
-        <section className="py-20 bg-white">
+        <section className="py-20 max-md:pt-8 max-md:pb-12 bg-white dark:bg-surface-raised">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-12">
-              <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
+              <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3 max-md:hidden">
                 Destacados
               </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong max-md:hidden">
                 Las favoritas
               </h2>
-              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] dark:text-ink-strong text-base max-w-[500px] mx-auto">
                 Descubre las piezas que están marcando tendencia.
               </p>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+
+            {/* DESKTOP: grid completo + botón catálogo */}
+            <div className="max-md:hidden">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6">
+                {featuredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              <div className="text-center mt-10">
+                <Link href="/productos?sort=rating">
+                  <Button variant="secondary">Ver todos los productos</Button>
+                </Link>
+              </div>
             </div>
-            <div className="text-center mt-10">
-              <Link href="/productos?sort=rating">
-                <Button variant="secondary">Ver todos los productos</Button>
-              </Link>
+
+            {/* MÓVIL: 2 top + scroll horizontal (estilo Novedades) */}
+            <div className="hidden max-md:block">
+              <div className="grid grid-cols-2 gap-3.75 mb-4">
+                {featuredProducts.slice(0, 2).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {featuredProducts.length > 2 && (
+                <div
+                  className="overflow-x-auto pb-2 -mx-4 px-4"
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  <ScrollNudge>
+                    {featuredProducts.slice(2).map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        className="flex-shrink-0 w-[calc(50%-7.5px)]"
+                      />
+                    ))}
+                  </ScrollNudge>
+                </div>
+              )}
+              <div className="flex justify-center mt-10">
+                <Link href="/destacados" prefetch={false}>
+                  <Button variant="secondary" className="w-60">
+                    Ver todos los destacados
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
       )}
 
       {newProducts.length > 0 && (
-        <section className="py-20">
+        <section className="py-20 max-md:pt-8 max-md:pb-12">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
-                Novedades
-              </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
-                Recién llegados
-              </h2>
-              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
-                Mira las nuevas piezas que tenemos para ti.
-              </p>
+<div className="text-center mb-12">
+            <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3 max-md:hidden">
+              Novedades
             </div>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
-              {newProducts.map((product) => (
+            <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong max-md:hidden">
+              Recién llegados
+            </h2>
+            <h2 className="hidden max-md:block text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
+              Novedades
+            </h2>
+            <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto max-md:hidden">
+              Mira las nuevas piezas que tenemos para ti.
+            </p>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:hidden max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
+            {newProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+          <div className="hidden max-md:block">
+            <div className="grid grid-cols-2 gap-3.75 mb-4">
+              {newProducts.slice(0, 2).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
+            {newProducts.length > 2 && (
+              <div
+                className="overflow-x-auto pb-2 -mx-4 px-4"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              >
+                <ScrollNudge>
+                  {newProducts.slice(2).map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      className="flex-shrink-0 w-[calc(50%-7.5px)]"
+                    />
+                  ))}
+                </ScrollNudge>
+              </div>
+            )}
+            <div className="flex justify-center mt-10">
+              <Link href="/novedades" prefetch={false}>
+                <Button variant="secondary" className="w-60">
+                  Ver todos los productos
+                </Button>
+              </Link>
+            </div>
+          </div>
           </div>
         </section>
       )}
 
       {testimonials.length > 0 && (
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-white dark:bg-surface-raised">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-12">
               <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
                 Testimonios
               </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
                 Lo que dicen nuestras clientas
               </h2>
-              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto">
                 Mujeres reales, resultados reales. Su satisfacción es nuestra mejor carta de presentación.
               </p>
             </div>
@@ -257,13 +308,13 @@ export default async function HomePage() {
               {testimonials.map((review) => (
                 <div
                   key={review.id}
-                  className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
+                  className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
                 >
                   <div className="text-[#F4B740] text-lg mb-3 tracking-[1px]">
                     {"★".repeat(review.rating)}
                     {"☆".repeat(5 - review.rating)}
                   </div>
-                  <p className="text-[15px] leading-[1.8] text-[#4A4A4A] mb-5 italic">
+                  <p className="text-[15px] leading-[1.8] text-[#4A4A4A] dark:text-ink mb-5 italic">
                     &ldquo;{review.content?.split(" ").slice(0, 30).join(" ")}{review.content && review.content.split(" ").length > 30 ? "..." : ""}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
@@ -271,10 +322,10 @@ export default async function HomePage() {
                       C
                     </div>
                     <div>
-                      <div className="font-semibold text-sm text-[#2D2D2D]">
+                      <div className="font-semibold text-sm text-[#2D2D2D] dark:text-ink-strong">
                         Cliente verificado
                       </div>
-                      <div className="text-[12px] text-[#6B6B6B]">
+                      <div className="text-[12px] text-[#6B6B6B] dark:text-ink-soft">
                         Compra verificada
                       </div>
                     </div>
@@ -286,7 +337,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="bg-white py-15 border-t border-[rgba(255,142,159,0.1)] border-b border-[rgba(255,142,159,0.1)]">
+      <section className="bg-white dark:bg-surface-raised py-15 border-t border-[rgba(255,142,159,0.1)] border-b border-[rgba(255,142,159,0.1)]">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-7.5 text-center">
             {ESCUDO_PAGO_ENABLED && (
@@ -294,8 +345,8 @@ export default async function HomePage() {
                 <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                   <FaShieldAlt className="text-[26px]" />
                 </div>
-                <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Escudo Pago</h4>
-                <p className="text-sm text-[#6B6B6B] leading-[1.6]">
+                <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Escudo Pago</h4>
+                <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                   Tu dinero protegido hasta recibir tu pedido. Paga con total confianza.
                 </p>
               </div>
@@ -304,8 +355,8 @@ export default async function HomePage() {
               <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaTruck className="text-[26px]" />
               </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Envío Seguro</h4>
-              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
+              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Envío Seguro</h4>
+              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                 Realizamos envíos seguros y rápidos a todo el país.
               </p>
             </div>
@@ -313,8 +364,8 @@ export default async function HomePage() {
               <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaGem className="text-[26px]" />
               </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Calidad Seleccionada</h4>
-              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
+              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Calidad Seleccionada</h4>
+              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                 Trabajamos con piezas cuidadosamente seleccionadas.
               </p>
             </div>
@@ -322,8 +373,8 @@ export default async function HomePage() {
               <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
                 <FaHeart className="text-[26px]" />
               </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D]">Atención Personalizada</h4>
-              <p className="text-sm text-[#6B6B6B] leading-[1.6]">
+              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Atención Personalizada</h4>
+              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                 Te brindamos asistencia durante tu proceso de compra.
               </p>
             </div>
@@ -338,10 +389,10 @@ export default async function HomePage() {
               <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
                 Escudo Pago
               </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
                 Tu dinero está protegido
               </h2>
-              <p className="text-[#6B6B6B] text-base max-w-[500px] mx-auto">
+              <p className="text-[#6B6B6B] dark:text-ink-soft text-base max-w-[500px] mx-auto">
                 Solo se libera cuando confirmes que recibiste tu pedido.
               </p>
             </div>
@@ -349,7 +400,7 @@ export default async function HomePage() {
               <div className="text-[72px] text-primary mb-5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
-              <p className="text-lg leading-[1.8] text-[#6B6B6B] mb-7.5">
+              <p className="text-lg leading-[1.8] text-[#6B6B6B] dark:text-ink-soft mb-7.5">
                 Con <strong>Escudo Pago</strong> tu compra está completamente protegida. El vendedor recibe el pago solo hasta que tú confirmes que recibiste tu producto en perfectas condiciones.
               </p>
               <Link href="/faq">

@@ -17,6 +17,16 @@ export async function getSocialLinks(client: SupabaseClient) {
   return data ?? []
 }
 
+export async function getWhatsappGroupLink(client: SupabaseClient): Promise<string> {
+  const { data } = await client
+    .from("social_links")
+    .select("url")
+    .eq("platform", "whatsapp_group")
+    .eq("is_active", true)
+    .maybeSingle() as unknown as { data: { url: string } | null }
+  return data?.url?.trim() ?? ""
+}
+
 export async function getAllSocialLinks(client: SupabaseClient) {
   const { data } = await client
     .from("social_links")

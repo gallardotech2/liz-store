@@ -9,6 +9,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   facebook: "#1877F2",
   instagram: "#E4405F",
   whatsapp: "#25D366",
+  whatsapp_group: "#25D366",
   tiktok: "#000000",
 }
 

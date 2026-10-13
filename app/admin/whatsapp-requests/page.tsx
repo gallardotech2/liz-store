@@ -44,6 +44,7 @@ export default function AdminWhatsAppRequestsPage() {
   const [requests, setRequests] = useState<RequestRow[]>([])
   const [search, setSearch] = useState("")
   const [updating, setUpdating] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     const supabase = createClient()
@@ -73,6 +74,15 @@ export default function AdminWhatsAppRequestsPage() {
       .update({ status } as never)
       .eq("id", id)
     setUpdating(null)
+    load()
+  }
+
+  async function handleDelete(req: RequestRow) {
+    if (!window.confirm(`¿Eliminar el pedido ${req.reference_code}?`)) return
+    setDeleting(req.id)
+    const supabase = createClient()
+    await supabase.from("whatsapp_requests").delete().eq("id", req.id)
+    setDeleting(null)
     load()
   }
 
@@ -162,6 +172,18 @@ export default function AdminWhatsAppRequestsPage() {
                         {updating === req.id && (
                           <svg className="animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
                         )}
+                        <button
+                          onClick={() => handleDelete(req)}
+                          disabled={deleting === req.id}
+                          title={`Eliminar pedido ${req.reference_code}`}
+                          className="p-2 rounded-lg text-[#E74C3C] bg-[rgba(231,76,60,0.12)] border-none cursor-pointer hover:bg-[rgba(231,76,60,0.2)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                        >
+                          {deleting === req.id ? (
+                            <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>

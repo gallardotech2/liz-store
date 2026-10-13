@@ -55,15 +55,15 @@ export function ProfileForm({ userId, nombre, phone }: ProfileFormProps) {
   if (!editing) {
     return (
       <div>
-        <h2 className="text-lg font-serif text-[#2D2D2D] mb-6">Datos del usuario</h2>
+        <h2 className="text-lg font-serif text-[#2D2D2D] dark:text-ink-strong mb-6">Datos del usuario</h2>
         <div className="space-y-4 mb-6">
-          <div className="p-4 rounded-xl bg-[#FDF8F6] border border-[#EEE]">
-            <span className="text-[12px] text-[#6B6B6B] block mb-1">Nombre</span>
-            <span className="text-[15px] font-medium text-[#2D2D2D]">{displayName || "—"}</span>
+          <div className="p-4 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line">
+            <span className="text-[12px] text-[#6B6B6B] dark:text-ink-soft block mb-1">Nombre</span>
+            <span className="text-[15px] font-medium text-[#2D2D2D] dark:text-ink-strong">{displayName || "—"}</span>
           </div>
-          <div className="p-4 rounded-xl bg-[#FDF8F6] border border-[#EEE]">
-            <span className="text-[12px] text-[#6B6B6B] block mb-1">Teléfono</span>
-            <span className="text-[15px] font-medium text-[#2D2D2D]">{displayPhone || "—"}</span>
+          <div className="p-4 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line">
+            <span className="text-[12px] text-[#6B6B6B] dark:text-ink-soft block mb-1">Teléfono</span>
+            <span className="text-[15px] font-medium text-[#2D2D2D] dark:text-ink-strong">{displayPhone || "—"}</span>
           </div>
         </div>
         <Button
@@ -80,18 +80,18 @@ export function ProfileForm({ userId, nombre, phone }: ProfileFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-serif text-[#2D2D2D]">Editar datos</h2>
+        <h2 className="text-lg font-serif text-[#2D2D2D] dark:text-ink-strong">Editar datos</h2>
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="text-sm text-[#6B6B6B] bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] transition-colors"
+          className="text-sm text-[#6B6B6B] dark:text-ink-soft bg-transparent border-none cursor-pointer hover:text-[#2D2D2D] dark:hover:text-ink-strong transition-colors"
         >
           Cancelar
         </button>
       </div>
 
       <div>
-        <label htmlFor="nombre" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+        <label htmlFor="nombre" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
           Nombre
         </label>
         <input
@@ -100,12 +100,12 @@ export function ProfileForm({ userId, nombre, phone }: ProfileFormProps) {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           required
-          className="w-full px-4 py-3 border border-[#DDD] rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)]"
+          className="w-full px-4 py-3 border border-[#DDD] dark:border-line rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)]"
         />
       </div>
 
       <div>
-        <label htmlFor="phone" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+        <label htmlFor="phone" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
           Teléfono
         </label>
         <input
@@ -114,18 +114,18 @@ export function ProfileForm({ userId, nombre, phone }: ProfileFormProps) {
           value={displayPhone}
           onChange={(e) => setDisplayPhone(e.target.value)}
           placeholder="Ej: 76426643"
-          className="w-full px-4 py-3 border border-[#DDD] rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)]"
+          className="w-full px-4 py-3 border border-[#DDD] dark:border-line rounded-[8px] text-[15px] font-sans transition-colors duration-300 focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(255,142,159,0.1)]"
         />
       </div>
 
       {error && (
-        <div className="p-3 rounded-[8px] bg-[#FFF0F0] border border-[#FFD0D0] text-[#E74C3C] text-[13px]">
+        <div className="p-3 rounded-[8px] bg-[#FFF0F0] dark:bg-[#2A1618] border border-[#FFD0D0] dark:border-[#4A2A2C] text-[#E74C3C] dark:text-[#FF8A80] text-[13px]">
           {error}
         </div>
       )}
 
       {message && (
-        <div className="p-3 rounded-[8px] bg-[#EAF7EE] border border-[#BEE5C8] text-[#2E7D46] text-[13px]">
+        <div className="p-3 rounded-[8px] bg-[#EAF7EE] dark:bg-[#16241A] border border-[#BEE5C8] dark:border-[#274431] text-[#2E7D46] dark:text-[#81C784] text-[13px]">
           {message}
         </div>
       )}

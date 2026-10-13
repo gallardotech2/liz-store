@@ -25,14 +25,14 @@ export function CookieConsent() {
   if (!visible) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)] border border-[rgba(255,142,159,0.15)] p-5 md:p-6">
+    <div className="fixed bottom-0 max-md:bottom-28 left-0 right-0 z-50 p-4 md:p-6">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-surface-elevated rounded-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)] border border-[rgba(255,142,159,0.15)] p-5 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
-            <h3 className="text-[#2D2D2D] font-semibold text-[15px] mb-1.5">
+            <h3 className="text-[#2D2D2D] dark:text-ink-strong font-semibold text-[15px] mb-1.5">
               Cookies en Liz Store
             </h3>
-            <p className="text-[#6B6B6B] text-[13px] leading-relaxed">
+            <p className="text-[#6B6B6B] dark:text-ink-soft text-[13px] leading-relaxed">
               Utilizamos cookies esenciales para el funcionamiento de la tienda
               (sesión de usuario y carrito de compras). También podemos usar
               cookies analíticas para mejorar tu experiencia.{" "}
@@ -42,7 +42,7 @@ export function CookieConsent() {
               >
                 Ver Política de Privacidad
               </a>
-              <span className="block mt-1 text-[11px] text-[#999]">
+              <span className="block mt-1 text-[11px] text-[#999] dark:text-ink-soft">
                 Última actualización: 21 de agosto de 2026
               </span>
             </p>
@@ -50,7 +50,7 @@ export function CookieConsent() {
           <div className="flex gap-2.5 shrink-0">
             <button
               onClick={reject}
-              className="px-5 py-2.5 rounded-full border border-[rgba(0,0,0,0.15)] bg-transparent text-[#4A4A4A] text-[13px] font-semibold cursor-pointer hover:bg-[rgba(0,0,0,0.04)] transition-colors"
+              className="px-5 py-2.5 rounded-full border border-[rgba(0,0,0,0.15)] dark:border-[rgba(255,255,255,0.15)] bg-transparent text-[#4A4A4A] dark:text-ink text-[13px] font-semibold cursor-pointer hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors"
             >
               Rechazar
             </button>

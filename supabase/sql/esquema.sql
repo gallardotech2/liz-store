@@ -81,6 +81,7 @@ CREATE TABLE products (
   is_active BOOLEAN DEFAULT true,
   is_featured BOOLEAN DEFAULT false,
   is_new BOOLEAN DEFAULT false,
+  is_offer BOOLEAN DEFAULT false,
   rating NUMERIC(3,2) DEFAULT 0.00,
   rating_count INTEGER DEFAULT 0 CHECK (rating_count >= 0),
   sales_count INTEGER DEFAULT 0 CHECK (sales_count >= 0),
@@ -562,6 +563,15 @@ CREATE POLICY "WhatsApp: admin todo" ON whatsapp_requests FOR ALL USING ((auth.j
 -- Social Links
 CREATE POLICY "Social Links: public SELECT" ON social_links FOR SELECT TO anon, authenticated USING (true);
 CREATE POLICY "Social Links: admin todo" ON social_links FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+-- Social Links: datos iniciales (editar URLs desde Admin > Redes Sociales)
+INSERT INTO social_links (platform, label, url) VALUES
+  ('facebook', 'Facebook', 'https://facebook.com/lizstore'),
+  ('instagram', 'Instagram', 'https://instagram.com/lizstore'),
+  ('whatsapp', 'WhatsApp', 'https://wa.me/59176426643'),
+  ('whatsapp_group', 'Grupo de WhatsApp', ''),
+  ('tiktok', 'TikTok', 'https://tiktok.com/@lizstore')
+ON CONFLICT (platform) DO NOTHING;
 
 -- =========================================================================
 -- STORAGE BUCKETS

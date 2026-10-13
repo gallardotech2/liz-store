@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import { DescriptionCollapse } from "@/components/ui/DescriptionCollapse"
+import { ScrollToTop } from "@/components/shop/ScrollToTop"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -186,8 +187,9 @@ export default async function ProductDetailPage({
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B]">
+      <ScrollToTop />
+      <div className="max-w-7xl mx-auto px-4 max-md:hidden">
+        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B] dark:text-ink-soft">
           <Link href="/" className="text-primary no-underline hover:underline">
             Inicio
           </Link>{" "}
@@ -204,9 +206,9 @@ export default async function ProductDetailPage({
 
       <section>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-[1fr_1fr] gap-12.5 py-15 max-lg:grid-cols-1">
+          <div className="grid grid-cols-[1fr_1fr] gap-12.5 py-15 max-lg:grid-cols-1 max-md:pt-3.5">
             <div className="sticky top-[100px] max-lg:static">
-              <div className="aspect-square rounded-[16px] overflow-hidden bg-[#FFFBF9] mb-3.75">
+              <div className="aspect-square rounded-[16px] overflow-hidden bg-[#FFFBF9] dark:bg-surface mb-3.75">
                 {mainImage ? (
                   <Image
                     src={mainImage.image}
@@ -217,7 +219,7 @@ export default async function ProductDetailPage({
                     priority
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6]">
+                  <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6] dark:to-surface">
                     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                   </div>
                 )}
@@ -243,10 +245,10 @@ export default async function ProductDetailPage({
             </div>
 
             <div className="pt-5">
-              <div className="text-[12px] text-primary-dark uppercase tracking-[1px] font-semibold mb-2.5">
+              <div className="text-[12px] text-primary-dark dark:text-primary uppercase tracking-[1px] font-semibold mb-2.5">
                 {cat.name}
               </div>
-              <h1 className="text-[clamp(24px,3vw,36px)] font-serif mb-4 text-[#2D2D2D]">
+              <h1 className="text-[clamp(24px,3vw,36px)] font-serif mb-4 text-[#2D2D2D] dark:text-ink-strong">
                 {p.name}
               </h1>
 
@@ -256,19 +258,19 @@ export default async function ProductDetailPage({
                     {"★".repeat(Math.round(p.rating))}
                     {"☆".repeat(5 - Math.round(p.rating))}
                   </span>
-                  <span className="text-[#6B6B6B]">
+                  <span className="text-[#6B6B6B] dark:text-ink-soft">
                     {p.rating} ({p.rating_count} reseñas)
                   </span>
                 </div>
               )}
 
               <div className="flex items-center gap-2 flex-wrap my-4">
-                <span className="text-[28px] font-bold text-primary-dark font-serif inline-flex items-center gap-0.5">
+                <span className="text-[28px] font-bold text-primary-dark dark:text-primary font-serif inline-flex items-center gap-0.5">
                   {formatCurrency(displayPrice)}
                 </span>
                 {hasDiscount && (
                   <>
-                    <span className="text-xl text-[#6B6B6B] line-through inline-flex items-center gap-0.5">
+                    <span className="text-xl text-[#6B6B6B] dark:text-ink-soft line-through inline-flex items-center gap-0.5">
                       {formatCurrency(p.price)}
                     </span>
                     <span className="text-[12px] text-white bg-[#E74C3C] px-2 py-0.5 rounded font-semibold">
@@ -285,7 +287,7 @@ export default async function ProductDetailPage({
                     En stock ({p.stock} disponibles)
                   </span>
                 ) : (
-                  <span className="text-[#E74C3C] flex items-center gap-2">
+                  <span className="text-[#E74C3C] dark:text-[#FF8A80] flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                     Agotado
                   </span>
@@ -295,7 +297,7 @@ export default async function ProductDetailPage({
               {p.short_description && (
                 <DescriptionCollapse
                   text={p.short_description}
-                  className="my-6 leading-[1.8] text-[#6B6B6B]"
+                  className="my-6 leading-[1.8] text-[#6B6B6B] dark:text-ink-soft"
                 />
               )}
 
@@ -310,12 +312,12 @@ export default async function ProductDetailPage({
               )}
 
               {ESCUDO_PAGO_ENABLED && (
-                <div className="bg-gradient-to-br from-[#FDF8F6] to-[#F5E6E8] rounded-[8px] p-5 my-6 border border-[rgba(255,142,159,0.2)]">
-                  <h4 className="flex items-center gap-2 text-sm mb-2 font-sans text-[#2D2D2D]">
+                <div className="bg-gradient-to-br from-[#FDF8F6] dark:from-surface to-[#F5E6E8] dark:to-surface-elevated rounded-[8px] p-5 my-6 border border-[rgba(255,142,159,0.2)]">
+                  <h4 className="flex items-center gap-2 text-sm mb-2 font-sans text-[#2D2D2D] dark:text-ink-strong">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--color-primary)" }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Escudo Pago
                   </h4>
-                  <p className="text-[13px] text-[#6B6B6B] leading-[1.6]">
+                  <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
                     Tu dinero está protegido y solo se liberará cuando confirmes
                     que recibiste tu pedido. Compra con total tranquilidad.
                   </p>
@@ -324,17 +326,17 @@ export default async function ProductDetailPage({
 
               {p.long_description && (
                 <div className="mt-7.5">
-                  <h3 className="font-sans text-lg mb-3 text-[#2D2D2D]">
+                  <h3 className="font-sans text-lg mb-3 text-[#2D2D2D] dark:text-ink-strong">
                     Descripción
                   </h3>
                   <DescriptionCollapse
                     text={p.long_description}
-                    className="leading-[1.8] text-[#6B6B6B]"
+                    className="leading-[1.8] text-[#6B6B6B] dark:text-ink-soft"
                   />
                 </div>
               )}
 
-              <div className="mt-5 text-[13px] text-[#6B6B6B]">
+              <div className="mt-5 text-[13px] text-[#6B6B6B] dark:text-ink-soft">
                 <strong>SKU:</strong> {p.sku}
               </div>
             </div>
@@ -349,7 +351,7 @@ export default async function ProductDetailPage({
               <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
                 Relacionados
               </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
                 También te puede gustar
               </h2>
             </div>
@@ -363,13 +365,13 @@ export default async function ProductDetailPage({
       )}
 
       {reviews && reviews.length > 0 && (
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-white dark:bg-surface-raised">
           <div className="max-w-7xl mx-auto px-4">
             <div className="text-center mb-12">
               <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
                 Reseñas
               </div>
-              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+              <h2 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
                 Opiniones de clientes
               </h2>
             </div>
@@ -385,18 +387,18 @@ export default async function ProductDetailPage({
                 }) => (
                   <div
                     key={review.id}
-                    className="bg-white rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
+                    className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] border border-[rgba(255,142,159,0.05)] transition-all duration-300 hover:shadow-[0_4px_15px_rgba(255,142,159,0.12)] hover:border-[rgb(251,132,150)]"
                   >
                     <div className="text-[#F4B740] text-lg mb-3 tracking-[1px]">
                       {"★".repeat(review.rating)}
                       {"☆".repeat(5 - review.rating)}
                     </div>
                     {review.title && (
-                      <h4 className="mb-2 text-sm font-semibold text-[#2D2D2D]">
+                      <h4 className="mb-2 text-sm font-semibold text-[#2D2D2D] dark:text-ink-strong">
                         {review.title}
                       </h4>
                     )}
-                    <p className="text-[15px] leading-[1.8] text-[#4A4A4A] mb-5 italic">
+                    <p className="text-[15px] leading-[1.8] text-[#4A4A4A] dark:text-ink mb-5 italic">
                       &ldquo;{review.content}&rdquo;
                     </p>
                     <div className="flex items-center gap-3">
@@ -404,10 +406,10 @@ export default async function ProductDetailPage({
                         C
                       </div>
                       <div>
-                        <div className="font-semibold text-sm text-[#2D2D2D]">
+                        <div className="font-semibold text-sm text-[#2D2D2D] dark:text-ink-strong">
                           Cliente
                         </div>
-                        <div className="text-[12px] text-[#6B6B6B]">
+                        <div className="text-[12px] text-[#6B6B6B] dark:text-ink-soft">
                           {review.is_verified
                             ? "✓ Compra verificada"
                             : "Compra verificada"}
@@ -421,6 +423,8 @@ export default async function ProductDetailPage({
           </div>
         </section>
       )}
+
+      <div className="md:hidden h-10" aria-hidden="true" />
     </>
   )
 }

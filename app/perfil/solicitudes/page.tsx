@@ -19,15 +19,15 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-[#FFF3E0] text-[#E65100]",
-  pending_payment: "bg-[#FFF8E1] text-[#F57F17]",
-  payment_confirmed: "bg-[#E8F5E9] text-[#2E7D32]",
-  preparing: "bg-[#E3F2FD] text-[#1565C0]",
-  in_package: "bg-[#E3F2FD] text-[#1565C0]",
-  ready_for_pickup: "bg-[#E8F5E9] text-[#2E7D32]",
-  shipped: "bg-[#E8F5E9] text-[#2E7D32]",
-  delivered: "bg-[#E8F5E9] text-[#2E7D32]",
-  cancelled: "bg-[#FFEBEE] text-[#C62828]",
+  pending: "bg-[#FFF3E0] dark:bg-[#261C10] text-[#E65100] dark:text-[#FF8A65]",
+  pending_payment: "bg-[#FFF8E1] dark:bg-[#26200F] text-[#F57F17] dark:text-[#FFB74D]",
+  payment_confirmed: "bg-[#E8F5E9] dark:bg-[#16241A] text-[#2E7D32] dark:text-[#81C784]",
+  preparing: "bg-[#E3F2FD] dark:bg-[#16202C] text-[#1565C0] dark:text-[#64B5F6]",
+  in_package: "bg-[#E3F2FD] dark:bg-[#16202C] text-[#1565C0] dark:text-[#64B5F6]",
+  ready_for_pickup: "bg-[#E8F5E9] dark:bg-[#16241A] text-[#2E7D32] dark:text-[#81C784]",
+  shipped: "bg-[#E8F5E9] dark:bg-[#16241A] text-[#2E7D32] dark:text-[#81C784]",
+  delivered: "bg-[#E8F5E9] dark:bg-[#16241A] text-[#2E7D32] dark:text-[#81C784]",
+  cancelled: "bg-[#FFEBEE] dark:bg-[#2A1618] text-[#C62828] dark:text-[#EF9A9A]",
 }
 
 export default async function SolicitudesPage() {
@@ -49,14 +49,14 @@ export default async function SolicitudesPage() {
           </Link>
         </div>
 
-        <h1 className="text-[clamp(24px,3vw,32px)] font-serif mb-8 text-[#2D2D2D]">
+        <h1 className="text-[clamp(24px,3vw,32px)] font-serif mb-8 text-[#2D2D2D] dark:text-ink-strong">
           Mis solicitudes
         </h1>
 
         {!requests || requests.length === 0 ? (
           <div className="text-center py-16">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#DDD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-4"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <p className="text-[#6B6B6B]">No tienes solicitudes por WhatsApp</p>
+            <p className="text-[#6B6B6B] dark:text-ink-soft">No tienes solicitudes por WhatsApp</p>
             <Link href="/productos" className="text-primary font-semibold no-underline hover:underline text-sm mt-2 inline-block">
               Explorar productos
             </Link>
@@ -66,20 +66,20 @@ export default async function SolicitudesPage() {
             {requests.map((req: any) => (
               <div
                 key={req.id}
-                className="bg-white rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[rgba(255,142,159,0.05)]"
+                className="bg-white dark:bg-surface-raised rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-[rgba(255,142,159,0.05)]"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <span className="text-[13px] text-[#6B6B6B]">Código</span>
-                    <p className="font-semibold text-[#2D2D2D]">{req.reference_code}</p>
+                    <span className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">Código</span>
+                    <p className="font-semibold text-[#2D2D2D] dark:text-ink-strong">{req.reference_code}</p>
                   </div>
-                  <span className={`text-[12px] px-2.5 py-1 rounded font-semibold ${STATUS_COLORS[req.status] || "bg-gray-100 text-gray-600"}`}>
+                  <span className={`text-[12px] px-2.5 py-1 rounded font-semibold ${STATUS_COLORS[req.status] || "bg-gray-100 dark:bg-surface-elevated text-gray-600 dark:text-ink"}`}>
                     {STATUS_LABELS[req.status] || req.status}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 py-2 border-t border-[#F5F5F5]">
-                  <div className="w-16 h-16 rounded-[8px] bg-[#FFFBF9] flex items-center justify-center text-[12px] text-[#6B6B6B] overflow-hidden shrink-0">
+                <div className="flex items-center gap-3 py-2 border-t border-[#F5F5F5] dark:border-line-faint">
+                  <div className="w-16 h-16 rounded-[8px] bg-[#FFFBF9] dark:bg-surface flex items-center justify-center text-[12px] text-[#6B6B6B] dark:text-ink-soft overflow-hidden shrink-0">
                     {req.product_image ? (
                       <img src={req.product_image} alt={req.product_name} className="w-full h-full object-cover" />
                     ) : (
@@ -87,14 +87,14 @@ export default async function SolicitudesPage() {
                     )}
                   </div>
                   <div className="flex-1">
-                    <p className="text-[14px] text-[#2D2D2D] font-medium">{req.product_name}</p>
+                    <p className="text-[14px] text-[#2D2D2D] dark:text-ink-strong font-medium">{req.product_name}</p>
                     {req.product_price != null && (
-                      <p className="text-[13px] text-[#6B6B6B]">{formatCurrency(req.product_price)}</p>
+                      <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">{formatCurrency(req.product_price)}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#F5F5F5] text-[13px] text-[#6B6B6B]">
+                <div className="mt-4 pt-3 border-t border-[#F5F5F5] dark:border-line-faint text-[13px] text-[#6B6B6B] dark:text-ink-soft">
                   {new Date(req.created_at).toLocaleDateString("es-BO", {
                     year: "numeric",
                     month: "long",

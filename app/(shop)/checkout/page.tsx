@@ -91,9 +91,9 @@ export default async function CheckoutPage() {
   const whatsappNumber = await getOrderWhatsAppNumber(supabase)
 
   return (
-    <section className="py-15">
+    <section className="py-15 max-md:pb-32">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B]">
+        <div className="breadcrumbs py-5 text-[14px] text-[#6B6B6B] dark:text-ink-soft">
           <Link href="/" className="text-primary no-underline hover:underline">Inicio</Link>
           {" / "}
           <Link href="/carrito" className="text-primary no-underline hover:underline">Carrito</Link>
@@ -105,7 +105,7 @@ export default async function CheckoutPage() {
           <div className="inline-block text-primary text-[13px] font-semibold uppercase tracking-[2px] mb-3">
             Finalizar compra
           </div>
-          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D]">
+          <h1 className="text-[clamp(28px,3.5vw,42px)] mb-4 font-serif text-[#2D2D2D] dark:text-ink-strong">
             Finalizar compra
           </h1>
         </div>

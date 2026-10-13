@@ -62,6 +62,7 @@ export async function createProduct(formData: FormData) {
   const is_active = formData.get("is_active") === "on"
   const is_featured = formData.get("is_featured") === "on"
   const is_new = formData.get("is_new") === "on"
+  const is_offer = formData.get("is_offer") === "on"
   const meta_description = (formData.get("meta_description") as string) || ""
   const meta_keywords = (formData.get("meta_keywords") as string) || ""
 
@@ -80,6 +81,7 @@ export async function createProduct(formData: FormData) {
       is_active,
       is_featured,
       is_new,
+      is_offer,
       meta_description,
       meta_keywords,
     })
@@ -124,12 +126,13 @@ export async function updateProduct(id: number, formData: FormData) {
   const is_active = formData.get("is_active") === "on"
   const is_featured = formData.get("is_featured") === "on"
   const is_new = formData.get("is_new") === "on"
+  const is_offer = formData.get("is_offer") === "on"
   const meta_description = (formData.get("meta_description") as string) || ""
   const meta_keywords = (formData.get("meta_keywords") as string) || ""
 
   const updateData: Record<string, unknown> = {
     name, slug, sku, category_id, price, discount_price, stock,
-    short_description, long_description, is_active, is_featured, is_new,
+    short_description, long_description, is_active, is_featured, is_new, is_offer,
     meta_description, meta_keywords,
   }
 

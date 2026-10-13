@@ -5,10 +5,10 @@ export default function NotFound() {
     <section className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="text-[80px] font-serif font-bold text-primary mb-4">404</div>
-        <h1 className="text-2xl font-serif text-[#2D2D2D] mb-3">
+        <h1 className="text-2xl font-serif text-[#2D2D2D] dark:text-ink-strong mb-3">
           Página no encontrada
         </h1>
-        <p className="text-[#6B6B6B] text-sm mb-8 leading-relaxed">
+        <p className="text-[#6B6B6B] dark:text-ink-soft text-sm mb-8 leading-relaxed">
           Lo sentimos, la página que buscas no existe o fue movida.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -20,7 +20,7 @@ export default function NotFound() {
           </Link>
           <Link
             href="/productos"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-white text-primary text-sm font-semibold no-underline border border-primary hover:bg-primary/5 transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-white dark:bg-surface-raised text-primary text-sm font-semibold no-underline border border-primary hover:bg-primary/5 transition-all duration-300"
           >
             Ver productos
           </Link>

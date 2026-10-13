@@ -89,26 +89,26 @@ export default function RegisterPage() {
 
   return (
     <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
-      <div className="bg-white rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
-        <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D]">
+      <div className="bg-white dark:bg-surface-raised rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)]">
+        <h1 className="text-center text-[26px] sm:text-[28px] font-serif mb-2 text-[#2D2D2D] dark:text-ink-strong">
           Crear cuenta
         </h1>
-        <p className="text-center text-[#6B6B6B] mb-7 sm:mb-7.5 text-[15px]">
+        <p className="text-center text-[#6B6B6B] dark:text-ink-soft mb-7 sm:mb-7.5 text-[15px]">
           Únete a Liz Store y comienza a comprar con seguridad.
         </p>
 
         <GoogleButton />
 
         <div className="flex items-center gap-3 my-6" role="separator" aria-label="o">
-          <span className="h-px flex-1 bg-[#EEE]" />
-          <span className="text-[13px] text-[#AAAAAA]">o</span>
-          <span className="h-px flex-1 bg-[#EEE]" />
+          <span className="h-px flex-1 bg-[#EEE] dark:bg-surface-elevated" />
+          <span className="text-[13px] text-[#AAAAAA] dark:text-ink-soft">o</span>
+          <span className="h-px flex-1 bg-[#EEE] dark:bg-surface-elevated" />
         </div>
 
         {success ? (
           <div
             role="status"
-            className="p-4 rounded-[8px] bg-[#EAF7EE] border border-[#BEE5C8] text-[#2E7D46] text-[14px] text-center"
+            className="p-4 rounded-[8px] bg-[#EAF7EE] dark:bg-[#16241A] border border-[#BEE5C8] dark:border-[#274431] text-[#2E7D46] dark:text-[#81C784] text-[14px] text-center"
           >
             {success}
             <div className="mt-4">
@@ -120,7 +120,7 @@ export default function RegisterPage() {
         ) : (
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-5">
-              <label htmlFor="username" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+              <label htmlFor="username" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
                 Nombre de usuario *
               </label>
               <input
@@ -138,15 +138,15 @@ export default function RegisterPage() {
                 placeholder="Elige un nombre de usuario"
                 aria-invalid={!!nombreError}
                 aria-describedby={nombreError ? "username-error" : undefined}
-                className={`${inputBase} ${nombreError ? "border-[#E74C3C] focus:border-[#E74C3C]" : "border-[#DDD] focus:border-primary"}`}
+                className={`${inputBase} ${nombreError ? "border-[#E74C3C] focus:border-[#E74C3C]" : "border-[#DDD] dark:border-line focus:border-primary"}`}
               />
               {nombreError && (
-                <p id="username-error" className="mt-1.5 text-[13px] text-[#E74C3C]">{nombreError}</p>
+                <p id="username-error" className="mt-1.5 text-[13px] text-[#E74C3C] dark:text-[#FF8A80]">{nombreError}</p>
               )}
             </div>
 
             <div className="mb-5">
-              <label htmlFor="email" className="block text-[14px] font-semibold text-[#2D2D2D] mb-1.5">
+              <label htmlFor="email" className="block text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-1.5">
                 Correo electrónico *
               </label>
               <input
@@ -165,10 +165,10 @@ export default function RegisterPage() {
                 placeholder="tu@correo.com"
                 aria-invalid={!!emailError}
                 aria-describedby={emailError ? "email-error" : undefined}
-                className={`${inputBase} ${emailError ? "border-[#E74C3C] focus:border-[#E74C3C]" : "border-[#DDD] focus:border-primary"}`}
+                className={`${inputBase} ${emailError ? "border-[#E74C3C] focus:border-[#E74C3C]" : "border-[#DDD] dark:border-line focus:border-primary"}`}
               />
               {emailError && (
-                <p id="email-error" className="mt-1.5 text-[13px] text-[#E74C3C]">{emailError}</p>
+                <p id="email-error" className="mt-1.5 text-[13px] text-[#E74C3C] dark:text-[#FF8A80]">{emailError}</p>
               )}
             </div>
 
@@ -206,7 +206,7 @@ export default function RegisterPage() {
             {error && (
               <div
                 role="alert"
-                className="mb-4 p-3 rounded-[8px] bg-[#FFF0F0] border border-[#FFD0D0] text-[#E74C3C] text-[13px]"
+                className="mb-4 p-3 rounded-[8px] bg-[#FFF0F0] dark:bg-[#2A1618] border border-[#FFD0D0] dark:border-[#4A2A2C] text-[#E74C3C] dark:text-[#FF8A80] text-[13px]"
               >
                 {error}
               </div>
@@ -223,7 +223,7 @@ export default function RegisterPage() {
           </form>
         )}
 
-        <p className="text-center mt-6 text-[14px] text-[#6B6B6B]">
+        <p className="text-center mt-6 text-[14px] text-[#6B6B6B] dark:text-ink-soft">
           ¿Ya tienes cuenta?{" "}
           <Link href="/auth/login" className="text-primary font-semibold no-underline hover:underline">
             Ingresa aquí
