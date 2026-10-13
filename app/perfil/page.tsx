@@ -43,12 +43,98 @@ export default async function PerfilPage() {
   const { data: profile } = await getProfile(supabase, user.id)
   const { data: requests } = await getUserRequests(supabase, user.id, 5)
 
+  const isAdmin = (profile as { role?: string } | null)?.role === "admin"
+  const nombre = (profile as { nombre?: string } | null)?.nombre?.trim() || ""
+  const phone = (profile as { phone?: string } | null)?.phone?.trim() || ""
+  const avatar = (profile as { avatar?: string | null } | null)?.avatar || ""
+  const isIncomplete = !nombre || !phone
+  const initial = (nombre?.[0] || user.email?.[0] || "?").toUpperCase()
+
   return (
     <section className="min-h-[80vh] py-12 px-4">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-[clamp(24px,3vw,32px)] font-serif mb-8 text-[#2D2D2D] dark:text-ink-strong">
           Mi Perfil
         </h1>
+
+        <div className="bg-white dark:bg-surface-raised rounded-[16px] p-6 mb-6 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-[rgba(255,142,159,0.05)]">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center text-2xl font-serif font-semibold shrink-0 overflow-hidden">
+              {avatar ? (
+                <img src={avatar} alt={nombre || "Avatar"} className="w-full h-full object-cover" />
+              ) : (
+                initial
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-[17px] font-semibold text-[#2D2D2D] dark:text-ink-strong m-0 truncate">
+                  {nombre || "Sin nombre"}
+                </p>
+                {isAdmin && (
+                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white shrink-0">
+                    Admin
+                  </span>
+                )}
+              </div>
+              <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft m-0 mt-1 truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-3 mt-5">
+            <div className="p-4 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line">
+              <span className="text-[12px] text-[#6B6B6B] dark:text-ink-soft block mb-1">Teléfono</span>
+              <span className="text-[15px] font-medium text-[#2D2D2D] dark:text-ink-strong">
+                {phone || "Sin registrar"}
+              </span>
+            </div>
+            <div className="p-4 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line">
+              <span className="text-[12px] text-[#6B6B6B] dark:text-ink-soft block mb-1">Miembro desde</span>
+              <span className="text-[15px] font-medium text-[#2D2D2D] dark:text-ink-strong">
+                {new Date(user.created_at).toLocaleDateString("es-BO", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {isIncomplete && (
+          <div className="flex items-start gap-3 mb-6 p-4 rounded-[14px] bg-[#FFF8E1] dark:bg-[#26200F] border border-[#FFE0B2] dark:border-[#4A3A1C]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B26A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5 dark:stroke-[#FFB74D]"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold text-[#B26A00] dark:text-[#FFB74D] m-0">
+                Termina de configurar tu perfil
+              </p>
+              <p className="text-[13px] text-[#8A6A2A] dark:text-ink-soft m-0 mt-0.5">
+                Agrega tu nombre y teléfono para agilizar tus compras y recibir tus pedidos.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            prefetch={false}
+            className="group mb-8 flex items-center justify-between gap-4 rounded-[16px] p-5 bg-gradient-to-br from-primary to-primary-dark text-white no-underline shadow-[0_4px_15px_rgba(255,142,159,0.3)] transition-transform duration-300 hover:-translate-y-0.5"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-[15px] leading-tight m-0">Panel de administración</p>
+                <p className="text-[13px] opacity-85 m-0">Gestiona productos, pedidos y configuración</p>
+              </div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 transition-transform duration-300 group-hover:translate-x-1"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </Link>
+        )}
 
         <div className="bg-white dark:bg-surface-raised rounded-[16px] p-8 shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-[rgba(255,142,159,0.05)]">
           <ProfileForm
