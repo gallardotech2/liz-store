@@ -28,6 +28,9 @@
 /memory/
 /.mcp_memory/
 
+# agentes y skills locales de opencode (no se suben)
+/.opencode/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

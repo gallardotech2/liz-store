@@ -1127,3 +1127,17 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 /*
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_offer BOOLEAN DEFAULT false;
 */
+
+-- ============================================================
+-- Fix 0020: Link de grupo de WhatsApp configurable desde el admin
+-- Fecha ejecución: 2026-10-12
+-- Estado: EJECUTADO
+-- Descripción: Crea la fila platform 'whatsapp_group' en social_links.
+--   Su URL se edita desde Admin > Redes Sociales y aparece en el botón
+--   "Únete a nuestro grupo de WhatsApp" del footer.
+-- ============================================================
+/*
+INSERT INTO social_links (platform, label, url, is_active)
+VALUES ('whatsapp_group', 'Grupo de WhatsApp', '', true)
+ON CONFLICT (platform) DO NOTHING;
+*/
