@@ -27,6 +27,6 @@ export async function updateStoreWhatsApp(formData: FormData) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/store")
-  revalidatePath("/")
+  revalidatePath("/", "layout")
   updateTag("store-profile")
 }

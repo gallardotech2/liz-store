@@ -43,5 +43,5 @@ export const getShopCategoriesMenu = unstable_cache(
     return (data ?? []) as Array<{ name: string; slug: string }>
   },
   ["shop-categories-menu"],
-  { revalidate: 3600, tags: ["categories"] },
+  { revalidate: 60, tags: ["categories"] },
 )

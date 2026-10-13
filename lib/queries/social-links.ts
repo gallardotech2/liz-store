@@ -32,7 +32,7 @@ export async function getWhatsappGroupLink(client: SupabaseClient): Promise<stri
 export const getWhatsappGroupLinkCached = unstable_cache(
   async () => getWhatsappGroupLink(createStaticClient()),
   ["whatsapp-group-link"],
-  { revalidate: 3600, tags: ["social-links"] },
+  { revalidate: 60, tags: ["social-links"] },
 )
 
 export async function getAllSocialLinks(client: SupabaseClient) {

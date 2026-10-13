@@ -33,6 +33,7 @@ export async function createCategory(formData: FormData) {
   }
 
   revalidatePath("/admin/categories")
+  revalidatePath("/", "layout")
   updateTag("categories")
   redirect("/admin/categories")
 }
@@ -88,6 +89,7 @@ export async function updateCategory(id: number, formData: FormData) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
+  revalidatePath("/", "layout")
   updateTag("categories")
   redirect("/admin/categories")
 }
@@ -111,5 +113,6 @@ export async function deleteCategory(id: number) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
+  revalidatePath("/", "layout")
   updateTag("categories")
 }

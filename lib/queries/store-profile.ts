@@ -38,7 +38,7 @@ export async function getOrderWhatsAppNumber(client: SupabaseClient): Promise<st
 export const getOrderWhatsAppNumberCached = unstable_cache(
   async () => getOrderWhatsAppNumber(createStaticClient()),
   ["order-whatsapp-number"],
-  { revalidate: 3600, tags: ["store-profile"] },
+  { revalidate: 60, tags: ["store-profile"] },
 )
 
 export async function updateStoreWhatsAppNumber(
