@@ -2,57 +2,104 @@
 
 import { useRef, useState, type DragEvent } from "react"
 import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
+import {
+  checkImageFile,
+  fitsUploadLimit,
+  UPLOAD_LIMIT_ERROR,
+} from "@/lib/image-detect"
 
 interface ImageDropzoneProps {
   name: string
   currentImage?: string | null
   onClear?: () => void
   maxSizeMB?: number
+  onBusyChange?: (busy: boolean) => void
 }
 
-export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: ImageDropzoneProps) {
+export function ImageDropzone({
+  name,
+  currentImage,
+  onClear,
+  maxSizeMB = 12,
+  onBusyChange,
+}: ImageDropzoneProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasFile, setHasFile] = useState(false)
   const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const selectionRef = useRef(0)
 
   const maxSize = maxSizeMB * 1024 * 1024
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
 
-  function validate(file: File): boolean {
-    setError(null)
-    if (file.size > maxSize) {
-      setError(`La imagen no debe superar los ${maxSizeMB}MB`)
-      return false
-    }
-    if (!allowedTypes.includes(file.type)) {
-      setError("Formato no soportado. Usa JPG, PNG o WEBP")
-      return false
-    }
-    return true
+  function clearInput() {
+    if (fileRef.current) fileRef.current.value = ""
+  }
+
+  // Al rechazar un archivo, si había una selección válida previa hay que
+  // resetear también la UI: el input ya quedó vacío, no puede quedar
+  // "seleccionado" fantasma. NO llama onClear (borraría la imagen actual
+  // en CategoryForm).
+  function resetSelectionUi() {
+    setPreview(null)
+    setHasFile(false)
+    clearInput()
   }
 
   async function handleFile(file: File) {
-    if (!validate(file)) return
+    const token = ++selectionRef.current
+    setError(null)
 
-    let outFile = file
-    if (imageIsCompressible(file)) {
-      setIsCompressing(true)
-      const result = await compressImage(file)
-      if (result.compressed) outFile = result.file
-      setIsCompressing(false)
+    const checked = await checkImageFile(file, maxSize)
+    if (token !== selectionRef.current) return
+    if (!checked.ok) {
+      setError(checked.error)
+      resetSelectionUi()
+      return
     }
 
-    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    let outFile = checked.file
+    if (imageIsCompressible(outFile)) {
+      setIsCompressing(true)
+      onBusyChange?.(true)
+      try {
+        const result = await compressImage(outFile)
+        if (result.compressed) outFile = result.file
+      } catch {
+        if (token === selectionRef.current) {
+          setError("No se pudo procesar la imagen. Intenta con otra foto.")
+          resetSelectionUi()
+          return
+        }
+      } finally {
+        setIsCompressing(false)
+        onBusyChange?.(false)
+      }
+      if (token !== selectionRef.current) return
+    }
+
+    if (!fitsUploadLimit(outFile)) {
+      setError(UPLOAD_LIMIT_ERROR)
+      resetSelectionUi()
+      return
+    }
+
+    try {
+      if (fileRef.current) setFileInput(fileRef.current, outFile)
+    } catch {
+      setError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
+      resetSelectionUi()
+      return
+    }
+
     setPreview(URL.createObjectURL(outFile))
     setHasFile(true)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
-    if (f) handleFile(f)
+    if (f) void handleFile(f)
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -73,6 +120,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
   }
 
   function handleClear() {
+    selectionRef.current++
     setPreview(null)
     setHasFile(false)
     setError(null)
@@ -104,7 +152,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
           ref={fileRef}
           type="file"
           name={name}
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
           className="hidden"
           onChange={handleChange}
         />

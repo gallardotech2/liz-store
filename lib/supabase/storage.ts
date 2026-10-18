@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { sniffImageType, normalizeMime } from "@/lib/image-detect"
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -15,53 +16,61 @@ const ALLOWED_MIME_TYPES = [
   "image/gif",
 ]
 
-const MAGIC_BYTES: Record<string, number[]> = {
-  "image/jpeg": [0xff, 0xd8, 0xff],
-  "image/png": [0x89, 0x50, 0x4e, 0x47],
-  "image/webp": [0x52, 0x49, 0x46, 0x46],
-  "image/gif": [0x47, 0x49, 0x46, 0x38],
+const EXT_BY_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
 }
 
-function generateFileName(originalName: string): string {
-  const ext = originalName.split(".").pop() ?? "jpg"
+function generateFileName(ext: string): string {
   const ts = Date.now().toString(36)
   const rand = Math.random().toString(36).slice(2, 8)
   return `${ts}-${rand}.${ext}`
 }
 
-async function validateFile(file: File): Promise<void> {
+// Valida por CONTENIDO (magic bytes), no por el MIME declarado: el selector de
+// Android puede reportar "" o alias (image/jpg, image/x-png) con bytes válidos.
+// Devuelve el tipo real del archivo.
+export async function validateFile(file: File): Promise<string> {
   if (file.size > MAX_FILE_SIZE) {
     throw new Error(`Archivo demasiado grande. Máximo: ${MAX_FILE_SIZE / 1024 / 1024}MB`)
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-    throw new Error(`Tipo de archivo no permitido: ${file.type}`)
-  }
+  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer())
+  const detected = sniffImageType(head)
 
-  const buffer = await file.arrayBuffer()
-  const bytes = new Uint8Array(buffer.slice(0, 8))
-
-  const expectedMagic = MAGIC_BYTES[file.type]
-  if (expectedMagic) {
-    const isValid = expectedMagic.every((byte, i) => bytes[i] === byte)
-    if (!isValid) {
-      throw new Error("El contenido del archivo no coincide con el tipo declarado")
+  if (!detected) {
+    const declared = normalizeMime(file.type)
+    if (declared === "image/heic" || declared === "image/heif") {
+      throw new Error("Formato HEIC/HEIF no admitido. Exporta la foto como JPG o PNG e inténtalo de nuevo")
     }
+    throw new Error("No se pudo reconocer el formato de la imagen. Usa JPG, PNG o WEBP")
   }
+
+  if (detected === "image/heic" || detected === "image/heif") {
+    throw new Error("Formato HEIC/HEIF no admitido. Exporta la foto como JPG o PNG e inténtalo de nuevo")
+  }
+
+  if (!ALLOWED_MIME_TYPES.includes(detected)) {
+    throw new Error(`Tipo de archivo no permitido: ${detected}`)
+  }
+
+  return detected
 }
 
 export async function uploadImage(
   file: File,
   folder: string,
 ): Promise<string> {
-  await validateFile(file)
+  const detectedType = await validateFile(file)
 
-  const fileName = generateFileName(file.name)
+  const fileName = generateFileName(EXT_BY_TYPE[detectedType] ?? "jpg")
   const filePath = `${folder}/${fileName}`
 
   const supabase = getSupabaseAdmin()
   const { error } = await supabase.storage.from(BUCKET).upload(filePath, file, {
-    contentType: file.type,
+    contentType: detectedType,
     upsert: true,
   })
 

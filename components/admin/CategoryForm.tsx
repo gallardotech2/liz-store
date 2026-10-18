@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -19,10 +19,10 @@ interface CategoryFormProps {
   action: (formData: FormData) => Promise<void>
 }
 
-function SubmitBtn() {
+function SubmitBtn({ extraDisabled = false }: { extraDisabled?: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" variant="primary" size="sm" disabled={pending}>
+    <Button type="submit" variant="primary" size="sm" disabled={pending || extraDisabled}>
       {pending ? "Guardando..." : "Guardar"}
     </Button>
   )
@@ -30,6 +30,7 @@ function SubmitBtn() {
 
 export function CategoryForm({ initialData, action }: CategoryFormProps) {
   const removeImageRef = useRef<HTMLInputElement>(null)
+  const [imageBusy, setImageBusy] = useState(false)
 
   return (
     <form action={action} className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -67,6 +68,7 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
         <ImageDropzone
           name="image"
           currentImage={initialData?.image}
+          onBusyChange={setImageBusy}
           onClear={() => {
             if (removeImageRef.current) removeImageRef.current.value = "1"
           }}
@@ -112,7 +114,7 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
       </div>
 
       <div className="md:col-span-2 flex items-center gap-3 pt-4 border-t border-white/12 mt-4">
-        <SubmitBtn />
+        <SubmitBtn extraDisabled={imageBusy} />
         <Link
           href="/admin/categories"
           className="text-sm text-[#ABB2BF] hover:text-white no-underline transition-colors"
