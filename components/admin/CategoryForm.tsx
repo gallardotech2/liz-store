@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -19,19 +19,17 @@ interface CategoryFormProps {
   action: (formData: FormData) => Promise<void>
 }
 
-function SubmitBtn({ busy }: { busy: boolean }) {
+function SubmitBtn() {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" variant="primary" size="sm" disabled={pending || busy}>
-      {pending ? "Guardando..." : busy ? "Preparando imagen..." : "Guardar"}
+    <Button type="submit" variant="primary" size="sm" disabled={pending}>
+      {pending ? "Guardando..." : "Guardar"}
     </Button>
   )
 }
 
 export function CategoryForm({ initialData, action }: CategoryFormProps) {
   const removeImageRef = useRef<HTMLInputElement>(null)
-  const [imageBusy, setImageBusy] = useState(false)
-  const [hasSelectedImage, setHasSelectedImage] = useState(false)
 
   return (
     <form action={action} className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -66,13 +64,9 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
           Imagen de la categoría
         </label>
         <input ref={removeImageRef} type="hidden" name="remove_image" defaultValue={initialData?.image ? "0" : "1"} />
-        <input type="hidden" name="image_selected" value={hasSelectedImage ? "1" : "0"} />
         <ImageDropzone
           name="image"
-          folder="categories"
           currentImage={initialData?.image}
-          onBusyChange={setImageBusy}
-          onFileStateChange={setHasSelectedImage}
           onClear={() => {
             if (removeImageRef.current) removeImageRef.current.value = "1"
           }}
@@ -118,7 +112,7 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
       </div>
 
       <div className="md:col-span-2 flex items-center gap-3 pt-4 border-t border-white/12 mt-4">
-        <SubmitBtn busy={imageBusy} />
+        <SubmitBtn />
         <Link
           href="/admin/categories"
           className="text-sm text-[#ABB2BF] hover:text-white no-underline transition-colors"

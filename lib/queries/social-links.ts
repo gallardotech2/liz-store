@@ -1,6 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { unstable_cache } from "next/cache"
-import { createStaticClient } from "@/lib/supabase/static"
 
 export interface SocialLink {
   id: number
@@ -28,12 +26,6 @@ export async function getWhatsappGroupLink(client: SupabaseClient): Promise<stri
     .maybeSingle() as unknown as { data: { url: string } | null }
   return data?.url?.trim() ?? ""
 }
-
-export const getWhatsappGroupLinkCached = unstable_cache(
-  async () => getWhatsappGroupLink(createStaticClient()),
-  ["whatsapp-group-link"],
-  { revalidate: 60, tags: ["social-links"] },
-)
 
 export async function getAllSocialLinks(client: SupabaseClient) {
   const { data } = await client

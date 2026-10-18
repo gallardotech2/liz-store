@@ -1,10 +1,10 @@
 "use server"
 
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
-import { resolveSubmittedImageUrl, deleteImage } from "@/lib/supabase/storage"
+import { uploadImage, deleteImage } from "@/lib/supabase/storage"
 
 export async function createCategory(formData: FormData) {
   await requireAdmin()
@@ -15,7 +15,6 @@ export async function createCategory(formData: FormData) {
   const description = (formData.get("description") as string) || ""
   const order = Number(formData.get("order")) || 0
   const is_active = formData.get("is_active") === "on"
-  const imageUrl = resolveSubmittedImageUrl(formData, false)
 
   const { data: category, error } = await (supabase as any)
     .from("categories")
@@ -24,16 +23,16 @@ export async function createCategory(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
-  if (imageUrl) {
+  const imageFile = formData.get("image") as File | null
+  if (imageFile && imageFile.size > 0) {
     const categoryId = category?.[0]?.id
     if (categoryId) {
+      const imageUrl = await uploadImage(imageFile, `categories/${categoryId}`)
       await (supabase as any).from("categories").update({ image: imageUrl }).eq("id", categoryId)
     }
   }
 
   revalidatePath("/admin/categories")
-  revalidatePath("/", "layout")
-  updateTag("categories")
   redirect("/admin/categories")
 }
 
@@ -50,9 +49,9 @@ export async function updateCategory(id: number, formData: FormData) {
   const updateData: Record<string, unknown> = { name, slug, description, order, is_active }
 
   const removeImage = formData.get("remove_image") === "1"
-  const imageUrl = resolveSubmittedImageUrl(formData, false)
+  const imageFile = formData.get("image") as File | null
 
-  if (removeImage && !imageUrl) {
+  if (removeImage && !(imageFile && imageFile.size > 0)) {
     const { data: old } = await (supabase as any)
       .from("categories")
       .select("image")
@@ -65,7 +64,7 @@ export async function updateCategory(id: number, formData: FormData) {
     updateData.image = null
   }
 
-  if (imageUrl) {
+  if (imageFile && imageFile.size > 0) {
     const { data: old } = await (supabase as any)
       .from("categories")
       .select("image")
@@ -76,6 +75,7 @@ export async function updateCategory(id: number, formData: FormData) {
       await deleteImage(old.image).catch(() => {})
     }
 
+    const imageUrl = await uploadImage(imageFile, `categories/${id}`)
     updateData.image = imageUrl
   }
 
@@ -87,8 +87,6 @@ export async function updateCategory(id: number, formData: FormData) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
-  revalidatePath("/", "layout")
-  updateTag("categories")
   redirect("/admin/categories")
 }
 
@@ -111,6 +109,4 @@ export async function deleteCategory(id: number) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/categories")
-  revalidatePath("/", "layout")
-  updateTag("categories")
 }

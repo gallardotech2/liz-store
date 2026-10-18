@@ -2,8 +2,9 @@ import { cookies } from "next/headers"
 import { Header } from "./Header"
 import { Footer } from "./Footer"
 import { BottomNav } from "./BottomNav"
-import { getOrderWhatsAppNumberCached } from "@/lib/queries/store-profile"
-import { getWhatsappGroupLinkCached } from "@/lib/queries/social-links"
+import { createClient } from "@/lib/supabase/server"
+import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
+import { getWhatsappGroupLink } from "@/lib/queries/social-links"
 import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
 
 interface ShopLayoutProps {
@@ -12,8 +13,9 @@ interface ShopLayoutProps {
 }
 
 export async function ShopLayout({ children, categories = [] }: ShopLayoutProps) {
-  const whatsappNumber = await getOrderWhatsAppNumberCached()
-  const whatsappGroupUrl = await getWhatsappGroupLinkCached()
+  const supabase = await createClient()
+  const whatsappNumber = await getOrderWhatsAppNumber(supabase)
+  const whatsappGroupUrl = await getWhatsappGroupLink(supabase)
   const cookieStore = await cookies()
   const cartCount = calculateCartTotal(
     parseCart(cookieStore.get(CART_COOKIE)?.value),

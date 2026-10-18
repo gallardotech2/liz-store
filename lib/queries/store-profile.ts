@@ -1,6 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { unstable_cache } from "next/cache"
-import { createStaticClient } from "@/lib/supabase/static"
 import { WHATSAPP_NUMBER } from "@/lib/constants"
 
 export interface StoreProfile {
@@ -34,12 +32,6 @@ export async function getOrderWhatsAppNumber(client: SupabaseClient): Promise<st
   }
   return WHATSAPP_NUMBER
 }
-
-export const getOrderWhatsAppNumberCached = unstable_cache(
-  async () => getOrderWhatsAppNumber(createStaticClient()),
-  ["order-whatsapp-number"],
-  { revalidate: 60, tags: ["store-profile"] },
-)
 
 export async function updateStoreWhatsAppNumber(
   client: SupabaseClient,

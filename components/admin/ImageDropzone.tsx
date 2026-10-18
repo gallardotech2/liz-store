@@ -1,148 +1,58 @@
 "use client"
 
 import { useRef, useState, type DragEvent } from "react"
-import { compressImage, imageIsCompressible } from "@/lib/image-compress"
-import { resolveImageType } from "@/lib/image-detect"
-import { uploadImageDirect, type ImageUploadFolder } from "@/lib/image-upload"
+import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
 
 interface ImageDropzoneProps {
   name: string
-  folder: ImageUploadFolder
   currentImage?: string | null
   onClear?: () => void
   maxSizeMB?: number
-  onBusyChange?: (busy: boolean) => void
-  onFileStateChange?: (hasFile: boolean) => void
 }
 
-type DropzonePhase = "idle" | "compress" | "upload"
-
-export function ImageDropzone({
-  name,
-  folder,
-  currentImage,
-  onClear,
-  maxSizeMB = 12,
-  onBusyChange,
-  onFileStateChange,
-}: ImageDropzoneProps) {
+export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: ImageDropzoneProps) {
   const [preview, setPreview] = useState<string | null>(null)
-  const [remoteUrl, setRemoteUrl] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasFile, setHasFile] = useState(false)
-  const [phase, setPhase] = useState<DropzonePhase>("idle")
+  const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const selectionIdRef = useRef(0)
 
   const maxSize = maxSizeMB * 1024 * 1024
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
 
-  function updatePhase(next: DropzonePhase) {
-    setPhase(next)
-    onBusyChange?.(next !== "idle")
-  }
-
-  function updateHasFile(value: boolean) {
-    setHasFile(value)
-    onFileStateChange?.(value)
-  }
-
-  function resetSelection() {
-    selectionIdRef.current++
-    if (fileRef.current) fileRef.current.value = ""
-    setPreview(null)
-    setRemoteUrl(null)
-    updateHasFile(false)
-    updatePhase("idle")
+  function validate(file: File): boolean {
+    setError(null)
+    if (file.size > maxSize) {
+      setError(`La imagen no debe superar los ${maxSizeMB}MB`)
+      return false
+    }
+    if (!allowedTypes.includes(file.type)) {
+      setError("Formato no soportado. Usa JPG, PNG o WEBP")
+      return false
+    }
+    return true
   }
 
   async function handleFile(file: File) {
-    const selectionId = ++selectionIdRef.current
-    setError(null)
+    if (!validate(file)) return
 
-    try {
-      if (file.size === 0) {
-        setError("El archivo está vacío. Selecciona otra imagen.")
-        resetSelection()
-        return
-      }
-
-      if (file.size > maxSize) {
-        setError(`La imagen no debe superar los ${maxSizeMB}MB`)
-        resetSelection()
-        return
-      }
-
-      const resolved = await resolveImageType(file)
-
-      if (selectionId !== selectionIdRef.current) return
-
-      if (resolved.type === null && !resolved.heic) {
-        setError("Formato no soportado. Usa JPG, PNG, WEBP o GIF")
-        resetSelection()
-        return
-      }
-
-      let outFile = file
-      let contentType = resolved.type ?? "image/jpeg"
-
-      if (resolved.heic || imageIsCompressible(resolved.type)) {
-        updatePhase("compress")
-        try {
-          const result = await compressImage(file, { forceEncode: resolved.heic })
-          if (result.compressed) {
-            outFile = result.file
-            contentType = "image/jpeg"
-          }
-        } finally {
-          if (selectionId === selectionIdRef.current) updatePhase("idle")
-        }
-      }
-
-      if (selectionId !== selectionIdRef.current) return
-
-      if (resolved.heic && outFile === file) {
-        setError(
-          "Esta foto está en formato HEIC y el navegador no pudo convertirla. En el selector elige «Compatibilidad» o «JPG», o exporta la foto como JPG.",
-        )
-        resetSelection()
-        return
-      }
-
-      updatePhase("upload")
-      let url: string | null = null
-      try {
-        url = await uploadImageDirect(outFile, folder, contentType)
-      } catch {
-        url = null
-      } finally {
-        if (selectionId === selectionIdRef.current) updatePhase("idle")
-      }
-
-      if (selectionId !== selectionIdRef.current) return
-
-      if (!url) {
-        setError("No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.")
-        resetSelection()
-        return
-      }
-
-      if (fileRef.current) fileRef.current.value = ""
-      setRemoteUrl(url)
-      setPreview(URL.createObjectURL(outFile))
-      updateHasFile(true)
-    } catch {
-      if (selectionId === selectionIdRef.current) {
-        setError("No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.")
-        resetSelection()
-      }
+    let outFile = file
+    if (imageIsCompressible(file)) {
+      setIsCompressing(true)
+      const result = await compressImage(file)
+      if (result.compressed) outFile = result.file
+      setIsCompressing(false)
     }
+
+    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    setPreview(URL.createObjectURL(outFile))
+    setHasFile(true)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
-    if (!f) return
-    void handleFile(f)
+    if (f) handleFile(f)
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -163,12 +73,9 @@ export function ImageDropzone({
   }
 
   function handleClear() {
-    selectionIdRef.current++
     setPreview(null)
-    setRemoteUrl(null)
-    updateHasFile(false)
+    setHasFile(false)
     setError(null)
-    updatePhase("idle")
     if (fileRef.current) fileRef.current.value = ""
     onClear?.()
   }
@@ -196,11 +103,11 @@ export function ImageDropzone({
         <input
           ref={fileRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
+          name={name}
+          accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handleChange}
         />
-        <input type="hidden" name={`${name}_url`} value={remoteUrl ?? ""} />
 
         {showImage ? (
           <img
@@ -216,7 +123,7 @@ export function ImageDropzone({
               />
             </svg>
             <span className="text-xs">Arrastra una imagen o haz clic para seleccionar</span>
-            <span className="text-[11px] text-[#6B7280]">JPG, PNG, WEBP o GIF — máx. {maxSizeMB}MB</span>
+            <span className="text-[11px] text-[#6B7280]">JPG, PNG o WEBP — máx. {maxSizeMB}MB</span>
           </div>
         )}
 
@@ -240,11 +147,7 @@ export function ImageDropzone({
           </button>
           {hasFile && (
             <span className="text-[11px] text-[#27AE60]">
-              {phase === "compress"
-                ? "Comprimiendo imagen…"
-                : phase === "upload"
-                  ? "Subiendo imagen…"
-                  : "✓ Imagen lista para guardar"}
+              {isCompressing ? "Comprimiendo imagen…" : "✓ Nueva imagen seleccionada (se comprime al guardar)"}
             </span>
           )}
         </div>

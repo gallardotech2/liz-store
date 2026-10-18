@@ -110,17 +110,8 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
 
   useEffect(() => {
     fetchSession()
-    const interval = setInterval(() => {
-      if (!document.hidden) fetchSession()
-    }, 30000)
-    const onVisibilityChange = () => {
-      if (!document.hidden) fetchSession()
-    }
-    document.addEventListener("visibilitychange", onVisibilityChange)
-    return () => {
-      clearInterval(interval)
-      document.removeEventListener("visibilitychange", onVisibilityChange)
-    }
+    const interval = setInterval(fetchSession, 5000)
+    return () => clearInterval(interval)
   }, [fetchSession])
 
   const currentProduct = session?.live_products?.find(

@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath, updateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
 
@@ -27,6 +27,5 @@ export async function updateStoreWhatsApp(formData: FormData) {
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/store")
-  revalidatePath("/", "layout")
-  updateTag("store-profile")
+  revalidatePath("/")
 }
