@@ -24,6 +24,10 @@ export async function createCategory(formData: FormData) {
   if (error) throw new Error(error.message)
 
   const imageFile = formData.get("image") as File | null
+  const imageSelected = formData.get("image_selected") === "1"
+  if (imageSelected && (!imageFile || imageFile.size === 0)) {
+    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
+  }
   if (imageFile && imageFile.size > 0) {
     const categoryId = category?.[0]?.id
     if (categoryId) {
@@ -52,6 +56,10 @@ export async function updateCategory(id: number, formData: FormData) {
 
   const removeImage = formData.get("remove_image") === "1"
   const imageFile = formData.get("image") as File | null
+  const imageSelected = formData.get("image_selected") === "1"
+  if (imageSelected && (!imageFile || imageFile.size === 0)) {
+    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
+  }
 
   if (removeImage && !(imageFile && imageFile.size > 0)) {
     const { data: old } = await (supabase as any)

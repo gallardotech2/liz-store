@@ -1,15 +1,17 @@
+import { resolveImageType } from "./image-detect"
+
 export interface CompressResult {
   file: File
   compressed: boolean
 }
 
-export function imageIsCompressible(file: File): boolean {
-  return ["image/jpeg", "image/png", "image/webp"].includes(file.type)
+export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+
+export function imageIsCompressible(type: string | null): boolean {
+  return type === "image/jpeg" || type === "image/png" || type === "image/webp"
 }
 
-// Objetivo tras comprimir: el archivo enviado al servidor siempre queda muy por
-// debajo del límite del Server Action (4MB) y ahorra almacenamiento free de Supabase.
-const TARGET_BYTES = 1.5 * 1024 * 1024
+const TARGET_BYTES = 600 * 1024
 
 const ATTEMPTS: Array<{ maxSide: number; quality: number }> = [
   { maxSide: 1600, quality: 0.85 },
@@ -19,62 +21,135 @@ const ATTEMPTS: Array<{ maxSide: number; quality: number }> = [
   { maxSide: 640, quality: 0.65 },
 ]
 
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    let settled = false
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        resolve(null)
+      }
+    }, 10000)
+    canvas.toBlob(
+      (blob) => {
+        if (!settled) {
+          settled = true
+          clearTimeout(timer)
+          resolve(blob)
+        }
+      },
+      "image/jpeg",
+      quality,
+    )
+  })
+}
+
+async function loadImageElement(file: File): Promise<HTMLImageElement> {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.decoding = "async"
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error("No se pudo decodificar la imagen"))
+      img.src = url
+    })
+    return img
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export async function compressImage(
   file: File,
-  maxSide = 1600,
-  quality = 0.82,
+  options?: { forceEncode?: boolean },
 ): Promise<CompressResult> {
-  // Archivos livianos se envían tal cual (preserva PNG y transparencia).
-  if (file.size <= TARGET_BYTES) return { file, compressed: false }
+  const forceEncode = options?.forceEncode ?? false
+
+  const resolved = await resolveImageType(file)
+  const mustConvert = resolved.heic
+  const canConvert = mustConvert || imageIsCompressible(resolved.type)
+
+  if (!canConvert) return { file, compressed: false }
+  if (!mustConvert && !forceEncode && file.size <= TARGET_BYTES) {
+    return { file, compressed: false }
+  }
+
+  const forceAccept = forceEncode || mustConvert
 
   try {
-    const bitmap = await createImageBitmap(file)
+    let width: number
+    let height: number
+    let draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void
+    let cleanup: () => void
 
-    let best: { file: File; size: number } | null = null
-
-    for (const attempt of ATTEMPTS) {
-      const effectiveMaxSide = Math.min(attempt.maxSide, maxSide)
-      const effectiveQuality = Math.min(attempt.quality, quality)
-      const scale = Math.min(1, effectiveMaxSide / Math.max(bitmap.width, bitmap.height))
-      const width = Math.max(1, Math.round(bitmap.width * scale))
-      const height = Math.max(1, Math.round(bitmap.height * scale))
-
-      const canvas = document.createElement("canvas")
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext("2d")
-      if (!ctx) continue
-
-      // Fondo blanco: JPEG no soporta transparencia y evitaría negro.
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(0, 0, width, height)
-      ctx.drawImage(bitmap, 0, 0, width, height)
-
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/jpeg", effectiveQuality),
-      )
-      if (!blob || blob.size === 0) continue
-
-      const out = new File([blob], "producto.jpg", { type: "image/jpeg" })
-      if (out.size < file.size && (!best || out.size < best.size)) {
-        best = { file: out, size: out.size }
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" })
+      width = bitmap.width
+      height = bitmap.height
+      draw = (ctx, w, h) => {
+        ctx.drawImage(bitmap, 0, 0, w, h)
       }
-      if (best && best.size <= TARGET_BYTES) {
-        bitmap.close()
-        return { file: best.file, compressed: true }
+      cleanup = () => bitmap.close()
+    } catch {
+      const img = await loadImageElement(file)
+      width = img.naturalWidth
+      height = img.naturalHeight
+      draw = (ctx, w, h) => {
+        ctx.drawImage(img, 0, 0, w, h)
+      }
+      cleanup = () => {
+        img.removeAttribute("src")
       }
     }
 
-    bitmap.close()
-    if (best) return { file: best.file, compressed: true }
-    return { file, compressed: false }
+    try {
+      if (!width || !height) return { file, compressed: false }
+
+      let best: { file: File; size: number } | null = null
+
+      for (const attempt of ATTEMPTS) {
+        const scale = Math.min(1, attempt.maxSide / Math.max(width, height))
+        const w = Math.max(1, Math.round(width * scale))
+        const h = Math.max(1, Math.round(height * scale))
+
+        const canvas = document.createElement("canvas")
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext("2d")
+        if (!ctx) continue
+
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, w, h)
+        draw(ctx, w, h)
+
+        const blob = await canvasToBlob(canvas, attempt.quality)
+        if (!blob || blob.size === 0) continue
+
+        const out = new File([blob], "producto.jpg", { type: "image/jpeg" })
+        if (out.size < file.size || forceAccept) {
+          if (!best || out.size < best.size) best = { file: out, size: out.size }
+        }
+        if (best && best.size <= TARGET_BYTES) break
+      }
+
+      if (best) return { file: best.file, compressed: true }
+      return { file, compressed: false }
+    } finally {
+      cleanup()
+    }
   } catch {
     return { file, compressed: false }
   }
 }
 
-export function setFileInput(input: HTMLInputElement, file: File): void {
-  const dt = new DataTransfer()
-  dt.items.add(file)
-  input.files = dt.files
+export function setFileInput(input: HTMLInputElement, file: File): boolean {
+  try {
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    input.files = dt.files
+    return input.files != null && input.files.length === 1
+  } catch {
+    return false
+  }
 }

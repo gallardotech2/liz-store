@@ -6,7 +6,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { ImageDropzone } from "./ImageDropzone"
 import { addProductImage, deleteProductImage, setMainProductImage } from "@/app/admin/products/actions"
-import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
+import { compressImage, imageIsCompressible, setFileInput, MAX_UPLOAD_BYTES } from "@/lib/image-compress"
+import { resolveImageType } from "@/lib/image-detect"
 
 interface CategoryOption {
   id: number
@@ -76,11 +77,11 @@ function generateSku(name: string): string {
   return `${abbreviateName(name)}-${digits}`
 }
 
-function SubmitBtn() {
+function SubmitBtn({ busy }: { busy: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" variant="primary" size="sm" disabled={pending}>
-      {pending ? "Guardando..." : "Guardar"}
+    <Button type="submit" variant="primary" size="sm" disabled={pending || busy}>
+      {pending ? "Guardando..." : busy ? "Comprimiendo..." : "Guardar"}
     </Button>
   )
 }
@@ -91,32 +92,81 @@ function AddImageForm({ productId }: { productId: number }) {
   const [imageError, setImageError] = useState<string | null>(null)
   const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const selectionIdRef = useRef(0)
+
+  function rejectSelection(message: string) {
+    setImageError(message)
+    if (fileRef.current) fileRef.current.value = ""
+    setPreview(null)
+  }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    if (f.size > 12 * 1024 * 1024) {
-      setImageError("La imagen no debe superar los 12MB")
-      e.target.value = ""
-      return
-    }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
-      setImageError("Formato no soportado. Usa JPG, PNG o WEBP")
-      e.target.value = ""
-      return
-    }
-
-    let outFile = f
-    if (imageIsCompressible(f)) {
-      setIsCompressing(true)
-      const result = await compressImage(f)
-      if (result.compressed) outFile = result.file
-      setIsCompressing(false)
-    }
-
-    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    const selectionId = ++selectionIdRef.current
     setImageError(null)
-    setPreview(URL.createObjectURL(outFile))
+
+    if (f.size === 0) {
+      rejectSelection("El archivo está vacío. Selecciona otra imagen.")
+      return
+    }
+    if (f.size > 12 * 1024 * 1024) {
+      rejectSelection("La imagen no debe superar los 12MB")
+      return
+    }
+
+    try {
+      const resolved = await resolveImageType(f)
+      if (selectionId !== selectionIdRef.current) return
+
+      if (resolved.type === null && !resolved.heic) {
+        rejectSelection("Formato no soportado. Usa JPG, PNG, WEBP o GIF")
+        return
+      }
+
+      let outFile = f
+      if (resolved.heic || imageIsCompressible(resolved.type)) {
+        setIsCompressing(true)
+        try {
+          const result = await compressImage(f, { forceEncode: resolved.heic })
+          if (result.compressed) outFile = result.file
+        } finally {
+          if (selectionId === selectionIdRef.current) setIsCompressing(false)
+        }
+      }
+
+      if (selectionId !== selectionIdRef.current) return
+
+      if (resolved.heic && outFile === f) {
+        rejectSelection(
+          "Esta foto está en formato HEIC y el navegador no pudo convertirla. Exporta la foto como JPG e inténtalo de nuevo.",
+        )
+        return
+      }
+
+      if (outFile.size > MAX_UPLOAD_BYTES) {
+        rejectSelection("No se pudo comprimir esta imagen en tu dispositivo. Prueba con otra foto.")
+        return
+      }
+
+      if (fileRef.current) {
+        const injected = setFileInput(fileRef.current, outFile)
+        if (!injected) {
+          const current = fileRef.current.files?.[0]
+          if (current && current.size > 0 && current.size <= MAX_UPLOAD_BYTES) {
+            outFile = current
+          } else {
+            rejectSelection("Este navegador no pudo preparar la imagen para el envío. Prueba de nuevo.")
+            return
+          }
+        }
+      }
+      setPreview(URL.createObjectURL(outFile))
+    } catch {
+      if (selectionId === selectionIdRef.current) {
+        rejectSelection("No se pudo procesar la imagen seleccionada.")
+      }
+    }
   }
 
   return (
@@ -133,7 +183,7 @@ function AddImageForm({ productId }: { productId: number }) {
             ref={fileRef}
             type="file"
             name="image"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
             required
             className="text-xs text-[#ABB2BF] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-none file:bg-primary file:text-white file:text-xs file:font-semibold file:cursor-pointer hover:file:bg-primary-dark transition-colors cursor-pointer"
             onChange={handleImageChange}
@@ -153,10 +203,10 @@ function AddImageForm({ productId }: { productId: number }) {
         </label>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || isCompressing}
           className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors border-none cursor-pointer disabled:opacity-50"
         >
-          {pending ? "Subiendo..." : "Agregar"}
+          {pending ? "Subiendo..." : isCompressing ? "Comprimiendo..." : "Agregar"}
         </button>
       </div>
       {isCompressing && (
@@ -205,6 +255,8 @@ function SetMainForm({ imageId, productId }: { imageId: number; productId: numbe
 export function ProductForm({ categories, initialData, action }: ProductFormProps) {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!initialData?.slug)
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(!!initialData?.sku)
+  const [mainImageBusy, setMainImageBusy] = useState(false)
+  const [hasSelectedImage, setHasSelectedImage] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
   const skuRef = useRef<HTMLInputElement>(null)
@@ -350,9 +402,12 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
           <label className="text-[13px] text-[#ABB2BF] font-medium">
             Imagen del producto
           </label>
+          <input type="hidden" name="image_selected" value={hasSelectedImage ? "1" : "0"} />
           <ImageDropzone
             name="image"
             currentImage={mainImage?.image}
+            onBusyChange={setMainImageBusy}
+            onFileStateChange={setHasSelectedImage}
           />
         </div>
 
@@ -455,7 +510,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
         </div>
 
         <div className="md:col-span-2 flex items-center gap-3 pt-4 border-t border-white/12 mt-4">
-          <SubmitBtn />
+          <SubmitBtn busy={mainImageBusy} />
           <Link
             href="/admin/products"
             className="text-sm text-[#ABB2BF] hover:text-white no-underline transition-colors"

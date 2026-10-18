@@ -1,58 +1,138 @@
 "use client"
 
 import { useRef, useState, type DragEvent } from "react"
-import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
+import { compressImage, imageIsCompressible, setFileInput, MAX_UPLOAD_BYTES } from "@/lib/image-compress"
+import { resolveImageType } from "@/lib/image-detect"
 
 interface ImageDropzoneProps {
   name: string
   currentImage?: string | null
   onClear?: () => void
   maxSizeMB?: number
+  onBusyChange?: (busy: boolean) => void
+  onFileStateChange?: (hasFile: boolean) => void
 }
 
-export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: ImageDropzoneProps) {
+export function ImageDropzone({
+  name,
+  currentImage,
+  onClear,
+  maxSizeMB = 12,
+  onBusyChange,
+  onFileStateChange,
+}: ImageDropzoneProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasFile, setHasFile] = useState(false)
   const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const selectionIdRef = useRef(0)
 
   const maxSize = maxSizeMB * 1024 * 1024
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"]
 
-  function validate(file: File): boolean {
-    setError(null)
-    if (file.size > maxSize) {
-      setError(`La imagen no debe superar los ${maxSizeMB}MB`)
-      return false
-    }
-    if (!allowedTypes.includes(file.type)) {
-      setError("Formato no soportado. Usa JPG, PNG o WEBP")
-      return false
-    }
-    return true
+  function updateBusy(value: boolean) {
+    setIsCompressing(value)
+    onBusyChange?.(value)
+  }
+
+  function updateHasFile(value: boolean) {
+    setHasFile(value)
+    onFileStateChange?.(value)
+  }
+
+  function resetSelection() {
+    selectionIdRef.current++
+    if (fileRef.current) fileRef.current.value = ""
+    setPreview(null)
+    updateHasFile(false)
+    updateBusy(false)
   }
 
   async function handleFile(file: File) {
-    if (!validate(file)) return
+    const selectionId = ++selectionIdRef.current
+    setError(null)
 
-    let outFile = file
-    if (imageIsCompressible(file)) {
-      setIsCompressing(true)
-      const result = await compressImage(file)
-      if (result.compressed) outFile = result.file
-      setIsCompressing(false)
+    try {
+      if (file.size === 0) {
+        setError("El archivo está vacío. Selecciona otra imagen.")
+        resetSelection()
+        return
+      }
+
+      if (file.size > maxSize) {
+        setError(`La imagen no debe superar los ${maxSizeMB}MB`)
+        resetSelection()
+        return
+      }
+
+      const resolved = await resolveImageType(file)
+
+      if (selectionId !== selectionIdRef.current) return
+
+      if (resolved.type === null && !resolved.heic) {
+        setError("Formato no soportado. Usa JPG, PNG, WEBP o GIF")
+        resetSelection()
+        return
+      }
+
+      let outFile = file
+      if (resolved.heic || imageIsCompressible(resolved.type)) {
+        updateBusy(true)
+        try {
+          const result = await compressImage(file, { forceEncode: resolved.heic })
+          if (result.compressed) outFile = result.file
+        } finally {
+          if (selectionId === selectionIdRef.current) updateBusy(false)
+        }
+      }
+
+      if (selectionId !== selectionIdRef.current) return
+
+      if (resolved.heic && outFile === file) {
+        setError(
+          "Esta foto está en formato HEIC y el navegador no pudo convertirla. En el selector elige «Compatibilidad» o «JPG», o exporta la foto como JPG.",
+        )
+        resetSelection()
+        return
+      }
+
+      if (outFile.size > MAX_UPLOAD_BYTES) {
+        setError(
+          "No se pudo comprimir esta imagen en tu dispositivo. Prueba con otra foto o redúcela en una app de edición.",
+        )
+        resetSelection()
+        return
+      }
+
+      if (fileRef.current) {
+        const injected = setFileInput(fileRef.current, outFile)
+        if (!injected) {
+          const current = fileRef.current.files?.[0]
+          if (current && current.size > 0 && current.size <= MAX_UPLOAD_BYTES) {
+            outFile = current
+          } else {
+            setError("Este navegador no pudo preparar la imagen para el envío. Prueba de nuevo.")
+            resetSelection()
+            return
+          }
+        }
+      }
+
+      setPreview(URL.createObjectURL(outFile))
+      updateHasFile(true)
+    } catch {
+      if (selectionId === selectionIdRef.current) {
+        setError("No se pudo procesar la imagen seleccionada.")
+        resetSelection()
+      }
     }
-
-    if (fileRef.current) setFileInput(fileRef.current, outFile)
-    setPreview(URL.createObjectURL(outFile))
-    setHasFile(true)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
-    if (f) handleFile(f)
+    if (!f) return
+    void handleFile(f)
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -73,9 +153,11 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
   }
 
   function handleClear() {
+    selectionIdRef.current++
     setPreview(null)
-    setHasFile(false)
+    updateHasFile(false)
     setError(null)
+    updateBusy(false)
     if (fileRef.current) fileRef.current.value = ""
     onClear?.()
   }
@@ -104,7 +186,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
           ref={fileRef}
           type="file"
           name={name}
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
           className="hidden"
           onChange={handleChange}
         />
@@ -123,7 +205,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
               />
             </svg>
             <span className="text-xs">Arrastra una imagen o haz clic para seleccionar</span>
-            <span className="text-[11px] text-[#6B7280]">JPG, PNG o WEBP — máx. {maxSizeMB}MB</span>
+            <span className="text-[11px] text-[#6B7280]">JPG, PNG, WEBP o GIF — máx. {maxSizeMB}MB</span>
           </div>
         )}
 
@@ -147,7 +229,7 @@ export function ImageDropzone({ name, currentImage, onClear, maxSizeMB = 12 }: I
           </button>
           {hasFile && (
             <span className="text-[11px] text-[#27AE60]">
-              {isCompressing ? "Comprimiendo imagen…" : "✓ Nueva imagen seleccionada (se comprime al guardar)"}
+              {isCompressing ? "Comprimiendo imagen…" : "✓ Imagen lista para guardar"}
             </span>
           )}
         </div>

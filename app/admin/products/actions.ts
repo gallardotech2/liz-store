@@ -90,6 +90,10 @@ export async function createProduct(formData: FormData) {
   if (error) throw new Error(error.message)
 
   const imageFile = formData.get("image") as File | null
+  const imageSelected = formData.get("image_selected") === "1"
+  if (imageSelected && (!imageFile || imageFile.size === 0)) {
+    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
+  }
   if (imageFile && imageFile.size > 0) {
     const productId = product?.[0]?.id
     if (productId) {
@@ -137,6 +141,10 @@ export async function updateProduct(id: number, formData: FormData) {
   }
 
   const imageFile = formData.get("image") as File | null
+  const imageSelected = formData.get("image_selected") === "1"
+  if (imageSelected && (!imageFile || imageFile.size === 0)) {
+    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
+  }
   if (imageFile && imageFile.size > 0) {
     const { data: existing } = await (supabase as any)
       .from("product_images")
