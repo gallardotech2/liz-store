@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { ImageDropzone } from "./ImageDropzone"
 import { addProductImage, deleteProductImage, setMainProductImage } from "@/app/admin/products/actions"
 import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
+import { checkImageFile, fitsUploadLimit, UPLOAD_LIMIT_ERROR } from "@/lib/image-detect"
 
 interface CategoryOption {
   id: number
@@ -76,10 +77,10 @@ function generateSku(name: string): string {
   return `${abbreviateName(name)}-${digits}`
 }
 
-function SubmitBtn() {
+function SubmitBtn({ extraDisabled = false }: { extraDisabled?: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" variant="primary" size="sm" disabled={pending}>
+    <Button type="submit" variant="primary" size="sm" disabled={pending || extraDisabled}>
       {pending ? "Guardando..." : "Guardar"}
     </Button>
   )
@@ -91,30 +92,60 @@ function AddImageForm({ productId }: { productId: number }) {
   const [imageError, setImageError] = useState<string | null>(null)
   const [isCompressing, setIsCompressing] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const selectionRef = useRef(0)
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
-    if (f.size > 12 * 1024 * 1024) {
-      setImageError("La imagen no debe superar los 12MB")
-      e.target.value = ""
-      return
-    }
-    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
-      setImageError("Formato no soportado. Usa JPG, PNG o WEBP")
+    const token = ++selectionRef.current
+    setImageError(null)
+
+    const checked = await checkImageFile(f, 12 * 1024 * 1024)
+    if (token !== selectionRef.current) return
+    if (!checked.ok) {
+      setImageError(checked.error)
+      setPreview(null)
       e.target.value = ""
       return
     }
 
-    let outFile = f
-    if (imageIsCompressible(f)) {
+    let outFile = checked.file
+    if (imageIsCompressible(outFile)) {
       setIsCompressing(true)
-      const result = await compressImage(f)
-      if (result.compressed) outFile = result.file
-      setIsCompressing(false)
+      let processFailed = false
+      try {
+        const result = await compressImage(outFile)
+        if (result.compressed) outFile = result.file
+      } catch {
+        processFailed = true
+      } finally {
+        setIsCompressing(false)
+      }
+      if (token !== selectionRef.current) return
+      if (processFailed) {
+        setImageError("No se pudo procesar la imagen. Intenta con otra foto.")
+        setPreview(null)
+        e.target.value = ""
+        return
+      }
     }
 
-    if (fileRef.current) setFileInput(fileRef.current, outFile)
+    if (!fitsUploadLimit(outFile)) {
+      setImageError(UPLOAD_LIMIT_ERROR)
+      setPreview(null)
+      e.target.value = ""
+      return
+    }
+
+    try {
+      if (fileRef.current) setFileInput(fileRef.current, outFile)
+    } catch {
+      setImageError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
+      setPreview(null)
+      e.target.value = ""
+      return
+    }
+
     setImageError(null)
     setPreview(URL.createObjectURL(outFile))
   }
@@ -123,7 +154,7 @@ function AddImageForm({ productId }: { productId: number }) {
     <form
       action={addProductImage.bind(null, productId)}
       className="bg-[#2A2D35] rounded-xl p-4 border border-white/12"
-      onSubmit={() => setTimeout(() => { setPreview(null); if (fileRef.current) fileRef.current.value = "" }, 100)}
+      onSubmit={() => setTimeout(() => { selectionRef.current++; setPreview(null); if (fileRef.current) fileRef.current.value = "" }, 100)}
     >
       <p className="text-[#ABB2BF] text-xs mb-3">Agregar nueva imagen</p>
       <div className="flex flex-wrap gap-3 items-end">
@@ -133,7 +164,7 @@ function AddImageForm({ productId }: { productId: number }) {
             ref={fileRef}
             type="file"
             name="image"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             required
             className="text-xs text-[#ABB2BF] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-none file:bg-primary file:text-white file:text-xs file:font-semibold file:cursor-pointer hover:file:bg-primary-dark transition-colors cursor-pointer"
             onChange={handleImageChange}
@@ -153,7 +184,7 @@ function AddImageForm({ productId }: { productId: number }) {
         </label>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || isCompressing}
           className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors border-none cursor-pointer disabled:opacity-50"
         >
           {pending ? "Subiendo..." : "Agregar"}
@@ -205,6 +236,7 @@ function SetMainForm({ imageId, productId }: { imageId: number; productId: numbe
 export function ProductForm({ categories, initialData, action }: ProductFormProps) {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!initialData?.slug)
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(!!initialData?.sku)
+  const [imageBusy, setImageBusy] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
   const skuRef = useRef<HTMLInputElement>(null)
@@ -353,6 +385,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
           <ImageDropzone
             name="image"
             currentImage={mainImage?.image}
+            onBusyChange={setImageBusy}
           />
         </div>
 
@@ -455,7 +488,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
         </div>
 
         <div className="md:col-span-2 flex items-center gap-3 pt-4 border-t border-white/12 mt-4">
-          <SubmitBtn />
+          <SubmitBtn extraDisabled={imageBusy} />
           <Link
             href="/admin/products"
             className="text-sm text-[#ABB2BF] hover:text-white no-underline transition-colors"
