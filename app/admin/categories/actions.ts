@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
-import { uploadImage, deleteImage } from "@/lib/supabase/storage"
+import { resolveSubmittedImageUrl, deleteImage } from "@/lib/supabase/storage"
 
 export async function createCategory(formData: FormData) {
   await requireAdmin()
@@ -15,6 +15,7 @@ export async function createCategory(formData: FormData) {
   const description = (formData.get("description") as string) || ""
   const order = Number(formData.get("order")) || 0
   const is_active = formData.get("is_active") === "on"
+  const imageUrl = resolveSubmittedImageUrl(formData, false)
 
   const { data: category, error } = await (supabase as any)
     .from("categories")
@@ -23,15 +24,9 @@ export async function createCategory(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
-  const imageFile = formData.get("image") as File | null
-  const imageSelected = formData.get("image_selected") === "1"
-  if (imageSelected && (!imageFile || imageFile.size === 0)) {
-    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
-  }
-  if (imageFile && imageFile.size > 0) {
+  if (imageUrl) {
     const categoryId = category?.[0]?.id
     if (categoryId) {
-      const imageUrl = await uploadImage(imageFile, `categories/${categoryId}`)
       await (supabase as any).from("categories").update({ image: imageUrl }).eq("id", categoryId)
     }
   }
@@ -55,13 +50,9 @@ export async function updateCategory(id: number, formData: FormData) {
   const updateData: Record<string, unknown> = { name, slug, description, order, is_active }
 
   const removeImage = formData.get("remove_image") === "1"
-  const imageFile = formData.get("image") as File | null
-  const imageSelected = formData.get("image_selected") === "1"
-  if (imageSelected && (!imageFile || imageFile.size === 0)) {
-    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
-  }
+  const imageUrl = resolveSubmittedImageUrl(formData, false)
 
-  if (removeImage && !(imageFile && imageFile.size > 0)) {
+  if (removeImage && !imageUrl) {
     const { data: old } = await (supabase as any)
       .from("categories")
       .select("image")
@@ -74,7 +65,7 @@ export async function updateCategory(id: number, formData: FormData) {
     updateData.image = null
   }
 
-  if (imageFile && imageFile.size > 0) {
+  if (imageUrl) {
     const { data: old } = await (supabase as any)
       .from("categories")
       .select("image")
@@ -85,7 +76,6 @@ export async function updateCategory(id: number, formData: FormData) {
       await deleteImage(old.image).catch(() => {})
     }
 
-    const imageUrl = await uploadImage(imageFile, `categories/${id}`)
     updateData.image = imageUrl
   }
 

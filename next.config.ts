@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@supabase/supabase-js"],
     serverActions: {
-      bodySizeLimit: "8mb",
+      bodySizeLimit: "4mb",
     },
   },
 }

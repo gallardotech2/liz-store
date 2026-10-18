@@ -23,7 +23,7 @@ function SubmitBtn({ busy }: { busy: boolean }) {
   const { pending } = useFormStatus()
   return (
     <Button type="submit" variant="primary" size="sm" disabled={pending || busy}>
-      {pending ? "Guardando..." : busy ? "Comprimiendo..." : "Guardar"}
+      {pending ? "Guardando..." : busy ? "Preparando imagen..." : "Guardar"}
     </Button>
   )
 }
@@ -69,6 +69,7 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
         <input type="hidden" name="image_selected" value={hasSelectedImage ? "1" : "0"} />
         <ImageDropzone
           name="image"
+          folder="categories"
           currentImage={initialData?.image}
           onBusyChange={setImageBusy}
           onFileStateChange={setHasSelectedImage}

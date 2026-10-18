@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
-import { uploadImage, deleteImage } from "@/lib/supabase/storage"
-
+import { resolveSubmittedImageUrl, deleteImage } from "@/lib/supabase/storage"
 function abbreviateName(name: string): string {
   const words = name
     .normalize("NFD")
@@ -65,6 +64,7 @@ export async function createProduct(formData: FormData) {
   const is_offer = formData.get("is_offer") === "on"
   const meta_description = (formData.get("meta_description") as string) || ""
   const meta_keywords = (formData.get("meta_keywords") as string) || ""
+  const imageUrl = resolveSubmittedImageUrl(formData, false)
 
   const { data: product, error } = await (supabase as any)
     .from("products")
@@ -89,15 +89,9 @@ export async function createProduct(formData: FormData) {
 
   if (error) throw new Error(error.message)
 
-  const imageFile = formData.get("image") as File | null
-  const imageSelected = formData.get("image_selected") === "1"
-  if (imageSelected && (!imageFile || imageFile.size === 0)) {
-    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
-  }
-  if (imageFile && imageFile.size > 0) {
+  if (imageUrl) {
     const productId = product?.[0]?.id
     if (productId) {
-      const imageUrl = await uploadImage(imageFile, `products/${productId}`)
       await (supabase as any).from("product_images").insert({
         product_id: productId,
         image: imageUrl,
@@ -133,6 +127,7 @@ export async function updateProduct(id: number, formData: FormData) {
   const is_offer = formData.get("is_offer") === "on"
   const meta_description = (formData.get("meta_description") as string) || ""
   const meta_keywords = (formData.get("meta_keywords") as string) || ""
+  const imageUrl = resolveSubmittedImageUrl(formData, false)
 
   const updateData: Record<string, unknown> = {
     name, slug, sku, category_id, price, discount_price, stock,
@@ -140,12 +135,7 @@ export async function updateProduct(id: number, formData: FormData) {
     meta_description, meta_keywords,
   }
 
-  const imageFile = formData.get("image") as File | null
-  const imageSelected = formData.get("image_selected") === "1"
-  if (imageSelected && (!imageFile || imageFile.size === 0)) {
-    throw new Error("La imagen seleccionada no llegó al servidor. Vuelve a seleccionarla e inténtalo de nuevo.")
-  }
-  if (imageFile && imageFile.size > 0) {
+  if (imageUrl) {
     const { data: existing } = await (supabase as any)
       .from("product_images")
       .select("id, image")
@@ -171,7 +161,6 @@ export async function updateProduct(id: number, formData: FormData) {
       }
     }
 
-    const imageUrl = await uploadImage(imageFile, `products/${id}`)
     await (supabase as any).from("product_images").insert({
       product_id: id,
       image: imageUrl,
@@ -216,13 +205,10 @@ export async function addProductImage(productId: number, formData: FormData) {
   await requireAdmin()
   const supabase = await createClient()
 
-  const imageFile = formData.get("image") as File | null
+  const imageUrl = resolveSubmittedImageUrl(formData, true)
+  if (!imageUrl) throw new Error("Selecciona una imagen")
   const alt_text = (formData.get("alt_text") as string) || ""
   const is_main = formData.get("is_main") === "on"
-
-  if (!imageFile || imageFile.size === 0) throw new Error("Selecciona una imagen")
-
-  const imageUrl = await uploadImage(imageFile, `products/${productId}`)
 
   if (is_main) {
     await (supabase as any)

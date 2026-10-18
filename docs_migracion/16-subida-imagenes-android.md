@@ -79,3 +79,54 @@ Tres huecos extra corregidos tras revisión:
 2. Condiciones de carrera de selección: token `selectionIdRef` en `ImageDropzone` **y** en `AddImageForm` — una selección antigua que fallaba tarde ya no puede limpiar la selección nueva del usuario. Guard también tras `resolveImageType` (no solo tras compresión).
 3. Guard de archivo vacío (`size 0`) en ambos flujos con mensaje claro.
 
+## Causa raíz definitiva (3ª ronda) — "Failed to fetch"
+Tras desplegar la 2ª pasada, el usuario seguía sin poder subir desde Android y ahora veía `"Failed to fetch"` (en inglés) en el error boundary.
+
+**`Failed to fetch` no es un error de nuestro código: es Vercel cortando la petición.** Límite duro de Vercel Functions (documentado, no configurable): **4.5MB máximo por request body**; si se supera devuelve `413 FUNCTION_PAYLOAD_TOO_LARGE` y aborta la conexión → el navegador lanza `TypeError: Failed to fetch`.
+
+Cadena del fallo:
+1. En modo móvil el selector entrega el archivo ORIGINAL (frecuentemente 4.5–12MB).
+2. Si la compresión en el dispositivo no logra reducirlo (o falla la decodificación), el archivo crudo pasa el chequeo del cliente (`MAX_UPLOAD_BYTES = 8MB` — mayor que el límite real de Vercel).
+3. El Server Action intenta enviar el archivo crudo por POST → Vercel corta en 4.5MB → `"Failed to fetch"`.
+4. `bodySizeLimit: "8mb"` en `next.config.ts` era inútil: el corte de Vercel (4.5MB) ocurre ANTES de que Next.js pueda imponer su límite.
+
+## Solución definitiva — subida directa navegador → Supabase Storage
+Patrón oficial de Vercel para saltarse el límite de 4.5MB: **los bytes de la imagen ya no pasan por Vercel**. Se sube con URL firmada directamente a Supabase Storage y al Server Action solo viaja la URL pública (texto minúsculo).
+
+Flujo nuevo:
+1. El cliente comprime (igual que antes, ≤600KB @1600px).
+2. Llama al Server Action `requestImageUploadTicket(folder, ext)` → `requireAdmin()` + `createSignedUploadUrl()` con la service role → devuelve `{ path, token, publicUrl }`.
+3. El navegador sube a Supabase con `uploadToSignedUrl(path, token, file)` (cliente anon — el token autoriza).
+4. El formulario envía solo un hidden `image_url` con la URL pública.
+5. El Server Action valida que la URL pertenezca a nuestro bucket (`extractPathFromUrl`) y guarda la fila.
+
+### Archivos
+- **Nuevo `lib/supabase/bucket.ts`**: `IMAGE_BUCKET = "product-images"` compartido server/cliente (sin ciclos de import).
+- **Nuevo `lib/image-upload.ts`**: `uploadImageDirect(file, folder, contentType)` — pide el ticket y sube a Supabase; mensajes en español.
+- **Nuevo `app/admin/storage-actions.ts`**: `requestImageUploadTicket()` (solo admin; whitelist de carpetas `products|categories` y extensiones).
+- **`lib/supabase/storage.ts`**: + `createUploadTicket()` (URL firmada + publicUrl), + `resolveSubmittedImageUrl(formData, required)` (valida que la URL sea de nuestro bucket), `extractPathFromUrl` exportada. Eliminado `uploadImage()` (ya nadie recibe archivos por Vercel).
+- **`components/admin/ImageDropzone.tsx`**: tras comprimir **sube directo a Supabase**; el input de archivo ya no tiene `name` (los bytes nunca se envían al action); hidden `image_url`; estados "Comprimiendo imagen… / Subiendo imagen… / ✓ Imagen lista". Nuevo prop obligatorio `folder`.
+- **`components/admin/ProductForm.tsx`**: `AddImageForm` con el mismo flujo (sube al elegir, botón Agregar deshabilitado hasta que haya URL); `SubmitBtn` muestra "Preparando imagen...".
+- **`components/admin/CategoryForm.tsx`**: pasa `folder="categories"`.
+- **`app/admin/{products,categories}/actions.ts`**: reciben `image_url` (validada) en lugar del archivo; guards actualizados (`image_selected` sin URL → error claro).
+- **`app/admin/error.tsx`**: traduce a **español** los errores en inglés que llegan al boundary (`Failed to fetch` → "No se pudo conectar con el servidor…", página desactualizada, error de servidor, payload demasiado grande).
+- **`next.config.ts`**: `bodySizeLimit` vuelve a `4mb` (el límite real es de Vercel; los actions ahora llevan solo texto).
+- **`lib/image-compress.ts`**: eliminados `MAX_UPLOAD_BYTES` y `setFileInput` (código muerto tras el cambio de arquitectura).
+
+### Ventajas
+- El límite de 4.5MB de Vercel **deja de existir para las imágenes** (ninguna imagen pasa por Vercel).
+- Si la compresión falla en un dispositivo, el archivo original sube igual por la vía directa (sin "Failed to fetch").
+- El guardado del formulario es más rápido (el POST ya no carga el archivo).
+- Errores siempre en español en el panel.
+
+### Consecuencias aceptadas
+- La validación por magic bytes en servidor ya no aplica al upload (no ve los bytes); la validación de formato vive en el cliente (panel solo-admin) y la URL se valida contra nuestro bucket.
+- Los archivos nuevos van a `products/...` y `categories/...` sin subcarpeta por id (los antiguos conservan su ruta).
+- Si el usuario elige una imagen y no guarda, queda un archivo huérfano en Storage (aceptable en panel admin).
+
+## Verificación (3ª ronda)
+- `npx tsc --noEmit`: 0 errores. `next build`: ✓ (48 páginas).
+- ESLint en archivos tocados: 0 errores nuevos (24 errores `no-explicit-any` preexistentes en actions, idénticos antes/después; warnings `<img>` preexistentes).
+- Pendiente: prueba manual en Android Brave modo móvil (cámara, galería, captura) + regresión PC.
+
+

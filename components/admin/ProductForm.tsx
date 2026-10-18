@@ -6,8 +6,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { ImageDropzone } from "./ImageDropzone"
 import { addProductImage, deleteProductImage, setMainProductImage } from "@/app/admin/products/actions"
-import { compressImage, imageIsCompressible, setFileInput, MAX_UPLOAD_BYTES } from "@/lib/image-compress"
+import { compressImage, imageIsCompressible } from "@/lib/image-compress"
 import { resolveImageType } from "@/lib/image-detect"
+import { uploadImageDirect } from "@/lib/image-upload"
 
 interface CategoryOption {
   id: number
@@ -81,7 +82,7 @@ function SubmitBtn({ busy }: { busy: boolean }) {
   const { pending } = useFormStatus()
   return (
     <Button type="submit" variant="primary" size="sm" disabled={pending || busy}>
-      {pending ? "Guardando..." : busy ? "Comprimiendo..." : "Guardar"}
+      {pending ? "Guardando..." : busy ? "Preparando imagen..." : "Guardar"}
     </Button>
   )
 }
@@ -89,15 +90,19 @@ function SubmitBtn({ busy }: { busy: boolean }) {
 function AddImageForm({ productId }: { productId: number }) {
   const { pending } = useFormStatus()
   const [preview, setPreview] = useState<string | null>(null)
+  const [remoteUrl, setRemoteUrl] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
-  const [isCompressing, setIsCompressing] = useState(false)
+  const [phase, setPhase] = useState<"idle" | "compress" | "upload">("idle")
   const fileRef = useRef<HTMLInputElement>(null)
   const selectionIdRef = useRef(0)
+  const isBusy = phase !== "idle"
 
   function rejectSelection(message: string) {
     setImageError(message)
     if (fileRef.current) fileRef.current.value = ""
     setPreview(null)
+    setRemoteUrl(null)
+    setPhase("idle")
   }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -125,13 +130,18 @@ function AddImageForm({ productId }: { productId: number }) {
       }
 
       let outFile = f
+      let contentType = resolved.type ?? "image/jpeg"
+
       if (resolved.heic || imageIsCompressible(resolved.type)) {
-        setIsCompressing(true)
+        setPhase("compress")
         try {
           const result = await compressImage(f, { forceEncode: resolved.heic })
-          if (result.compressed) outFile = result.file
+          if (result.compressed) {
+            outFile = result.file
+            contentType = "image/jpeg"
+          }
         } finally {
-          if (selectionId === selectionIdRef.current) setIsCompressing(false)
+          if (selectionId === selectionIdRef.current) setPhase("idle")
         }
       }
 
@@ -144,27 +154,29 @@ function AddImageForm({ productId }: { productId: number }) {
         return
       }
 
-      if (outFile.size > MAX_UPLOAD_BYTES) {
-        rejectSelection("No se pudo comprimir esta imagen en tu dispositivo. Prueba con otra foto.")
+      setPhase("upload")
+      let url: string | null = null
+      try {
+        url = await uploadImageDirect(outFile, "products", contentType)
+      } catch {
+        url = null
+      } finally {
+        if (selectionId === selectionIdRef.current) setPhase("idle")
+      }
+
+      if (selectionId !== selectionIdRef.current) return
+
+      if (!url) {
+        rejectSelection("No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.")
         return
       }
 
-      if (fileRef.current) {
-        const injected = setFileInput(fileRef.current, outFile)
-        if (!injected) {
-          const current = fileRef.current.files?.[0]
-          if (current && current.size > 0 && current.size <= MAX_UPLOAD_BYTES) {
-            outFile = current
-          } else {
-            rejectSelection("Este navegador no pudo preparar la imagen para el envío. Prueba de nuevo.")
-            return
-          }
-        }
-      }
+      if (fileRef.current) fileRef.current.value = ""
+      setRemoteUrl(url)
       setPreview(URL.createObjectURL(outFile))
     } catch {
       if (selectionId === selectionIdRef.current) {
-        rejectSelection("No se pudo procesar la imagen seleccionada.")
+        rejectSelection("No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.")
       }
     }
   }
@@ -173,7 +185,11 @@ function AddImageForm({ productId }: { productId: number }) {
     <form
       action={addProductImage.bind(null, productId)}
       className="bg-[#2A2D35] rounded-xl p-4 border border-white/12"
-      onSubmit={() => setTimeout(() => { setPreview(null); if (fileRef.current) fileRef.current.value = "" }, 100)}
+      onSubmit={() => setTimeout(() => {
+        setPreview(null)
+        setRemoteUrl(null)
+        if (fileRef.current) fileRef.current.value = ""
+      }, 100)}
     >
       <p className="text-[#ABB2BF] text-xs mb-3">Agregar nueva imagen</p>
       <div className="flex flex-wrap gap-3 items-end">
@@ -182,12 +198,11 @@ function AddImageForm({ productId }: { productId: number }) {
           <input
             ref={fileRef}
             type="file"
-            name="image"
             accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
-            required
             className="text-xs text-[#ABB2BF] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-none file:bg-primary file:text-white file:text-xs file:font-semibold file:cursor-pointer hover:file:bg-primary-dark transition-colors cursor-pointer"
             onChange={handleImageChange}
           />
+          <input type="hidden" name="image_url" value={remoteUrl ?? ""} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[11px] text-[#ABB2BF]">Texto alternativo</label>
@@ -203,14 +218,16 @@ function AddImageForm({ productId }: { productId: number }) {
         </label>
         <button
           type="submit"
-          disabled={pending || isCompressing}
+          disabled={pending || isBusy || !remoteUrl}
           className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors border-none cursor-pointer disabled:opacity-50"
         >
-          {pending ? "Subiendo..." : isCompressing ? "Comprimiendo..." : "Agregar"}
+          {pending ? "Guardando..." : phase === "compress" ? "Comprimiendo..." : phase === "upload" ? "Subiendo..." : "Agregar"}
         </button>
       </div>
-      {isCompressing && (
-        <p className="text-[#ABB2BF] text-[12px] mt-2">Comprimiendo imagen…</p>
+      {isBusy && (
+        <p className="text-[#ABB2BF] text-[12px] mt-2">
+          {phase === "compress" ? "Comprimiendo imagen…" : "Subiendo imagen…"}
+        </p>
       )}
       {preview && (
         <div className="mt-3">
@@ -405,6 +422,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
           <input type="hidden" name="image_selected" value={hasSelectedImage ? "1" : "0"} />
           <ImageDropzone
             name="image"
+            folder="products"
             currentImage={mainImage?.image}
             onBusyChange={setMainImageBusy}
             onFileStateChange={setHasSelectedImage}

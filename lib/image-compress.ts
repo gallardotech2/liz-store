@@ -5,8 +5,6 @@ export interface CompressResult {
   compressed: boolean
 }
 
-export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
-
 export function imageIsCompressible(type: string | null): boolean {
   return type === "image/jpeg" || type === "image/png" || type === "image/webp"
 }
@@ -140,16 +138,5 @@ export async function compressImage(
     }
   } catch {
     return { file, compressed: false }
-  }
-}
-
-export function setFileInput(input: HTMLInputElement, file: File): boolean {
-  try {
-    const dt = new DataTransfer()
-    dt.items.add(file)
-    input.files = dt.files
-    return input.files != null && input.files.length === 1
-  } catch {
-    return false
   }
 }
