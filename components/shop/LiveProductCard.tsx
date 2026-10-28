@@ -10,10 +10,12 @@ import type { HotProduct } from "@/lib/hot"
 
 export function LiveProductCard({
   product,
+  whatsappNumber,
   priority = false,
   className,
 }: {
   product: HotProduct
+  whatsappNumber: string
   priority?: boolean
   className?: string
 }) {
@@ -158,6 +160,7 @@ export function LiveProductCard({
           productName={product.name}
           productImage={product.image ?? ""}
           productPrice={pricing.displayPrice}
+          whatsappNumber={whatsappNumber}
           unavailableLabel={unavailableLabel}
         />
       </div>

@@ -6,6 +6,7 @@ import { CatalogFilters } from "@/components/shop/CatalogFilters"
 import { HotBanner } from "@/components/shop/HotBanner"
 import { getActiveHotCampaign } from "@/lib/live"
 import { getHotCatalogMap } from "@/lib/hot"
+import { getSocialWhatsAppNumber } from "@/lib/queries/social-links"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -34,6 +35,7 @@ export default async function CatalogPage({
   const hotCampaign = await getActiveHotCampaign()
   const liveMap = getHotCatalogMap(hotCampaign)
   const quickOrder = Boolean(hotCampaign)
+  const whatsappNumber = quickOrder ? await getSocialWhatsAppNumber(supabase) : ""
 
   const { data: categories } = await s
     .from("categories")
@@ -188,6 +190,7 @@ export default async function CatalogPage({
                     product={product}
                     liveProduct={liveMap.get(product.id) ?? null}
                     quickOrder={quickOrder}
+                    whatsappNumber={whatsappNumber}
                   />
                 ))}
               </div>

@@ -4,10 +4,12 @@ import type { HotProduct } from "@/lib/hot"
 
 export function LiveProductGrid({
   products,
+  whatsappNumber,
   className,
   priorityFirst = false,
 }: {
   products: HotProduct[]
+  whatsappNumber: string
   className?: string
   priorityFirst?: boolean
 }) {
@@ -24,6 +26,7 @@ export function LiveProductGrid({
         <LiveProductCard
           key={product.productId}
           product={product}
+          whatsappNumber={whatsappNumber}
           priority={priorityFirst && index < 2}
         />
       ))}

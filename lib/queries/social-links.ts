@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { parseWhatsAppNumber } from "@/lib/whatsapp"
 
 export interface SocialLink {
   id: number
@@ -25,6 +26,16 @@ export async function getWhatsappGroupLink(client: SupabaseClient): Promise<stri
     .eq("is_active", true)
     .maybeSingle() as unknown as { data: { url: string } | null }
   return data?.url?.trim() ?? ""
+}
+
+export async function getSocialWhatsAppNumber(client: SupabaseClient): Promise<string> {
+  const { data } = await client
+    .from("social_links")
+    .select("url")
+    .eq("platform", "whatsapp")
+    .eq("is_active", true)
+    .maybeSingle() as unknown as { data: { url: string } | null }
+  return parseWhatsAppNumber(data?.url ?? "")
 }
 
 export async function getAllSocialLinks(client: SupabaseClient) {

@@ -14,6 +14,7 @@ import { WhatsAppOrderButton } from "@/components/shop/WhatsAppOrderButton"
 import { TikTokIcon } from "@/components/ui/TikTokIcon"
 import { getActiveHotCampaign } from "@/lib/live"
 import { getHotPromoMap } from "@/lib/hot"
+import { getSocialWhatsAppNumber } from "@/lib/queries/social-links"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -160,6 +161,9 @@ export default async function ProductDetailPage({
   const hotProduct =
     hotCampaign?.products.find((item) => item.productId === p.id) ?? null
   const hotMap = getHotPromoMap(hotCampaign)
+  const whatsappNumber = hotProduct
+    ? await getSocialWhatsAppNumber(supabase)
+    : ""
 
   const reviews = reviewsResult.data
 
@@ -365,6 +369,7 @@ export default async function ProductDetailPage({
                     productName={p.name}
                     productImage={mainImage?.image ?? ""}
                     productPrice={hotProduct.promoPrice}
+                    whatsappNumber={whatsappNumber}
                   />
                 </div>
               )}

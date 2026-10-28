@@ -12,6 +12,7 @@ import { PersonalizedCategories } from "@/components/shop/PersonalizedCategories
 import { ScrollNudge } from "@/components/shop/ScrollNudge"
 import { HotHome } from "@/components/shop/HotHome"
 import { getActiveHotCampaign } from "@/lib/live"
+import { getSocialWhatsAppNumber } from "@/lib/queries/social-links"
 
 export const revalidate = 3600
 
@@ -63,7 +64,8 @@ export default async function HomePage() {
     ])
 
   if (hotCampaign) {
-    return <HotHome campaign={hotCampaign} />
+    const whatsappNumber = await getSocialWhatsAppNumber(supabase)
+    return <HotHome campaign={hotCampaign} whatsappNumber={whatsappNumber} />
   }
 
   type RawCategory = {

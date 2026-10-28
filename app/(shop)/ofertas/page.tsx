@@ -6,6 +6,7 @@ import { HotBanner } from "@/components/shop/HotBanner"
 import { HotProductGrid } from "@/components/shop/HotProductGrid"
 import { getActiveHotCampaign } from "@/lib/live"
 import { getHotCatalogMap } from "@/lib/hot"
+import { getSocialWhatsAppNumber } from "@/lib/queries/social-links"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -51,6 +52,7 @@ export default async function OffersPage({
   const hotCampaign = await getActiveHotCampaign()
   const liveMap = getHotCatalogMap(hotCampaign)
   const quickOrder = Boolean(hotCampaign)
+  const whatsappNumber = quickOrder ? await getSocialWhatsAppNumber(supabase) : ""
 
   const query = s
     .from("products")
@@ -144,7 +146,10 @@ export default async function OffersPage({
                   Descuentos activos por tiempo limitado.
                 </p>
               </div>
-              <HotProductGrid products={hotCampaign.topDiscounts} />
+              <HotProductGrid
+                products={hotCampaign.topDiscounts}
+                whatsappNumber={whatsappNumber}
+              />
             </div>
           )}
 
@@ -162,6 +167,7 @@ export default async function OffersPage({
                     product={product}
                     liveProduct={liveMap.get(product.id) ?? null}
                     quickOrder={quickOrder}
+                    whatsappNumber={whatsappNumber}
                   />
                 ))}
               </div>

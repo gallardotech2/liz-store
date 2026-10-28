@@ -4,10 +4,15 @@ import type { HotProduct } from "@/lib/hot"
 
 interface HotProductGridProps {
   products: HotProduct[]
+  whatsappNumber: string
   className?: string
 }
 
-export function HotProductGrid({ products, className }: HotProductGridProps) {
+export function HotProductGrid({
+  products,
+  whatsappNumber,
+  className,
+}: HotProductGridProps) {
   if (products.length === 0) return null
 
   return (
@@ -37,6 +42,7 @@ export function HotProductGrid({ products, className }: HotProductGridProps) {
           }}
           liveProduct={product}
           quickOrder
+          whatsappNumber={whatsappNumber}
         />
       ))}
     </div>

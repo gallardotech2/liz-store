@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { WHATSAPP_NUMBER } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import { parseWhatsAppNumber } from "@/lib/whatsapp"
 
 interface WhatsAppOrderButtonProps {
   productId: number
   productName: string
   productImage: string
   productPrice: number
+  whatsappNumber?: string
   compact?: boolean
   label?: string
   className?: string
@@ -21,6 +23,7 @@ export function WhatsAppOrderButton({
   productName,
   productImage,
   productPrice,
+  whatsappNumber,
   compact = false,
   label,
   className,
@@ -28,8 +31,11 @@ export function WhatsAppOrderButton({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const destination = parseWhatsAppNumber(whatsappNumber ?? WHATSAPP_NUMBER)
+  const hasDestination = destination.length > 0
 
   async function handleClick() {
+    if (!hasDestination) return
     setError("")
     setLoading(true)
 
@@ -53,7 +59,7 @@ export function WhatsAppOrderButton({
       }
 
       const msg = `Hola, quiero solicitar el producto: ${productName}. Código: ${data.referenceCode}`
-      const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
+      const whatsappUrl = `https://wa.me/${destination}?text=${encodeURIComponent(msg)}`
       window.open(whatsappUrl, "_blank")
 
       router.push("/perfil/solicitudes")
@@ -69,8 +75,11 @@ export function WhatsAppOrderButton({
       <Button
         variant="whatsapp"
         size={compact ? "sm" : "md"}
-        className={cn("w-full justify-center", className)}
-        disabled={loading}
+        className={cn(
+          "w-full justify-center disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0",
+          className,
+        )}
+        disabled={loading || !hasDestination}
         onClick={handleClick}
       >
         {loading ? (
@@ -82,7 +91,11 @@ export function WhatsAppOrderButton({
           ? compact
             ? "Creando..."
             : "Creando solicitud..."
-          : label ?? (compact ? "Pedir" : "Pedir por WhatsApp")}
+          : !hasDestination
+            ? compact
+              ? "No disponible"
+              : "WhatsApp no configurado"
+            : label ?? (compact ? "Pedir" : "Pedir por WhatsApp")}
       </Button>
 
       {error && (

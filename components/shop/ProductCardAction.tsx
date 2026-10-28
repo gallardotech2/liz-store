@@ -5,6 +5,7 @@ interface ProductCardActionProps {
   productName: string
   productImage: string
   productPrice: number
+  whatsappNumber?: string
   unavailableLabel?: string | null
 }
 
@@ -13,6 +14,7 @@ export function ProductCardAction({
   productName,
   productImage,
   productPrice,
+  whatsappNumber,
   unavailableLabel = null,
 }: ProductCardActionProps) {
   if (unavailableLabel) {
@@ -29,6 +31,7 @@ export function ProductCardAction({
       productName={productName}
       productImage={productImage}
       productPrice={productPrice}
+      whatsappNumber={whatsappNumber}
       compact
       label="Pedir"
       className="h-10"

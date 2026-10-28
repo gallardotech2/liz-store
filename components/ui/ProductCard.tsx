@@ -28,6 +28,7 @@ interface ProductCardProps {
   promoPrice?: number | null
   liveProduct?: CardLivePricing | null
   quickOrder?: boolean
+  whatsappNumber?: string
 }
 
 export function ProductCard({
@@ -36,6 +37,7 @@ export function ProductCard({
   promoPrice = null,
   liveProduct = null,
   quickOrder = false,
+  whatsappNumber,
 }: ProductCardProps) {
   const live =
     liveProduct ??
@@ -168,6 +170,7 @@ export function ProductCard({
             productName={product.name}
             productImage={product.image ?? ""}
             productPrice={pricing.displayPrice}
+            whatsappNumber={whatsappNumber}
             unavailableLabel={unavailableLabel}
           />
         </div>

@@ -11,6 +11,7 @@ import type { HotCampaign, HotProduct } from "@/lib/hot"
 
 interface HotHomeProps {
   campaign: HotCampaign
+  whatsappNumber: string
 }
 
 type LiveCategoryGroup = {
@@ -19,7 +20,7 @@ type LiveCategoryGroup = {
   products: HotProduct[]
 }
 
-export function HotHome({ campaign }: HotHomeProps) {
+export function HotHome({ campaign, whatsappNumber }: HotHomeProps) {
   const { session, current, products, catalog: allCatalog } = campaign
   const catalog = current
     ? allCatalog.filter((product) => product.productId !== current.productId)
@@ -183,6 +184,7 @@ export function HotHome({ campaign }: HotHomeProps) {
                       productName={current.name}
                       productImage={current.image ?? ""}
                       productPrice={current.promoPrice}
+                      whatsappNumber={whatsappNumber}
                       label="Pedir por WhatsApp"
                     />
                   ) : (
@@ -258,6 +260,7 @@ export function HotHome({ campaign }: HotHomeProps) {
                       <LiveProductCard
                         key={product.productId}
                         product={product}
+                        whatsappNumber={whatsappNumber}
                         className="w-[160px] flex-shrink-0 sm:w-[190px] lg:w-[210px]"
                       />
                     ))}
