@@ -10,6 +10,8 @@ import { HeroSocialIcons } from "@/components/layout/HeroSocialIcons"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import { PersonalizedCategories } from "@/components/shop/PersonalizedCategories"
 import { ScrollNudge } from "@/components/shop/ScrollNudge"
+import { HotHome } from "@/components/shop/HotHome"
+import { getActiveHotCampaign } from "@/lib/live"
 
 export const revalidate = 3600
 
@@ -39,7 +41,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   const s = supabase as any
 
-  const [categoriesResult, featuredResult, newResult, testimonialsResult, _storeProfileResult, productCounts] =
+  const [categoriesResult, featuredResult, newResult, testimonialsResult, _storeProfileResult, productCounts, hotCampaign] =
     await Promise.all([
       s.from("categories").select("*").eq("is_active", true).order("order"),
       s
@@ -57,7 +59,12 @@ export default async function HomePage() {
       s.from("reviews").select("id, rating, content").eq("is_approved", true).limit(6),
       s.from("store_profiles").select("*").maybeSingle(),
       s.from("products").select("category_id").eq("is_active", true),
+      getActiveHotCampaign(),
     ])
+
+  if (hotCampaign) {
+    return <HotHome campaign={hotCampaign} />
+  }
 
   type RawCategory = {
     id: number

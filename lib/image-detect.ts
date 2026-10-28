@@ -4,7 +4,12 @@
 // image/pjpeg) aunque los bytes sean un JPG/PNG válido (MDN Blob.type).
 // Por eso el contenido manda y el MIME declarado es solo referencia.
 
-export const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"]
+export const SUPPORTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]
 
 // Límite de subida por debajo de experimental.serverActions.bodySizeLimit ("4mb"
 // en next.config.ts), dejando margen para el overhead de multipart/form-data
@@ -13,6 +18,9 @@ export const MAX_UPLOAD_BYTES = 3.5 * 1024 * 1024
 
 export const HEIC_ERROR =
   "Formato HEIC/HEIF no compatible con la web. Exporta la foto como JPG o PNG desde tu galería (Compartir → Exportar/Guardar como) y vuelve a intentarlo."
+
+export const IMAGE_READ_ERROR =
+  "No se pudo leer la imagen seleccionada. Puede estar solo en la nube o estar dañada. Descárgala de nuevo o elige otra imagen."
 
 const MIME_ALIASES: Record<string, string> = {
   "image/jpg": "image/jpeg",
@@ -93,18 +101,47 @@ export interface ResolvedImage {
   heic: boolean
 }
 
-export async function resolveImageType(file: File): Promise<ResolvedImage> {
-  const head = new Uint8Array(await file.slice(0, 32).arrayBuffer())
-  const sniffed = sniffImageType(head)
-  const type = sniffed ?? normalizeMime(file.type)
+export function resolveImageTypeFromBytes(
+  bytes: Uint8Array,
+  declaredType: string | null | undefined,
+  fileName = "imagen",
+): ResolvedImage {
+  const sniffed = sniffImageType(bytes)
+  const type = sniffed ?? normalizeMime(declaredType)
   const heic = type === "image/heic" || type === "image/heif"
   return {
     type,
-    ext: EXT_BY_TYPE[type] ?? file.name.split(".").pop()?.toLowerCase() ?? "jpg",
+    ext: EXT_BY_TYPE[type] ?? fileName.split(".").pop()?.toLowerCase() ?? "jpg",
     sniffed,
     supported: SUPPORTED_IMAGE_TYPES.includes(type),
     heic,
   }
+}
+
+const READ_TIMEOUT_MS = 15_000
+
+async function readFileBytes(file: File): Promise<ArrayBuffer> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      file.arrayBuffer(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(IMAGE_READ_ERROR)), READ_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
+export async function resolveImageType(file: File): Promise<ResolvedImage> {
+  let bytes: Uint8Array
+  try {
+    bytes = new Uint8Array(await readFileBytes(file))
+  } catch {
+    throw new Error(IMAGE_READ_ERROR)
+  }
+  return resolveImageTypeFromBytes(bytes, file.type, file.name)
 }
 
 export type ImageCheck =
@@ -125,14 +162,33 @@ export async function checkImageFile(file: File, maxBytes: number): Promise<Imag
     }
   }
 
-  const resolved = await resolveImageType(file)
+  // Leemos el archivo COMPLETO antes de continuar. Un File de Android puede
+  // apuntar a un proveedor cloud-only o a una URI que falla al leer; en ese
+  // caso hay que avisar y limpiar la selección, nunca enviar el original.
+  let bytes: Uint8Array
+  try {
+    bytes = new Uint8Array(await readFileBytes(file))
+  } catch {
+    throw new Error(IMAGE_READ_ERROR)
+  }
+
+  if (bytes.length === 0) {
+    return { ok: false, error: "El archivo está vacío. Vuelve a seleccionar la imagen." }
+  }
+
+  const resolved = resolveImageTypeFromBytes(bytes, file.type, file.name)
 
   if (resolved.heic) return { ok: false, error: HEIC_ERROR }
   if (!resolved.sniffed || !resolved.supported) {
-    return { ok: false, error: "Formato no soportado. Usa JPG, PNG o WEBP" }
+    return { ok: false, error: "Formato no soportado. Usa JPG, PNG, WEBP o GIF" }
   }
 
-  const out = file.type === resolved.type ? file : new File([file], file.name, { type: resolved.type })
+  // Siempre devolvemos un File nuevo respaldado por bytes en memoria. Así el
+  // archivo que se procesa y se envía no depende del proveedor del picker.
+  const out = new File([bytes.buffer as ArrayBuffer], file.name || "imagen", {
+    type: resolved.type,
+    lastModified: file.lastModified,
+  })
   return { ok: true, file: out, type: resolved.type }
 }
 

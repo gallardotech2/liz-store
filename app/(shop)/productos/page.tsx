@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import { ProductCard } from "@/components/ui/ProductCard"
 import { Button } from "@/components/ui/Button"
 import { CatalogFilters } from "@/components/shop/CatalogFilters"
+import { HotBanner } from "@/components/shop/HotBanner"
+import { getActiveHotCampaign } from "@/lib/live"
+import { getHotCatalogMap } from "@/lib/hot"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -28,6 +31,9 @@ export default async function CatalogPage({
 
   const supabase = await createClient()
   const s = supabase as any
+  const hotCampaign = await getActiveHotCampaign()
+  const liveMap = getHotCatalogMap(hotCampaign)
+  const quickOrder = Boolean(hotCampaign)
 
   const { data: categories } = await s
     .from("categories")
@@ -158,6 +164,14 @@ export default async function CatalogPage({
             </p>
           </div>
 
+          {hotCampaign && (
+            <HotBanner
+              title={hotCampaign.session.title}
+              endsAt={hotCampaign.session.endsAt}
+              ctaHref="/ofertas"
+            />
+          )}
+
           <CatalogFilters
             categories={categories ?? []}
             categorySlug={categorySlug}
@@ -169,7 +183,12 @@ export default async function CatalogPage({
             <>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
                 {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    liveProduct={liveMap.get(product.id) ?? null}
+                    quickOrder={quickOrder}
+                  />
                 ))}
               </div>
 

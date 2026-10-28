@@ -1141,3 +1141,1011 @@ INSERT INTO social_links (platform, label, url, is_active)
 VALUES ('whatsapp_group', 'Grupo de WhatsApp', '', true)
 ON CONFLICT (platform) DO NOTHING;
 */
+
+-- ============================================================
+-- Fix 0021: Modo Hot global (campaña de venta rápida)
+-- Fecha ejecución: 2026-10-26
+-- Estado: EJECUTADO
+-- Descripción: Agrega duración/expiración a live_sessions, precio Hot,
+--   mostrado y updated_at a live_products, índices de unicidad, RLS
+--   de campaña vencida y RPCs admin para gestionar la campaña.
+-- ============================================================
+/*
+-- ---------------------------------------------------------------------------
+-- 1. Columnas de campaña
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE public.live_sessions
+  ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS duration_hours INTEGER,
+  ADD COLUMN IF NOT EXISTS ended_reason TEXT;
+
+ALTER TABLE public.live_products
+  ADD COLUMN IF NOT EXISTS promo_price NUMERIC(10,2),
+  ADD COLUMN IF NOT EXISTS shown_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'live_sessions_duration_hours_check'
+  ) THEN
+    ALTER TABLE public.live_sessions
+      ADD CONSTRAINT live_sessions_duration_hours_check
+      CHECK (duration_hours IS NULL OR duration_hours > 0);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'live_sessions_ended_reason_check'
+  ) THEN
+    ALTER TABLE public.live_sessions
+      ADD CONSTRAINT live_sessions_ended_reason_check
+      CHECK (ended_reason IS NULL OR ended_reason IN ('manual', 'expired'));
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'live_sessions_ends_at_check'
+  ) THEN
+    ALTER TABLE public.live_sessions
+      ADD CONSTRAINT live_sessions_ends_at_check
+      CHECK (ends_at IS NULL OR started_at IS NULL OR ends_at > started_at);
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'live_products_promo_price_check'
+  ) THEN
+    ALTER TABLE public.live_products
+      ADD CONSTRAINT live_products_promo_price_check
+      CHECK (promo_price IS NULL OR promo_price >= 0);
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------------
+-- 2. Sincronización inicial y limpieza de duplicados
+-- ---------------------------------------------------------------------------
+
+INSERT INTO public.live_products (session_id, product_id, "order")
+SELECT lsp.live_session_id, lsp.product_id, 0
+FROM public.live_session_products lsp
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM public.live_products lp
+  WHERE lp.session_id = lsp.live_session_id
+    AND lp.product_id = lsp.product_id
+);
+
+DELETE FROM public.live_products a
+USING public.live_products b
+WHERE a.session_id = b.session_id
+  AND a.product_id = b.product_id
+  AND a.id > b.id;
+
+-- Dejar una sola campaña live si hubiera duplicados previos.
+WITH ranked AS (
+  SELECT id,
+         row_number() OVER (
+           ORDER BY COALESCE(started_at, created_at) DESC, id DESC
+         ) AS rn
+  FROM public.live_sessions
+  WHERE status = 'live'
+)
+UPDATE public.live_sessions s
+SET status = 'ended',
+    ended_at = now(),
+    ended_reason = 'manual',
+    updated_at = now()
+FROM ranked r
+WHERE s.id = r.id
+  AND r.rn > 1;
+
+-- ---------------------------------------------------------------------------
+-- 3. Índices
+-- ---------------------------------------------------------------------------
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_live_products_session_product
+  ON public.live_products (session_id, product_id);
+
+CREATE INDEX IF NOT EXISTS idx_live_sessions_active
+  ON public.live_sessions (status, ends_at);
+
+-- Una sola campaña live a la vez.
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_live_session_active
+  ON public.live_sessions ((true))
+  WHERE status = 'live';
+
+-- ---------------------------------------------------------------------------
+-- 4. RLS pública: una campaña vencida deja de ser visible
+-- ---------------------------------------------------------------------------
+
+DROP POLICY IF EXISTS "Live Sessions: anon SELECT activas" ON public.live_sessions;
+
+CREATE POLICY "Live Sessions: anon SELECT activas"
+  ON public.live_sessions
+  FOR SELECT TO anon, authenticated
+  USING (
+    status = 'live'
+    AND (ends_at IS NULL OR ends_at > now())
+  );
+
+-- ---------------------------------------------------------------------------
+-- 5. Helpers y RPCs admin
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.is_hot_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.profiles
+    WHERE id = auth.uid()
+      AND role = 'admin'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_hot_admin() FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION public.activate_hot_session(
+  p_session_id INTEGER,
+  p_duration_hours INTEGER DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_session public.live_sessions%ROWTYPE;
+  v_duration INTEGER;
+  v_current_product INTEGER;
+  v_has_product BOOLEAN;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_duration_hours IS NOT NULL AND p_duration_hours <= 0 THEN
+    RAISE EXCEPTION 'La duración debe ser mayor a 0';
+  END IF;
+
+  -- Cerrar campañas vencidas para liberar el cupo de campaña activa.
+  UPDATE public.live_sessions
+  SET status = 'ended',
+      ended_at = now(),
+      ended_reason = 'expired',
+      updated_at = now()
+  WHERE status = 'live'
+    AND ends_at IS NOT NULL
+    AND ends_at <= now();
+
+  SELECT *
+  INTO v_session
+  FROM public.live_sessions
+  WHERE id = p_session_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Campaña no encontrada';
+  END IF;
+
+  IF v_session.status NOT IN ('not_started', 'paused') THEN
+    RAISE EXCEPTION 'Solo se puede activar una campaña no iniciada o pausada';
+  END IF;
+
+  IF v_session.status = 'paused'
+     AND v_session.ends_at IS NOT NULL
+     AND v_session.ends_at <= now() THEN
+    UPDATE public.live_sessions
+    SET status = 'ended',
+        ended_at = now(),
+        ended_reason = 'expired',
+        updated_at = now()
+    WHERE id = p_session_id;
+
+    RAISE EXCEPTION 'La campaña ya venció; crea una nueva';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM public.live_sessions
+    WHERE status = 'live'
+      AND id <> p_session_id
+  ) THEN
+    RAISE EXCEPTION 'Ya hay una campaña Hot activa';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.live_products
+    WHERE session_id = p_session_id
+  ) INTO v_has_product;
+
+  IF NOT v_has_product THEN
+    RAISE EXCEPTION 'Agrega al menos un producto antes de activar';
+  END IF;
+
+  v_duration := COALESCE(p_duration_hours, v_session.duration_hours);
+
+  SELECT product_id
+  INTO v_current_product
+  FROM public.live_products
+  WHERE session_id = p_session_id
+  ORDER BY "order", id
+  LIMIT 1;
+
+  UPDATE public.live_sessions
+  SET status = 'live',
+      started_at = COALESCE(started_at, now()),
+      ends_at = CASE
+        WHEN v_duration IS NOT NULL
+          THEN COALESCE(started_at, now()) + make_interval(hours => v_duration)
+        ELSE NULL
+      END,
+      duration_hours = v_duration,
+      ended_at = NULL,
+      ended_reason = NULL,
+      current_product_id = COALESCE(current_product_id, v_current_product),
+      updated_at = now()
+  WHERE id = p_session_id;
+
+  UPDATE public.live_products
+  SET shown_at = COALESCE(shown_at, now())
+  WHERE session_id = p_session_id
+    AND product_id = (
+      SELECT current_product_id
+      FROM public.live_sessions
+      WHERE id = p_session_id
+    );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.set_hot_current_product(
+  p_session_id INTEGER,
+  p_product_id INTEGER
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_exists BOOLEAN;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_product_id IS NOT NULL THEN
+    SELECT EXISTS (
+      SELECT 1
+      FROM public.live_products
+      WHERE session_id = p_session_id
+        AND product_id = p_product_id
+    ) INTO v_exists;
+
+    IF NOT v_exists THEN
+      RAISE EXCEPTION 'El producto no pertenece a la campaña';
+    END IF;
+  END IF;
+
+  UPDATE public.live_sessions
+  SET current_product_id = p_product_id,
+      updated_at = now()
+  WHERE id = p_session_id;
+
+  IF p_product_id IS NOT NULL THEN
+    UPDATE public.live_products
+    SET shown_at = COALESCE(shown_at, now())
+    WHERE session_id = p_session_id
+      AND product_id = p_product_id;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.add_hot_product(
+  p_session_id INTEGER,
+  p_product_id INTEGER,
+  p_order INTEGER DEFAULT 0,
+  p_promo_price NUMERIC DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_normal NUMERIC;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_order IS NULL OR p_order < 0 THEN
+    RAISE EXCEPTION 'El orden no puede ser negativo';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.live_sessions WHERE id = p_session_id
+  ) THEN
+    RAISE EXCEPTION 'Campaña no encontrada';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.products
+    WHERE id = p_product_id
+      AND is_active = true
+  ) THEN
+    RAISE EXCEPTION 'Producto no encontrado o inactivo';
+  END IF;
+
+  IF p_promo_price IS NOT NULL THEN
+    IF p_promo_price < 0 THEN
+      RAISE EXCEPTION 'El precio Hot no puede ser negativo';
+    END IF;
+
+    SELECT COALESCE(discount_price, price)
+    INTO v_normal
+    FROM public.products
+    WHERE id = p_product_id;
+
+    IF p_promo_price >= v_normal THEN
+      RAISE EXCEPTION 'El precio Hot debe ser menor al precio normal';
+    END IF;
+  END IF;
+
+  INSERT INTO public.live_products (
+    session_id,
+    product_id,
+    "order",
+    promo_price,
+    updated_at
+  )
+  VALUES (
+    p_session_id,
+    p_product_id,
+    p_order,
+    p_promo_price,
+    now()
+  )
+  ON CONFLICT (session_id, product_id)
+  DO UPDATE SET
+    "order" = EXCLUDED."order",
+    promo_price = EXCLUDED.promo_price,
+    updated_at = now();
+
+  INSERT INTO public.live_session_products (live_session_id, product_id)
+  VALUES (p_session_id, p_product_id)
+  ON CONFLICT (live_session_id, product_id) DO NOTHING;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.update_hot_product_promo(
+  p_session_id INTEGER,
+  p_product_id INTEGER,
+  p_promo_price NUMERIC
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_normal NUMERIC;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_promo_price IS NOT NULL THEN
+    IF p_promo_price < 0 THEN
+      RAISE EXCEPTION 'El precio Hot no puede ser negativo';
+    END IF;
+
+    SELECT COALESCE(discount_price, price)
+    INTO v_normal
+    FROM public.products
+    WHERE id = p_product_id;
+
+    IF v_normal IS NULL THEN
+      RAISE EXCEPTION 'Producto no encontrado';
+    END IF;
+
+    IF p_promo_price >= v_normal THEN
+      RAISE EXCEPTION 'El precio Hot debe ser menor al precio normal';
+    END IF;
+  END IF;
+
+  UPDATE public.live_products
+  SET promo_price = p_promo_price,
+      updated_at = now()
+  WHERE session_id = p_session_id
+    AND product_id = p_product_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'El producto no pertenece a la campaña';
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.remove_hot_product(
+  p_session_id INTEGER,
+  p_product_id INTEGER
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  DELETE FROM public.live_products
+  WHERE session_id = p_session_id
+    AND product_id = p_product_id;
+
+  DELETE FROM public.live_session_products
+  WHERE live_session_id = p_session_id
+    AND product_id = p_product_id;
+
+  UPDATE public.live_sessions
+  SET current_product_id = NULL,
+      updated_at = now()
+  WHERE id = p_session_id
+    AND current_product_id = p_product_id;
+END;
+$$;
+
+-- Solo usuarios autenticados pueden invocar los RPCs; el helper interno
+-- valida además que el perfil tenga role='admin'.
+REVOKE ALL ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) TO authenticated;
+*/
+
+-- ============================================================
+-- Fix 0022: Precio Live persistente por producto y carga masiva
+-- Fecha ejecución: 2026-10-26
+-- Estado: EJECUTADO
+-- Descripción: Agrega products.live_price para reutilizar el último
+--   precio Live de cada producto, persiste ese precio al agregar o
+--   editar productos de una sesión y agrega la RPC add_hot_products
+--   para cargar varios productos en una sola operación.
+-- ============================================================
+/*
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS live_price NUMERIC(10,2);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'products_live_price_check'
+      AND conrelid = 'public.products'::regclass
+  ) THEN
+    ALTER TABLE public.products
+      ADD CONSTRAINT products_live_price_check
+      CHECK (live_price IS NULL OR live_price >= 0);
+  END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.add_hot_product(
+  p_session_id INTEGER,
+  p_product_id INTEGER,
+  p_order INTEGER DEFAULT 0,
+  p_promo_price NUMERIC DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_normal NUMERIC;
+  v_live NUMERIC;
+  v_promo NUMERIC;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_order IS NULL OR p_order < 0 THEN
+    RAISE EXCEPTION 'El orden no puede ser negativo';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.live_sessions WHERE id = p_session_id
+  ) THEN
+    RAISE EXCEPTION 'Campaña no encontrada';
+  END IF;
+
+  SELECT COALESCE(discount_price, price), live_price
+  INTO v_normal, v_live
+  FROM public.products
+  WHERE id = p_product_id
+    AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Producto no encontrado o inactivo';
+  END IF;
+
+  IF p_promo_price IS NOT NULL THEN
+    IF p_promo_price < 0 OR p_promo_price >= v_normal THEN
+      RAISE EXCEPTION 'El precio Live debe ser menor al precio normal';
+    END IF;
+    v_promo := p_promo_price;
+  ELSIF v_live IS NOT NULL AND v_live >= 0 AND v_live < v_normal THEN
+    v_promo := v_live;
+  ELSE
+    v_promo := NULL;
+  END IF;
+
+  INSERT INTO public.live_products (
+    session_id,
+    product_id,
+    "order",
+    promo_price,
+    updated_at
+  )
+  VALUES (
+    p_session_id,
+    p_product_id,
+    p_order,
+    v_promo,
+    now()
+  )
+  ON CONFLICT (session_id, product_id)
+  DO UPDATE SET
+    "order" = EXCLUDED."order",
+    promo_price = COALESCE(EXCLUDED.promo_price, live_products.promo_price),
+    updated_at = now();
+
+  INSERT INTO public.live_session_products (live_session_id, product_id)
+  VALUES (p_session_id, p_product_id)
+  ON CONFLICT (live_session_id, product_id) DO NOTHING;
+
+  IF p_promo_price IS NOT NULL THEN
+    UPDATE public.products
+    SET live_price = p_promo_price
+    WHERE id = p_product_id;
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.update_hot_product_promo(
+  p_session_id INTEGER,
+  p_product_id INTEGER,
+  p_promo_price NUMERIC
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_normal NUMERIC;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT COALESCE(discount_price, price)
+  INTO v_normal
+  FROM public.products
+  WHERE id = p_product_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Producto no encontrado';
+  END IF;
+
+  IF p_promo_price IS NOT NULL THEN
+    IF p_promo_price < 0 OR p_promo_price >= v_normal THEN
+      RAISE EXCEPTION 'El precio Live debe ser menor al precio normal';
+    END IF;
+  END IF;
+
+  UPDATE public.live_products
+  SET promo_price = p_promo_price,
+      updated_at = now()
+  WHERE session_id = p_session_id
+    AND product_id = p_product_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'El producto no pertenece a la campaña';
+  END IF;
+
+  UPDATE public.products
+  SET live_price = p_promo_price
+  WHERE id = p_product_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.add_hot_products(
+  p_session_id INTEGER,
+  p_product_ids INTEGER[]
+)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_product_id INTEGER;
+  v_normal NUMERIC;
+  v_live NUMERIC;
+  v_promo NUMERIC;
+  v_order INTEGER;
+  v_inserted INTEGER;
+  v_added INTEGER := 0;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.live_sessions WHERE id = p_session_id
+  ) THEN
+    RAISE EXCEPTION 'Campaña no encontrada';
+  END IF;
+
+  IF p_product_ids IS NULL OR cardinality(p_product_ids) = 0 THEN
+    RETURN 0;
+  END IF;
+
+  SELECT COALESCE(MAX("order"), -1)
+  INTO v_order
+  FROM public.live_products
+  WHERE session_id = p_session_id;
+
+  FOR v_product_id IN
+    SELECT DISTINCT p.id
+    FROM public.products p
+    WHERE p.id = ANY(p_product_ids)
+      AND p.is_active = true
+    ORDER BY p.id
+  LOOP
+    SELECT COALESCE(discount_price, price), live_price
+    INTO v_normal, v_live
+    FROM public.products
+    WHERE id = v_product_id;
+
+    IF v_live IS NOT NULL AND (v_live < 0 OR v_live >= v_normal) THEN
+      v_promo := NULL;
+    ELSE
+      v_promo := v_live;
+    END IF;
+
+    v_order := v_order + 1;
+
+    INSERT INTO public.live_products (
+      session_id,
+      product_id,
+      "order",
+      promo_price,
+      updated_at
+    )
+    VALUES (
+      p_session_id,
+      v_product_id,
+      v_order,
+      v_promo,
+      now()
+    )
+    ON CONFLICT (session_id, product_id) DO NOTHING;
+
+    GET DIAGNOSTICS v_inserted = ROW_COUNT;
+    v_added := v_added + v_inserted;
+
+    INSERT INTO public.live_session_products (live_session_id, product_id)
+    VALUES (p_session_id, v_product_id)
+    ON CONFLICT (live_session_id, product_id) DO NOTHING;
+  END LOOP;
+
+  RETURN v_added;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
+*/
+
+-- ============================================================
+-- Fix 0023: Modo Live global permanente
+-- Fecha ejecución: 2026-10-26
+-- Estado: EJECUTADO
+-- Descripción: Convierte Modo Live en una configuración única y
+--   persistente. Reutiliza la transmisión activa o la última con
+--   productos, marca una sola fila como global, conserva el catálogo
+--   y permite reiniciar el Modo Live después de finalizarlo.
+-- ============================================================
+/*
+ALTER TABLE public.live_sessions
+  ADD COLUMN IF NOT EXISTS is_global BOOLEAN NOT NULL DEFAULT false;
+
+DO $$
+DECLARE
+  v_global_id INTEGER;
+  v_base_id INTEGER;
+BEGIN
+  SELECT id
+  INTO v_global_id
+  FROM public.live_sessions
+  WHERE is_global = true
+  ORDER BY id
+  LIMIT 1;
+
+  IF v_global_id IS NULL THEN
+    SELECT s.id
+    INTO v_base_id
+    FROM public.live_sessions s
+    WHERE s.status = 'live'
+      AND (s.ends_at IS NULL OR s.ends_at > now())
+    ORDER BY COALESCE(s.started_at, s.created_at) DESC, s.id DESC
+    LIMIT 1;
+
+    IF v_base_id IS NULL THEN
+      SELECT s.id
+      INTO v_base_id
+      FROM public.live_sessions s
+      WHERE EXISTS (
+        SELECT 1
+        FROM public.live_products lp
+        WHERE lp.session_id = s.id
+      )
+      ORDER BY COALESCE(s.started_at, s.created_at) DESC, s.id DESC
+      LIMIT 1;
+    END IF;
+
+    IF v_base_id IS NULL THEN
+      SELECT s.id
+      INTO v_base_id
+      FROM public.live_sessions s
+      ORDER BY s.created_at DESC, s.id DESC
+      LIMIT 1;
+    END IF;
+
+    IF v_base_id IS NOT NULL THEN
+      UPDATE public.live_sessions
+      SET is_global = true,
+          updated_at = now()
+      WHERE id = v_base_id;
+
+      v_global_id := v_base_id;
+    ELSE
+      INSERT INTO public.live_sessions (title, status, is_global)
+      VALUES ('Modo Live', 'ended', true)
+      RETURNING id INTO v_global_id;
+    END IF;
+  END IF;
+
+  UPDATE public.live_sessions
+  SET is_global = false,
+      updated_at = now()
+  WHERE is_global = true
+    AND id <> v_global_id;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.live_products
+    WHERE session_id = v_global_id
+  ) THEN
+    SELECT s.id
+    INTO v_base_id
+    FROM public.live_sessions s
+    WHERE s.id <> v_global_id
+      AND EXISTS (
+        SELECT 1
+        FROM public.live_products lp
+        WHERE lp.session_id = s.id
+      )
+    ORDER BY COALESCE(s.started_at, s.created_at) DESC, s.id DESC
+    LIMIT 1;
+
+    IF v_base_id IS NOT NULL THEN
+      INSERT INTO public.live_products (
+        session_id,
+        product_id,
+        "order",
+        promo_price,
+        status,
+        shown_at,
+        updated_at
+      )
+      SELECT
+        v_global_id,
+        lp.product_id,
+        lp."order",
+        lp.promo_price,
+        lp.status,
+        lp.shown_at,
+        now()
+      FROM public.live_products lp
+      WHERE lp.session_id = v_base_id
+      ON CONFLICT (session_id, product_id) DO NOTHING;
+    END IF;
+  END IF;
+
+  UPDATE public.live_sessions
+  SET status = 'ended',
+      ended_at = COALESCE(ended_at, now()),
+      ended_reason = COALESCE(ended_reason, 'manual'),
+      updated_at = now()
+  WHERE status = 'live'
+    AND id <> v_global_id;
+
+  WITH ordered AS (
+    SELECT
+      id,
+      row_number() OVER (ORDER BY "order", id) - 1 AS new_order
+    FROM public.live_products
+    WHERE session_id = v_global_id
+  )
+  UPDATE public.live_products lp
+  SET "order" = ordered.new_order,
+      updated_at = now()
+  FROM ordered
+  WHERE lp.id = ordered.id
+    AND lp."order" IS DISTINCT FROM ordered.new_order;
+
+  INSERT INTO public.live_session_products (live_session_id, product_id)
+  SELECT v_global_id, product_id
+  FROM public.live_products
+  WHERE session_id = v_global_id
+  ON CONFLICT (live_session_id, product_id) DO NOTHING;
+
+  UPDATE public.products p
+  SET live_price = lp.promo_price
+  FROM public.live_products lp
+  WHERE lp.session_id = v_global_id
+    AND lp.product_id = p.id
+    AND p.live_price IS NULL
+    AND lp.promo_price IS NOT NULL
+    AND lp.promo_price >= 0
+    AND lp.promo_price < COALESCE(p.discount_price, p.price);
+
+  UPDATE public.live_sessions
+  SET current_product_id = CASE
+        WHEN current_product_id IN (
+          SELECT product_id
+          FROM public.live_products
+          WHERE session_id = v_global_id
+        ) THEN current_product_id
+        ELSE (
+          SELECT product_id
+          FROM public.live_products
+          WHERE session_id = v_global_id
+          ORDER BY "order", id
+          LIMIT 1
+        )
+      END,
+      updated_at = now()
+  WHERE id = v_global_id;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_live_session_global
+  ON public.live_sessions ((true))
+  WHERE is_global = true;
+
+CREATE OR REPLACE FUNCTION public.start_live_mode(
+  p_session_id INTEGER,
+  p_ends_at TIMESTAMPTZ DEFAULT NULL
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_is_global BOOLEAN;
+  v_status TEXT;
+  v_current_ends_at TIMESTAMPTZ;
+  v_current_product INTEGER;
+  v_has_products BOOLEAN;
+BEGIN
+  IF NOT public.is_hot_admin() THEN
+    RAISE EXCEPTION 'No autorizado' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_ends_at IS NOT NULL AND p_ends_at <= now() THEN
+    RAISE EXCEPTION 'La finalización debe ser una fecha futura';
+  END IF;
+
+  SELECT is_global, status, ends_at
+  INTO v_is_global, v_status, v_current_ends_at
+  FROM public.live_sessions
+  WHERE id = p_session_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Modo Live no encontrado';
+  END IF;
+
+  IF NOT v_is_global THEN
+    RAISE EXCEPTION 'La configuración no es el Modo Live global';
+  END IF;
+
+  IF v_status = 'live'
+     AND (v_current_ends_at IS NULL OR v_current_ends_at > now()) THEN
+    RAISE EXCEPTION 'El Modo Live ya está activo';
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.live_products
+    WHERE session_id = p_session_id
+  ) INTO v_has_products;
+
+  IF NOT v_has_products THEN
+    RAISE EXCEPTION 'Agrega al menos un producto antes de iniciar';
+  END IF;
+
+  UPDATE public.live_sessions
+  SET status = 'ended',
+      ended_at = now(),
+      ended_reason = 'manual',
+      updated_at = now()
+  WHERE status = 'live'
+    AND id <> p_session_id;
+
+  SELECT product_id
+  INTO v_current_product
+  FROM public.live_products
+  WHERE session_id = p_session_id
+  ORDER BY "order", id
+  LIMIT 1;
+
+  UPDATE public.live_sessions
+  SET status = 'live',
+      started_at = now(),
+      ends_at = p_ends_at,
+      duration_hours = NULL,
+      ended_at = NULL,
+      ended_reason = NULL,
+      current_product_id = CASE
+        WHEN current_product_id IN (
+          SELECT product_id
+          FROM public.live_products
+          WHERE session_id = p_session_id
+        ) THEN current_product_id
+        ELSE v_current_product
+      END,
+      updated_at = now()
+  WHERE id = p_session_id;
+
+  UPDATE public.live_products
+  SET shown_at = COALESCE(shown_at, now())
+  WHERE session_id = p_session_id
+    AND product_id = (
+      SELECT current_product_id
+      FROM public.live_sessions
+      WHERE id = p_session_id
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
+*/

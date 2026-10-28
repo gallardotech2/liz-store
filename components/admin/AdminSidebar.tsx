@@ -46,9 +46,9 @@ const navGroups = [
     ],
   },
   {
-    title: "En Vivo",
+    title: "Modo Live",
     links: [
-      { href: "/admin/lives", label: "Lives", icon: <BroadcastIcon /> },
+      { href: "/admin/lives", label: "Modo Live", icon: <BroadcastIcon /> },
       { href: "/admin/profile", label: "Perfil", icon: <CogIcon /> },
     ],
   },

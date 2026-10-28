@@ -193,6 +193,7 @@ export interface ProductsTable {
     category_id: number
     price: number
     discount_price: number | null
+    live_price: number | null
     stock: number
     short_description: string
     long_description: string
@@ -217,6 +218,7 @@ export interface ProductsTable {
     category_id: number
     price: number
     discount_price?: number | null
+    live_price?: number | null
     stock?: number
     short_description?: string
     long_description?: string
@@ -241,6 +243,7 @@ export interface ProductsTable {
     category_id?: number
     price?: number
     discount_price?: number | null
+    live_price?: number | null
     stock?: number
     short_description?: string
     long_description?: string
@@ -595,12 +598,13 @@ export interface StoreProfilesTable {
     followers: number
     likes: number
     rating: number
-    reviewsCount: number
-    customersServed: number
-    qrCode: string | null
-    accountName: string
-    accountNumber: string
-    bankName: string
+    reviews_count: number
+    customers_served: number
+    qr_code: string | null
+    whatsapp_number: string
+    account_name: string
+    account_number: string
+    bank_name: string
     created_at: string
     updated_at: string
   }
@@ -612,12 +616,13 @@ export interface StoreProfilesTable {
     followers?: number
     likes?: number
     rating?: number
-    reviewsCount?: number
-    customersServed?: number
-    qrCode?: string | null
-    accountName?: string
-    accountNumber?: string
-    bankName?: string
+    reviews_count?: number
+    customers_served?: number
+    qr_code?: string | null
+    whatsapp_number?: string
+    account_name?: string
+    account_number?: string
+    bank_name?: string
     created_at?: string
     updated_at?: string
   }
@@ -629,12 +634,13 @@ export interface StoreProfilesTable {
     followers?: number
     likes?: number
     rating?: number
-    reviewsCount?: number
-    customersServed?: number
-    qrCode?: string | null
-    accountName?: string
-    accountNumber?: string
-    bankName?: string
+    reviews_count?: number
+    customers_served?: number
+    qr_code?: string | null
+    whatsapp_number?: string
+    account_name?: string
+    account_number?: string
+    bank_name?: string
     created_at?: string
     updated_at?: string
   }
@@ -646,9 +652,13 @@ export interface LiveSessionsTable {
     store_id: number | null
     title: string
     status: LiveSessionStatus
+    is_global: boolean
     started_at: string | null
     ended_at: string | null
+    ends_at: string | null
     duration: string | null
+    duration_hours: number | null
+    ended_reason: string | null
     current_product_id: number | null
     total_products_shown: number
     total_products_sold: number
@@ -665,9 +675,13 @@ export interface LiveSessionsTable {
     store_id?: number | null
     title: string
     status?: LiveSessionStatus
+    is_global?: boolean
     started_at?: string | null
     ended_at?: string | null
+    ends_at?: string | null
     duration?: string | null
+    duration_hours?: number | null
+    ended_reason?: string | null
     current_product_id?: number | null
     total_products_shown?: number
     total_products_sold?: number
@@ -684,9 +698,13 @@ export interface LiveSessionsTable {
     store_id?: number | null
     title?: string
     status?: LiveSessionStatus
+    is_global?: boolean
     started_at?: string | null
     ended_at?: string | null
+    ends_at?: string | null
     duration?: string | null
+    duration_hours?: number | null
+    ended_reason?: string | null
     current_product_id?: number | null
     total_products_shown?: number
     total_products_sold?: number
@@ -722,8 +740,11 @@ export interface LiveProductsTable {
     product_id: number
     status: LiveProductStatus
     order: number
+    promo_price: number | null
+    shown_at: string | null
     added_at: string
     created_at: string
+    updated_at: string
   }
   Insert: {
     id?: number
@@ -731,8 +752,11 @@ export interface LiveProductsTable {
     product_id: number
     status?: LiveProductStatus
     order?: number
+    promo_price?: number | null
+    shown_at?: string | null
     added_at?: string
     created_at?: string
+    updated_at?: string
   }
   Update: {
     id?: number
@@ -740,8 +764,11 @@ export interface LiveProductsTable {
     product_id?: number
     status?: LiveProductStatus
     order?: number
+    promo_price?: number | null
+    shown_at?: string | null
     added_at?: string
     created_at?: string
+    updated_at?: string
   }
 }
 
@@ -936,7 +963,60 @@ export interface Database {
       social_links: SocialLinksTable
     }
     Views: {}
-    Functions: {}
+    Functions: {
+      start_live_mode: {
+        Args: {
+          p_session_id: number
+          p_ends_at?: string | null
+        }
+        Returns: undefined
+      }
+      activate_hot_session: {
+        Args: {
+          p_session_id: number
+          p_duration_hours?: number | null
+        }
+        Returns: undefined
+      }
+      set_hot_current_product: {
+        Args: {
+          p_session_id: number
+          p_product_id: number | null
+        }
+        Returns: undefined
+      }
+      add_hot_product: {
+        Args: {
+          p_session_id: number
+          p_product_id: number
+          p_order?: number
+          p_promo_price?: number | null
+        }
+        Returns: undefined
+      }
+      add_hot_products: {
+        Args: {
+          p_session_id: number
+          p_product_ids: number[]
+        }
+        Returns: number
+      }
+      update_hot_product_promo: {
+        Args: {
+          p_session_id: number
+          p_product_id: number
+          p_promo_price: number | null
+        }
+        Returns: undefined
+      }
+      remove_hot_product: {
+        Args: {
+          p_session_id: number
+          p_product_id: number
+        }
+        Returns: undefined
+      }
+    }
     Enums: {}
   }
 }

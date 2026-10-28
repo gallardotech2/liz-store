@@ -9,6 +9,11 @@ import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import { DescriptionCollapse } from "@/components/ui/DescriptionCollapse"
 import { ScrollToTop } from "@/components/shop/ScrollToTop"
+import { HotCountdown } from "@/components/layout/HotCountdown"
+import { WhatsAppOrderButton } from "@/components/shop/WhatsAppOrderButton"
+import { TikTokIcon } from "@/components/ui/TikTokIcon"
+import { getActiveHotCampaign } from "@/lib/live"
+import { getHotPromoMap } from "@/lib/hot"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -133,7 +138,7 @@ export default async function ProductDetailPage({
 
   const cat = Array.isArray(p.category) ? p.category[0] : p.category
 
-  const [reviewsResult, relatedRaw] = await Promise.all([
+  const [reviewsResult, relatedRaw, hotCampaign] = await Promise.all([
     s
       .from("reviews")
       .select("id, title, content, rating, is_verified, created_at")
@@ -149,7 +154,12 @@ export default async function ProductDetailPage({
       .eq("category_id", p.category_id)
       .neq("id", p.id)
       .limit(4),
+    getActiveHotCampaign(),
   ])
+
+  const hotProduct =
+    hotCampaign?.products.find((item) => item.productId === p.id) ?? null
+  const hotMap = getHotPromoMap(hotCampaign)
 
   const reviews = reviewsResult.data
 
@@ -265,17 +275,36 @@ export default async function ProductDetailPage({
               )}
 
               <div className="flex items-center gap-2 flex-wrap my-4">
-                <span className="text-[28px] font-bold text-primary-dark dark:text-primary font-serif inline-flex items-center gap-0.5">
-                  {formatCurrency(displayPrice)}
-                </span>
-                {hasDiscount && (
+                {hotProduct ? (
                   <>
+                    <span className="text-[12px] text-white bg-[#E74C3C] px-2.5 py-1 rounded-full font-bold uppercase tracking-[0.5px]">
+                      Precio exclusivo
+                    </span>
+                    <span className="text-[28px] font-bold text-[#E74C3C] font-serif inline-flex items-center gap-0.5">
+                      {formatCurrency(hotProduct.promoPrice)}
+                    </span>
                     <span className="text-xl text-[#6B6B6B] dark:text-ink-soft line-through inline-flex items-center gap-0.5">
-                      {formatCurrency(p.price)}
+                      {formatCurrency(hotProduct.normalPrice)}
                     </span>
                     <span className="text-[12px] text-white bg-[#E74C3C] px-2 py-0.5 rounded font-semibold">
-                      -{discountPct}%
+                      -{hotProduct.discountPercent}%
                     </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[28px] font-bold text-primary-dark dark:text-primary font-serif inline-flex items-center gap-0.5">
+                      {formatCurrency(displayPrice)}
+                    </span>
+                    {hasDiscount && (
+                      <>
+                        <span className="text-xl text-[#6B6B6B] dark:text-ink-soft line-through inline-flex items-center gap-0.5">
+                          {formatCurrency(p.price)}
+                        </span>
+                        <span className="text-[12px] text-white bg-[#E74C3C] px-2 py-0.5 rounded font-semibold">
+                          -{discountPct}%
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -301,14 +330,63 @@ export default async function ProductDetailPage({
                 />
               )}
 
+              {hotProduct && p.stock > 0 && (
+                <div className="rounded-[16px] border-2 border-[#E74C3C]/30 bg-gradient-to-br from-[#FFF5F5] via-white to-[#FFFBF9] dark:from-[#2A1D1D] dark:via-surface-raised dark:to-surface p-5 my-6">
+                  <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+                    <h4 className="flex items-center gap-2 text-sm font-sans font-semibold text-[#2D2D2D] dark:text-ink-strong">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#E74C3C] text-white">
+                        <TikTokIcon className="h-3.5 w-3.5" />
+                      </span>
+                      Compra por WhatsApp
+                    </h4>
+                    <span className="text-[12px] text-[#6B6B6B] dark:text-ink-soft">
+                      {hotCampaign?.session.endsAt ? (
+                        <>
+                          Termina en{" "}
+                          <HotCountdown
+                            endsAt={hotCampaign.session.endsAt}
+                            className="font-bold text-[#E74C3C]"
+                          />
+                        </>
+                      ) : (
+                        "Precio exclusivo, sin límite de tiempo"
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-[13px] leading-[1.6] text-[#6B6B6B] dark:text-ink-soft mb-4">
+                    Solicita este producto por WhatsApp a este precio de{" "}
+                    <strong className="text-[#E74C3C]">
+                      {formatCurrency(hotProduct.promoPrice)}
+                    </strong>
+                    . Válido solo mientras dure la promoción.
+                  </p>
+                  <WhatsAppOrderButton
+                    productId={p.id}
+                    productName={p.name}
+                    productImage={mainImage?.image ?? ""}
+                    productPrice={hotProduct.promoPrice}
+                  />
+                </div>
+              )}
+
               {p.stock > 0 && (
-                <AddToCartForm
-                  productId={p.id}
-                  productName={p.name}
-                  productSlug={p.slug}
-                  price={displayPrice}
-                  stock={p.stock}
-                />
+                <div className={hotProduct ? "mt-6 rounded-[16px] border border-[rgba(255,142,159,0.25)] bg-white dark:bg-surface-raised p-4" : ""}>
+                  {hotProduct && (
+                    <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft mb-3">
+                      También puedes comprar al precio normal:{" "}
+                      <strong className="text-[#2D2D2D] dark:text-ink-strong">
+                        {formatCurrency(displayPrice)}
+                      </strong>
+                    </p>
+                  )}
+                  <AddToCartForm
+                    productId={p.id}
+                    productName={p.name}
+                    productSlug={p.slug}
+                    price={displayPrice}
+                    stock={p.stock}
+                  />
+                </div>
               )}
 
               {ESCUDO_PAGO_ENABLED && (
@@ -357,7 +435,11 @@ export default async function ProductDetailPage({
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
               {related.map((rp) => (
-                <ProductCard key={rp.id} product={rp} />
+                <ProductCard
+                  key={rp.id}
+                  product={rp}
+                  promoPrice={hotMap.get(rp.id)?.promoPrice ?? null}
+                />
               ))}
             </div>
           </div>

@@ -3,6 +3,9 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { ProductCard } from "@/components/ui/ProductCard"
 import { Button } from "@/components/ui/Button"
+import { HotBanner } from "@/components/shop/HotBanner"
+import { getActiveHotCampaign } from "@/lib/live"
+import { getHotPromoMap } from "@/lib/hot"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -45,6 +48,8 @@ export default async function FeaturedPage({
 
   const supabase = await createClient()
   const s = supabase as any
+  const hotCampaign = await getActiveHotCampaign()
+  const hotMap = getHotPromoMap(hotCampaign)
 
   const query = s
     .from("products")
@@ -125,11 +130,23 @@ export default async function FeaturedPage({
             </p>
           </div>
 
+          {hotCampaign && (
+            <HotBanner
+              title={hotCampaign.session.title}
+              endsAt={hotCampaign.session.endsAt}
+              ctaHref="/ofertas"
+            />
+          )}
+
           {products.length > 0 ? (
             <>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
                 {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    promoPrice={hotMap.get(product.id)?.promoPrice ?? null}
+                  />
                 ))}
               </div>
 

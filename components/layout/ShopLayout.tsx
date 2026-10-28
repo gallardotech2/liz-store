@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server"
 import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 import { getWhatsappGroupLink } from "@/lib/queries/social-links"
 import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
+import { getActiveHotCampaign } from "@/lib/live"
+import { getPublicLiveTitle } from "@/lib/live-copy"
+import { HotModeSync } from "@/components/shop/HotModeSync"
 
 interface ShopLayoutProps {
   children: React.ReactNode
@@ -14,24 +17,37 @@ interface ShopLayoutProps {
 
 export async function ShopLayout({ children, categories = [] }: ShopLayoutProps) {
   const supabase = await createClient()
-  const whatsappNumber = await getOrderWhatsAppNumber(supabase)
-  const whatsappGroupUrl = await getWhatsappGroupLink(supabase)
+  const [whatsappNumber, whatsappGroupUrl, hot] = await Promise.all([
+    getOrderWhatsAppNumber(supabase),
+    getWhatsappGroupLink(supabase),
+    getActiveHotCampaign(),
+  ])
   const cookieStore = await cookies()
   const cartCount = calculateCartTotal(
     parseCart(cookieStore.get(CART_COOKIE)?.value),
   ).itemCount
 
+  const hotInfo = hot
+    ? { title: getPublicLiveTitle(hot.session.title), endsAt: hot.session.endsAt }
+    : null
+
   return (
     <>
-      <Header categories={categories} cartCount={cartCount} />
+      <HotModeSync endsAt={hot?.session.endsAt ?? null} />
+      <Header
+        categories={categories}
+        cartCount={cartCount}
+        activeLive={hotInfo}
+      />
       <main className="flex-1">{children}</main>
       <Footer
         categories={categories}
         whatsappNumber={whatsappNumber}
         whatsappGroupUrl={whatsappGroupUrl}
+        hot={hotInfo}
       />
       <div className="md:hidden h-[calc(4rem+env(safe-area-inset-bottom))]" aria-hidden="true" />
-      <BottomNav cartCount={cartCount} />
+      <BottomNav cartCount={cartCount} hotActive={!!hot} />
     </>
   )
 }

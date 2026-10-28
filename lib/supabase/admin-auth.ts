@@ -1,10 +1,10 @@
-import { forbidden } from "next/navigation"
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
 export async function requireAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) forbidden()
+  if (!user) redirect("/auth/login")
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -12,6 +12,8 @@ export async function requireAdmin() {
     .eq("id", user.id)
     .single()
 
-  if ((profile as unknown as { role?: string })?.role !== "admin") forbidden()
+  if ((profile as unknown as { role?: string })?.role !== "admin") {
+    redirect("/auth/login")
+  }
   return user
 }

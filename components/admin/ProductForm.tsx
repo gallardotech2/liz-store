@@ -1,13 +1,13 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import { useFormStatus } from "react-dom"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { ImageDropzone } from "./ImageDropzone"
 import { addProductImage, deleteProductImage, setMainProductImage } from "@/app/admin/products/actions"
 import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
-import { checkImageFile, fitsUploadLimit, UPLOAD_LIMIT_ERROR } from "@/lib/image-detect"
+import { checkImageFile, fitsUploadLimit, IMAGE_READ_ERROR, UPLOAD_LIMIT_ERROR } from "@/lib/image-detect"
 
 interface CategoryOption {
   id: number
@@ -90,72 +90,101 @@ function AddImageForm({ productId }: { productId: number }) {
   const { pending } = useFormStatus()
   const [preview, setPreview] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
-  const [isCompressing, setIsCompressing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingLabel, setProcessingLabel] = useState("")
+  const [hasSelectedImage, setHasSelectedImage] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const selectionRef = useRef(0)
+  const previewUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+    }
+  }, [])
+
+  function updatePreview(url: string | null) {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    previewUrlRef.current = url
+    setPreview(url)
+  }
+
+  function resetSelection() {
+    updatePreview(null)
+    setHasSelectedImage(false)
+    if (fileRef.current) fileRef.current.value = ""
+  }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (!f) return
     const token = ++selectionRef.current
     setImageError(null)
-
-    const checked = await checkImageFile(f, 12 * 1024 * 1024)
-    if (token !== selectionRef.current) return
-    if (!checked.ok) {
-      setImageError(checked.error)
-      setPreview(null)
-      e.target.value = ""
-      return
-    }
-
-    let outFile = checked.file
-    if (imageIsCompressible(outFile)) {
-      setIsCompressing(true)
-      let processFailed = false
-      try {
-        const result = await compressImage(outFile)
-        if (result.compressed) outFile = result.file
-      } catch {
-        processFailed = true
-      } finally {
-        setIsCompressing(false)
-      }
-      if (token !== selectionRef.current) return
-      if (processFailed) {
-        setImageError("No se pudo procesar la imagen. Intenta con otra foto.")
-        setPreview(null)
-        e.target.value = ""
-        return
-      }
-    }
-
-    if (!fitsUploadLimit(outFile)) {
-      setImageError(UPLOAD_LIMIT_ERROR)
-      setPreview(null)
-      e.target.value = ""
-      return
-    }
+    setHasSelectedImage(false)
+    setProcessingLabel("Validando imagen…")
+    setIsProcessing(true)
 
     try {
-      if (fileRef.current) setFileInput(fileRef.current, outFile)
-    } catch {
-      setImageError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
-      setPreview(null)
-      e.target.value = ""
-      return
-    }
+      const checked = await checkImageFile(f, 12 * 1024 * 1024)
+      if (token !== selectionRef.current) return
+      if (!checked.ok) {
+        setImageError(checked.error)
+        resetSelection()
+        return
+      }
 
-    setImageError(null)
-    setPreview(URL.createObjectURL(outFile))
+      let outFile = checked.file
+      if (imageIsCompressible(outFile)) {
+        setProcessingLabel("Procesando imagen…")
+        const result = await compressImage(outFile)
+        if (token !== selectionRef.current) return
+        if (result.compressed) outFile = result.file
+      }
+
+      if (!fitsUploadLimit(outFile)) {
+        setImageError(UPLOAD_LIMIT_ERROR)
+        resetSelection()
+        return
+      }
+      if (token !== selectionRef.current) return
+
+      if (!fileRef.current || !setFileInput(fileRef.current, outFile)) {
+        setImageError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
+        resetSelection()
+        return
+      }
+
+      const current = fileRef.current.files?.[0]
+      if (!current || current.size !== outFile.size || current.type !== outFile.type) {
+        setImageError("No se pudo verificar la imagen preparada. Vuelve a seleccionarla.")
+        resetSelection()
+        return
+      }
+
+      updatePreview(URL.createObjectURL(outFile))
+      setHasSelectedImage(true)
+    } catch (err) {
+      if (token === selectionRef.current) {
+        setImageError(err instanceof Error && err.message ? err.message : IMAGE_READ_ERROR)
+        resetSelection()
+      }
+    } finally {
+      if (token === selectionRef.current) {
+        setIsProcessing(false)
+        setProcessingLabel("")
+      }
+    }
   }
 
   return (
     <form
       action={addProductImage.bind(null, productId)}
       className="bg-[#2A2D35] rounded-xl p-4 border border-white/12"
-      onSubmit={() => setTimeout(() => { selectionRef.current++; setPreview(null); if (fileRef.current) fileRef.current.value = "" }, 100)}
     >
+      <input type="hidden" name="image_selected" value={hasSelectedImage ? "1" : "0"} />
       <p className="text-[#ABB2BF] text-xs mb-3">Agregar nueva imagen</p>
       <div className="flex flex-wrap gap-3 items-end">
         <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
@@ -164,7 +193,7 @@ function AddImageForm({ productId }: { productId: number }) {
             ref={fileRef}
             type="file"
             name="image"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
             required
             className="text-xs text-[#ABB2BF] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-none file:bg-primary file:text-white file:text-xs file:font-semibold file:cursor-pointer hover:file:bg-primary-dark transition-colors cursor-pointer"
             onChange={handleImageChange}
@@ -184,14 +213,14 @@ function AddImageForm({ productId }: { productId: number }) {
         </label>
         <button
           type="submit"
-          disabled={pending || isCompressing}
+          disabled={pending || isProcessing || !hasSelectedImage}
           className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors border-none cursor-pointer disabled:opacity-50"
         >
           {pending ? "Subiendo..." : "Agregar"}
         </button>
       </div>
-      {isCompressing && (
-        <p className="text-[#ABB2BF] text-[12px] mt-2">Comprimiendo imagen…</p>
+      {isProcessing && (
+        <p className="text-[#ABB2BF] text-[12px] mt-2">{processingLabel}</p>
       )}
       {preview && (
         <div className="mt-3">
@@ -237,6 +266,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!initialData?.slug)
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(!!initialData?.sku)
   const [imageBusy, setImageBusy] = useState(false)
+  const [imageSelected, setImageSelected] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
   const slugRef = useRef<HTMLInputElement>(null)
   const skuRef = useRef<HTMLInputElement>(null)
@@ -266,6 +296,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <form action={action} className="contents">
+        <input type="hidden" name="image_selected" value={imageSelected ? "1" : "0"} />
         <div className="md:col-span-2">
           <h3 className="text-white text-base font-bold mb-4">Información básica</h3>
         </div>
@@ -386,6 +417,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
             name="image"
             currentImage={mainImage?.image}
             onBusyChange={setImageBusy}
+            onFileStateChange={setImageSelected}
           />
         </div>
 

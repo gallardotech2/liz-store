@@ -2,6 +2,10 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { ProductCard } from "@/components/ui/ProductCard"
 import { Button } from "@/components/ui/Button"
+import { HotBanner } from "@/components/shop/HotBanner"
+import { HotProductGrid } from "@/components/shop/HotProductGrid"
+import { getActiveHotCampaign } from "@/lib/live"
+import { getHotCatalogMap } from "@/lib/hot"
 import type { Metadata } from "next"
 
 export const revalidate = 3600
@@ -44,6 +48,9 @@ export default async function OffersPage({
 
   const supabase = await createClient()
   const s = supabase as any
+  const hotCampaign = await getActiveHotCampaign()
+  const liveMap = getHotCatalogMap(hotCampaign)
+  const quickOrder = Boolean(hotCampaign)
 
   const query = s
     .from("products")
@@ -123,11 +130,39 @@ export default async function OffersPage({
             </p>
           </div>
 
+          {hotCampaign && hotCampaign.products.length > 0 && (
+            <div className="mb-14">
+              <HotBanner
+                title={hotCampaign.session.title}
+                endsAt={hotCampaign.session.endsAt}
+              />
+              <div className="text-center mb-7">
+                <h2 className="text-[clamp(24px,2.5vw,32px)] mb-2 font-serif text-[#2D2D2D] dark:text-ink-strong">
+                  Los mejores precios
+                </h2>
+                <p className="text-[#6B6B6B] dark:text-ink-soft text-sm">
+                  Descuentos activos por tiempo limitado.
+                </p>
+              </div>
+              <HotProductGrid products={hotCampaign.topDiscounts} />
+            </div>
+          )}
+
           {products.length > 0 ? (
             <>
+              {hotCampaign && (
+                <h2 className="text-center text-[clamp(22px,2.5vw,30px)] mb-6 font-serif text-[#2D2D2D] dark:text-ink-strong">
+                  Ofertas regulares
+                </h2>
+              )}
               <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-6 max-md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] max-md:gap-3.75">
                 {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    liveProduct={liveMap.get(product.id) ?? null}
+                    quickOrder={quickOrder}
+                  />
                 ))}
               </div>
 

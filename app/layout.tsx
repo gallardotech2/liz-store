@@ -3,6 +3,7 @@ import { Playfair_Display, Inter, Great_Vibes, Cinzel } from "next/font/google"
 import { Analytics } from "@vercel/analytics/react"
 import { CookieConsent } from "@/components/ui/CookieConsent"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
+import { InlineScript } from "@/components/theme/InlineScript"
 import "./globals.css"
 
 const playfair = Playfair_Display({
@@ -71,7 +72,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <InlineScript html={themeInitScript} />
       </head>
       <body className="min-h-full flex flex-col bg-[#FDF8F6] dark:bg-page text-[#4A4A4A] dark:text-ink font-sans overflow-x-hidden" suppressHydrationWarning>
         <ThemeProvider>{children}</ThemeProvider>

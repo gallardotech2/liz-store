@@ -6,6 +6,9 @@ import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductSearch } from "@/components/shop/ProductSearch"
 import { useTheme, type Theme } from "@/components/theme/ThemeProvider"
+import { HotCountdown } from "@/components/layout/HotCountdown"
+import { LiveBadge } from "@/components/ui/LiveBadge"
+import { isDefaultLiveTitle } from "@/lib/live-copy"
 
 const THEME_VALUES = ["light", "dark", "system"] as const
 
@@ -62,6 +65,7 @@ interface HeaderStoreProfile {
 
 interface HeaderLiveSession {
   title: string
+  endsAt: string | null
 }
 
 interface HeaderProps {
@@ -190,12 +194,21 @@ export function Header({
   return (
     <>
       {activeLive ? (
-        <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f0f1a] text-white text-[13px] py-2 text-center border-b-2 border-[#27AE60]">
-          <div className="max-w-7xl mx-auto px-4 flex items-center gap-5 flex-wrap justify-center">
-            <span className="inline-block bg-[#E74C3C] text-white px-4 py-1.5 rounded-full text-[13px] font-bold tracking-[1px] animate-pulse">
-              🔴 EN VIVO
-            </span>
-            <strong>{activeLive.title}</strong>
+        <div className="border-b-2 border-[#C9A96E] bg-gradient-to-r from-primary to-primary-dark py-2 text-center text-[13px] text-white">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-4 sm:gap-5">
+            <LiveBadge variant="inverse" />
+            {!isDefaultLiveTitle(activeLive.title) && (
+              <strong>{activeLive.title}</strong>
+            )}
+            {activeLive.endsAt && (
+              <span className="text-sm text-white/90">
+                Termina en{" "}
+                <HotCountdown
+                  endsAt={activeLive.endsAt}
+                  className="font-bold text-[#FFF1D6]"
+                />
+              </span>
+            )}
             {storeProfile && (
               <span className="text-sm opacity-80 flex gap-4 flex-wrap">
                 <span>❤️ {storeProfile.likes}</span>
@@ -206,7 +219,7 @@ export function Header({
             )}
             <Link
               href="/productos"
-              className="inline-flex items-center gap-2 rounded-full font-semibold transition-all duration-300 cursor-pointer border-none font-sans whitespace-nowrap no-underline px-5 py-2.5 text-xs bg-gradient-to-br from-primary to-primary-dark text-white shadow-[0_4px_15px_rgba(255,142,159,0.3)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-full font-semibold transition-all duration-300 cursor-pointer border-none font-sans whitespace-nowrap no-underline bg-white px-4 py-2 text-xs text-primary-dark shadow-sm hover:-translate-y-0.5 hover:bg-[#FFF7F8]"
             >
               Ver productos
             </Link>

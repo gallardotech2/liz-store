@@ -6,6 +6,7 @@ import { FaHome, FaTag, FaStore, FaShoppingCart } from "react-icons/fa"
 
 interface BottomNavProps {
   cartCount: number
+  hotActive?: boolean
 }
 
 interface NavItem {
@@ -23,7 +24,7 @@ const navItems: NavItem[] = [
   { href: "/carrito", label: "Carrito", icon: FaShoppingCart, exact: true },
 ]
 
-export function BottomNav({ cartCount }: BottomNavProps) {
+export function BottomNav({ cartCount, hotActive = false }: BottomNavProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -69,6 +70,12 @@ export function BottomNav({ cartCount }: BottomNavProps) {
                 <span className="relative z-10 text-[10.5px] font-medium leading-none tracking-[0.2px]">
                   {item.label}
                 </span>
+                {item.href === "/ofertas" && hotActive && (
+                  <span
+                    className="absolute -top-1 -right-1 h-2.5 w-2.5 animate-pulse rounded-full bg-[#E74C3C]"
+                    aria-label="En vivo activo"
+                  />
+                )}
                 {item.href === "/carrito" && cartCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1 min-w-[16px] h-5 rounded-full bg-primary text-white text-[10px] font-semibold flex items-center justify-center px-1.5"

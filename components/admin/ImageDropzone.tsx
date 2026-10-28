@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef, useState, type DragEvent } from "react"
+import { useEffect, useRef, useState, type DragEvent } from "react"
 import { compressImage, imageIsCompressible, setFileInput } from "@/lib/image-compress"
 import {
   checkImageFile,
   fitsUploadLimit,
+  IMAGE_READ_ERROR,
   UPLOAD_LIMIT_ERROR,
 } from "@/lib/image-detect"
 
@@ -14,6 +15,7 @@ interface ImageDropzoneProps {
   onClear?: () => void
   maxSizeMB?: number
   onBusyChange?: (busy: boolean) => void
+  onFileStateChange?: (hasFile: boolean) => void
 }
 
 export function ImageDropzone({
@@ -22,79 +24,111 @@ export function ImageDropzone({
   onClear,
   maxSizeMB = 12,
   onBusyChange,
+  onFileStateChange,
 }: ImageDropzoneProps) {
   const [preview, setPreview] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasFile, setHasFile] = useState(false)
-  const [isCompressing, setIsCompressing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [processingLabel, setProcessingLabel] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
   const selectionRef = useRef(0)
+  const previewUrlRef = useRef<string | null>(null)
 
   const maxSize = maxSizeMB * 1024 * 1024
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current)
+        previewUrlRef.current = null
+      }
+    }
+  }, [])
+
+  function updatePreview(url: string | null) {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
+    previewUrlRef.current = url
+    setPreview(url)
+  }
+
+  function setBusy(value: boolean) {
+    setIsProcessing(value)
+    onBusyChange?.(value)
+  }
+
+  function setFileState(value: boolean) {
+    setHasFile(value)
+    onFileStateChange?.(value)
+  }
 
   function clearInput() {
     if (fileRef.current) fileRef.current.value = ""
   }
 
-  // Al rechazar un archivo, si había una selección válida previa hay que
-  // resetear también la UI: el input ya quedó vacío, no puede quedar
-  // "seleccionado" fantasma. NO llama onClear (borraría la imagen actual
-  // en CategoryForm).
   function resetSelectionUi() {
-    setPreview(null)
-    setHasFile(false)
+    updatePreview(null)
+    setFileState(false)
     clearInput()
   }
 
   async function handleFile(file: File) {
     const token = ++selectionRef.current
     setError(null)
-
-    const checked = await checkImageFile(file, maxSize)
-    if (token !== selectionRef.current) return
-    if (!checked.ok) {
-      setError(checked.error)
-      resetSelectionUi()
-      return
-    }
-
-    let outFile = checked.file
-    if (imageIsCompressible(outFile)) {
-      setIsCompressing(true)
-      onBusyChange?.(true)
-      try {
-        const result = await compressImage(outFile)
-        if (result.compressed) outFile = result.file
-      } catch {
-        if (token === selectionRef.current) {
-          setError("No se pudo procesar la imagen. Intenta con otra foto.")
-          resetSelectionUi()
-          return
-        }
-      } finally {
-        setIsCompressing(false)
-        onBusyChange?.(false)
-      }
-      if (token !== selectionRef.current) return
-    }
-
-    if (!fitsUploadLimit(outFile)) {
-      setError(UPLOAD_LIMIT_ERROR)
-      resetSelectionUi()
-      return
-    }
+    setProcessingLabel("Validando imagen…")
+    setBusy(true)
 
     try {
-      if (fileRef.current) setFileInput(fileRef.current, outFile)
-    } catch {
-      setError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
-      resetSelectionUi()
-      return
-    }
+      const checked = await checkImageFile(file, maxSize)
+      if (token !== selectionRef.current) return
+      if (!checked.ok) {
+        setError(checked.error)
+        resetSelectionUi()
+        return
+      }
 
-    setPreview(URL.createObjectURL(outFile))
-    setHasFile(true)
+      let outFile = checked.file
+      if (imageIsCompressible(outFile)) {
+        setProcessingLabel("Procesando imagen…")
+        const result = await compressImage(outFile)
+        if (token !== selectionRef.current) return
+        if (result.compressed) outFile = result.file
+      }
+
+      if (!fitsUploadLimit(outFile)) {
+        setError(UPLOAD_LIMIT_ERROR)
+        resetSelectionUi()
+        return
+      }
+      if (token !== selectionRef.current) return
+
+      if (!fileRef.current || !setFileInput(fileRef.current, outFile)) {
+        setError("Tu navegador no permitió preparar la imagen para el envío. Vuelve a intentarlo.")
+        resetSelectionUi()
+        return
+      }
+
+      const current = fileRef.current.files?.[0]
+      if (!current || current.size !== outFile.size || current.type !== outFile.type) {
+        setError("No se pudo verificar la imagen preparada. Vuelve a seleccionarla.")
+        resetSelectionUi()
+        return
+      }
+
+      updatePreview(URL.createObjectURL(outFile))
+      setFileState(true)
+    } catch (err) {
+      if (token === selectionRef.current) {
+        setError(err instanceof Error && err.message ? err.message : IMAGE_READ_ERROR)
+        resetSelectionUi()
+      }
+    } finally {
+      if (token === selectionRef.current) {
+        setBusy(false)
+        setProcessingLabel("")
+      }
+    }
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -120,12 +154,13 @@ export function ImageDropzone({
   }
 
   function handleClear() {
+    const wasPreview = !!preview
     selectionRef.current++
-    setPreview(null)
-    setHasFile(false)
     setError(null)
-    if (fileRef.current) fileRef.current.value = ""
-    onClear?.()
+    resetSelectionUi()
+    setBusy(false)
+    setProcessingLabel("")
+    if (!wasPreview) onClear?.()
   }
 
   const showImage = preview ?? currentImage
@@ -152,7 +187,7 @@ export function ImageDropzone({
           ref={fileRef}
           type="file"
           name={name}
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
           className="hidden"
           onChange={handleChange}
         />
@@ -171,7 +206,7 @@ export function ImageDropzone({
               />
             </svg>
             <span className="text-xs">Arrastra una imagen o haz clic para seleccionar</span>
-            <span className="text-[11px] text-[#6B7280]">JPG, PNG o WEBP — máx. {maxSizeMB}MB</span>
+            <span className="text-[11px] text-[#6B7280]">JPG, PNG, WEBP o GIF — máx. {maxSizeMB}MB</span>
           </div>
         )}
 
@@ -184,7 +219,7 @@ export function ImageDropzone({
 
       {error && <p className="text-[#E74C3C] text-[12px]">{error}</p>}
 
-      {showImage && (
+      {showImage && (preview || onClear) && (
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -195,10 +230,14 @@ export function ImageDropzone({
           </button>
           {hasFile && (
             <span className="text-[11px] text-[#27AE60]">
-              {isCompressing ? "Comprimiendo imagen…" : "✓ Nueva imagen seleccionada (se comprime al guardar)"}
+              {isProcessing ? processingLabel : "✓ Nueva imagen seleccionada (se comprime al guardar)"}
             </span>
           )}
         </div>
+      )}
+
+      {isProcessing && !hasFile && (
+        <p className="text-[#ABB2BF] text-[11px]">{processingLabel}</p>
       )}
 
       {currentImage && !preview && !hasFile && (

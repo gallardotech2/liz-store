@@ -4,23 +4,62 @@ import Link from "next/link"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import { WHATSAPP_NUMBER } from "@/lib/constants"
 import { SocialIcons } from "./SocialIcons"
+import { HotCountdown } from "./HotCountdown"
+import { getPublicLiveTitle, isDefaultLiveTitle } from "@/lib/live-copy"
 
 interface FooterCategory {
   name: string
   slug: string
 }
 
+interface FooterHot {
+  title: string
+  endsAt: string | null
+}
+
 interface FooterProps {
   categories?: FooterCategory[]
   whatsappNumber?: string
   whatsappGroupUrl?: string
+  hot?: FooterHot | null
 }
 
-export function Footer({ categories = [], whatsappNumber = "", whatsappGroupUrl = "" }: FooterProps) {
+export function Footer({
+  categories = [],
+  whatsappNumber = "",
+  whatsappGroupUrl = "",
+  hot = null,
+}: FooterProps) {
   const groupUrl =
     whatsappGroupUrl.trim() || `https://wa.me/${whatsappNumber || WHATSAPP_NUMBER}`
   return (
     <>
+      {hot?.endsAt && (
+        <section className="bg-[#2D2D2D] border-t border-[#C9A96E]/30 border-b border-[#C9A96E]/20">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-center gap-3 flex-wrap text-center">
+            {!isDefaultLiveTitle(hot.title) && (
+              <span className="text-white text-sm font-semibold">
+                {getPublicLiveTitle(hot.title)}
+              </span>
+            )}
+            <span className="text-[rgba(255,255,255,0.7)] text-sm">
+              Termina en{" "}
+              <HotCountdown
+                endsAt={hot.endsAt}
+                className="font-bold text-[#C9A96E]"
+              />
+            </span>
+            <Link
+              href="/productos"
+              className="text-[#C9A96E] text-sm font-semibold no-underline hover:text-white transition-colors"
+              prefetch={false}
+            >
+              Ver productos
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="bg-gradient-to-br from-primary to-primary-dark py-20 text-center text-white">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-white text-[clamp(28px,3vw,38px)] font-serif mb-4">

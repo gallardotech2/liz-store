@@ -31,9 +31,11 @@ function SubmitBtn({ extraDisabled = false }: { extraDisabled?: boolean }) {
 export function CategoryForm({ initialData, action }: CategoryFormProps) {
   const removeImageRef = useRef<HTMLInputElement>(null)
   const [imageBusy, setImageBusy] = useState(false)
+  const [imageSelected, setImageSelected] = useState(false)
 
   return (
     <form action={action} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <input type="hidden" name="image_selected" value={imageSelected ? "1" : "0"} />
       <div className="flex flex-col gap-1.5">
         <label htmlFor="name" className="text-[13px] text-[#ABB2BF] font-medium">
           Nombre *
@@ -69,6 +71,12 @@ export function CategoryForm({ initialData, action }: CategoryFormProps) {
           name="image"
           currentImage={initialData?.image}
           onBusyChange={setImageBusy}
+          onFileStateChange={(hasFile) => {
+            setImageSelected(hasFile)
+            if (hasFile && removeImageRef.current) {
+              removeImageRef.current.value = "0"
+            }
+          }}
           onClear={() => {
             if (removeImageRef.current) removeImageRef.current.value = "1"
           }}

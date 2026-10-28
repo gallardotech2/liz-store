@@ -1,168 +1,385 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { BroadcastIcon, MicIcon, MicOffIcon, CameraIcon, CameraOffIcon, XIcon, MessageSquareIcon, HeartIcon, EyeIcon, ShoppingBagIcon, ArrowLeftIcon, PlayCircleIcon, PauseIcon, StopIcon } from "@/components/admin/Icons"
-import { Button } from "@/components/ui/Button"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
+import {
+  BroadcastIcon,
+  ArrowLeftIcon,
+  PlayCircleIcon,
+  StopIcon,
+  EyeIcon,
+  ShoppingBagIcon,
+  HeartIcon,
+} from "@/components/admin/Icons"
+import { HotCountdown } from "@/components/layout/HotCountdown"
+import { HotPromoForm } from "@/components/admin/HotPromoForm"
+import {
+  LiveProductPicker,
+  type LivePickerCategory,
+  type LivePickerProduct,
+} from "@/components/admin/LiveProductPicker"
+import { LiveElapsed } from "@/components/admin/LiveElapsed"
+import { LiveEndScheduler } from "@/components/admin/LiveEndScheduler"
+import {
+  startLiveMode,
+  endLiveSession,
+  moveLiveProduct,
+  removeProductFromLiveSession,
+  setCurrentLiveProduct,
+  updateHotProductStatus,
+} from "@/app/admin/lives/actions"
 import { cn } from "@/lib/utils"
+import type { LiveProductStatus } from "@/types/database"
+import { isHotSessionExpired } from "@/lib/hot"
+import { LiveBadge } from "@/components/ui/LiveBadge"
 
-interface LiveSession {
+type SessionStatus = "not_started" | "live" | "paused" | "ended"
+
+interface StudioProduct {
+  id: number
+  product_id: number
+  status: LiveProductStatus
+  order: number | null
+  promo_price: number | null
+  shown_at: string | null
+  products: {
+    id: number
+    name: string
+    price: number
+    discount_price: number | null
+    stock: number
+    product_images: Array<{ image: string; is_main: boolean }> | null
+  } | null
+}
+
+interface StudioSession {
   id: number
   title: string
-  status: "not_started" | "live" | "paused" | "ended"
+  status: SessionStatus
+  is_global: boolean
   started_at: string | null
+  ends_at: string | null
+  duration_hours: number | null
   ended_at: string | null
+  ended_reason: "manual" | "expired" | null
   current_product_id: number | null
-  total_products_shown: number
-  total_products_sold: number
-  total_reserved: number
-  total_interested: number
-  total_likes: number
-  total_followers: number
-  live_products: Array<{
-    id: number
-    product_id: number
-    status: "available" | "requested" | "reserved" | "sold"
-    order: number
-    products: {
-      id: number
-      name: string
-      price: number
-      discount_price: number | null
-      product_images: Array<{ image: string; is_main: boolean }>
-    }
-  }>
-  store_profiles: {
-    name: string
-    likes: number
-    followers: number
-    rating: number
-    reviewsCount: number
-  }
+  live_products: StudioProduct[]
 }
 
 interface StudioPageProps {
   params: Promise<{ id: string }>
 }
 
-const productStatusConfig = {
-  available: { label: "Disponible", color: "bg-[#27AE60]", text: "text-[#27AE60]" },
-  requested: { label: "Solicitado", color: "bg-[#C9A96E]", text: "text-[#C9A96E]" },
-  reserved: { label: "Reservado", color: "bg-[#03C9D7]", text: "text-[#03C9D7]" },
-  sold: { label: "Vendido", color: "bg-[#E74C3C]", text: "text-[#E74C3C]" },
+interface PickerProductRow {
+  id: number
+  name: string
+  price: number
+  discount_price: number | null
+  live_price: number | null
+  stock: number
+  category_id: number
+  category: { name: string } | Array<{ name: string }> | null
+  product_images: Array<{ image: string; is_main: boolean }> | null
+}
+
+function toPickerProducts(rows: PickerProductRow[]): LivePickerProduct[] {
+  return rows.map((product) => {
+    const images = product.product_images ?? []
+    const mainImage = images.find((image) => image.is_main) ?? images[0]
+    const category = Array.isArray(product.category)
+      ? product.category[0]
+      : product.category
+
+    return {
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      discount_price:
+        product.discount_price !== null ? Number(product.discount_price) : null,
+      live_price:
+        product.live_price !== null ? Number(product.live_price) : null,
+      stock: Number(product.stock ?? 0),
+      categoryId: Number(product.category_id),
+      categoryName: category?.name ?? "Sin categoría",
+      image: mainImage?.image ?? null,
+    }
+  })
+}
+
+const productStatusConfig: Record<
+  LiveProductStatus,
+  { label: string; color: string }
+> = {
+  available: { label: "Disponible", color: "bg-[#27AE60]" },
+  requested: { label: "Solicitado", color: "bg-[#C9A96E]" },
+  reserved: { label: "Reservado", color: "bg-[#03C9D7]" },
+  sold: { label: "Vendido", color: "bg-[#E74C3C]" },
+}
+
+function formatCurrency(amount: number) {
+  return `Bs. ${Number(amount).toFixed(2)}`
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "—"
+  return new Intl.DateTimeFormat("es-BO", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/La_Paz",
+  }).format(new Date(value))
+}
+
+function getNormalPrice(product: StudioProduct) {
+  if (!product.products) return null
+  return Number(product.products.discount_price ?? product.products.price)
+}
+
+function getPromoPrice(product: StudioProduct) {
+  if (product.promo_price === null) return null
+  const value = Number(product.promo_price)
+  return Number.isFinite(value) ? value : null
+}
+
+function isHotProduct(product: StudioProduct) {
+  const normal = getNormalPrice(product)
+  const promo = getPromoPrice(product)
+  return normal !== null && promo !== null && promo < normal
+}
+
+function CampaignActions({
+  session,
+  busy,
+  run,
+  compact = false,
+}: {
+  session: StudioSession
+  busy: string | null
+  run: (key: string, action: () => Promise<void>) => Promise<void>
+  compact?: boolean
+}) {
+  const buttonClass = compact
+    ? "inline-flex items-center justify-center gap-1.5 rounded-lg border-none px-3 py-2 text-[11px] font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+    : "w-full rounded-lg border-none py-3 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+  const active = session.status === "live" && !isHotSessionExpired(session)
+
+  return (
+    <div className={compact ? "flex flex-wrap gap-2" : "flex flex-col gap-2"}>
+      {active ? (
+        <button
+          onClick={() => run("end", () => endLiveSession(session.id))}
+          disabled={busy !== null}
+          className={cn(
+            buttonClass,
+            "bg-[#E74C3C] text-white hover:bg-[#E74C3C]/90",
+          )}
+        >
+          <StopIcon className="h-4 w-4" />
+          Finalizar Modo Live
+        </button>
+      ) : (
+        <button
+          onClick={() => run("start", () => startLiveMode(session.id))}
+          disabled={busy !== null || session.live_products.length === 0}
+          className={cn(
+            buttonClass,
+            "bg-[#27AE60] text-white hover:bg-[#27AE60]/90",
+          )}
+        >
+          <PlayCircleIcon className="h-4 w-4" />
+          Iniciar Modo Live
+        </button>
+      )}
+
+      {!active && session.live_products.length === 0 && (
+        <p className="rounded-lg bg-[#C9A96E]/10 px-3 py-2 text-[11px] text-[#C9A96E]">
+          Agrega al menos un producto para iniciar.
+        </p>
+      )}
+    </div>
+  )
 }
 
 export default function AdminLiveStudioPage({ params }: StudioPageProps) {
-  const [session, setSession] = useState<LiveSession | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [currentProductId, setCurrentProductId] = useState<number | null>(null)
-  const [isMicOn, setIsMicOn] = useState(true)
-  const [isCameraOn, setIsCameraOn] = useState(true)
-  const [showChat, setShowChat] = useState(false)
-  const [comments, setComments] = useState<Array<{ id: number; user: string; message: string; time: string }>>([])
-  const [newComment, setNewComment] = useState("")
-  const [likes, setLikes] = useState(0)
-  const [followers, setFollowers] = useState(0)
-  const [viewers, setViewers] = useState(0)
-
   const liveSessionId = Number(use(params).id)
 
-  const fetchSession = useCallback(async () => {
-    try {
-      const supabase = createClient()
-      const { data } = await (supabase as any)
-        .from("live_sessions")
-        .select(`
-          *,
-          live_products(
+  const [session, setSession] = useState<StudioSession | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [productQuery, setProductQuery] = useState("")
+  const [catalog, setCatalog] = useState<LivePickerProduct[]>([])
+  const [categories, setCategories] = useState<LivePickerCategory[]>([])
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [showAddProducts, setShowAddProducts] = useState(false)
+
+  const fetchSession = useCallback(
+    async (silent = false) => {
+      try {
+        const supabase = createClient()
+        const { data, error: fetchError } = await (supabase as any)
+          .from("live_sessions")
+          .select(`
             id,
-            product_id,
+            title,
             status,
-            order,
-            products(
+            is_global,
+            started_at,
+            ends_at,
+            duration_hours,
+            ended_at,
+            ended_reason,
+            current_product_id,
+            live_products(
               id,
-              name,
-              price,
-              discount_price,
-              product_images(image, is_main)
+              product_id,
+              status,
+              "order",
+              promo_price,
+              shown_at,
+              products(
+                id,
+                name,
+                price,
+                discount_price,
+                stock,
+                product_images(image, is_main)
+              )
             )
+          `)
+          .eq("id", liveSessionId)
+          .single()
+
+        if (fetchError) throw fetchError
+
+        const sorted = {
+          ...(data as StudioSession),
+          live_products: [...((data as StudioSession).live_products ?? [])].sort(
+            (a, b) =>
+              (a.order ?? 0) - (b.order ?? 0) || a.product_id - b.product_id,
           ),
-          store_profiles(name, likes, followers, rating, reviewsCount)
-        `)
-        .eq("id", liveSessionId)
-        .single()
+        }
 
-      if (data) {
-        const sessionData = data as unknown as LiveSession
-        setSession(sessionData)
-        setCurrentProductId(sessionData.current_product_id)
-        setLikes(sessionData.store_profiles?.likes ?? 0)
-        setFollowers(sessionData.store_profiles?.followers ?? 0)
-        setViewers(sessionData.total_interested ?? 0)
+        setSession(sorted)
+        if (!silent) setError(null)
+      } catch (err) {
+        if (!silent) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "No se pudo cargar el Modo Live",
+          )
+        }
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error("Error fetching session:", err)
-    } finally {
-      setLoading(false)
-    }
-  }, [liveSessionId])
-
-  useEffect(() => {
-    fetchSession()
-    const interval = setInterval(fetchSession, 5000)
-    return () => clearInterval(interval)
-  }, [fetchSession])
-
-  const currentProduct = session?.live_products?.find(
-    (lp) => lp.product_id === currentProductId
+    },
+    [liveSessionId],
   )
 
-  const availableProducts = session?.live_products?.filter(
-    (lp) => lp.product_id !== currentProductId && lp.status === "available"
-  ) || []
+  const loadCatalog = useCallback(async () => {
+    setCatalogLoading(true)
+    setCatalogError(null)
 
-  const handleStatusChange = async (status: "not_started" | "live" | "paused" | "ended") => {
-    if (!session) return
-    const supabase = createClient()
-    const { error } = await (supabase as any)
-      .from("live_sessions")
-      .update({
-        status,
-        ...(status === "live" && { started_at: new Date().toISOString() }),
-        ...(status === "ended" && { ended_at: new Date().toISOString() }),
-      })
-      .eq("id", session.id)
+    try {
+      const supabase = createClient()
+      const [productsResult, categoriesResult] = await Promise.all([
+        (supabase as any)
+          .from("products")
+          .select(`
+            id,
+            name,
+            price,
+            discount_price,
+            live_price,
+            stock,
+            category_id,
+            category:categories(id, name),
+            product_images(image, is_main)
+          `)
+          .eq("is_active", true)
+          .order("name"),
+        (supabase as any)
+          .from("categories")
+          .select("id, name")
+          .order("name"),
+      ])
 
-    if (!error) {
-      setSession((prev) => prev ? { ...prev, status } : null)
-      fetchSession()
+      if (productsResult.error) throw productsResult.error
+      if (categoriesResult.error) throw categoriesResult.error
+
+      setCatalog(
+        toPickerProducts((productsResult.data ?? []) as PickerProductRow[]),
+      )
+      setCategories(
+        (categoriesResult.data ?? []) as LivePickerCategory[],
+      )
+    } catch (err) {
+      setCatalogError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar el catálogo de productos.",
+      )
+    } finally {
+      setCatalogLoading(false)
     }
-  }
+  }, [])
 
-  const handleSetCurrentProduct = async (productId: number | null) => {
-    const supabase = createClient()
-    const { error } = await (supabase as any)
-      .from("live_sessions")
-      .update({ current_product_id: productId })
-      .eq("id", liveSessionId)
+  useEffect(() => {
+    const initial = window.setTimeout(() => {
+      void loadCatalog()
+    }, 0)
+    return () => window.clearTimeout(initial)
+  }, [loadCatalog])
 
-    if (!error) {
-      setCurrentProductId(productId)
-      fetchSession()
+  useEffect(() => {
+    const initial = window.setTimeout(() => fetchSession(), 0)
+
+    let interval: ReturnType<typeof setInterval> | null = null
+    const stop = () => {
+      if (interval) {
+        clearInterval(interval)
+        interval = null
+      }
     }
-  }
+    const start = () => {
+      if (interval) return
+      interval = setInterval(() => {
+        if (document.visibilityState === "visible") fetchSession(true)
+      }, 30000)
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchSession(true)
+        start()
+      } else {
+        stop()
+      }
+    }
 
-  const handleUpdateLiveProductStatus = async (productId: number, status: "available" | "requested" | "reserved" | "sold") => {
-    const supabase = createClient()
-    const { error } = await (supabase as any)
-      .from("live_products")
-      .update({ status })
-      .eq("session_id", liveSessionId)
-      .eq("product_id", productId)
+    start()
+    document.addEventListener("visibilitychange", handleVisibility)
 
-    if (!error) {
-      fetchSession()
+    return () => {
+      window.clearTimeout(initial)
+      stop()
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [fetchSession])
+
+  async function run(key: string, action: () => Promise<void>) {
+    setBusy(key)
+    setError(null)
+    try {
+      await action()
+      await fetchSession(true)
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo completar la acción",
+      )
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -178,437 +395,764 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
     return (
       <div className="text-center py-20">
         <BroadcastIcon className="w-16 h-16 mx-auto mb-4 opacity-30" />
-        <h2 className="text-xl text-[#9CA3B8]">Sesión no encontrada</h2>
-        <Link href="/admin/lives" className="mt-4 inline-block text-primary hover:underline">
-          ← Volver a sesiones
+        <h2 className="text-xl text-[#9CA3B8]">Modo Live no encontrado</h2>
+        {error && <p className="text-sm text-[#E74C3C] mt-2">{error}</p>}
+        <Link
+          href="/admin/lives"
+          className="mt-4 inline-block text-primary hover:underline"
+        >
+          Volver al Modo Live
         </Link>
       </div>
     )
   }
 
-  const formatCurrency = (amount: number) => `Bs. ${amount.toFixed(2)}`
+  if (!session.is_global) {
+    return (
+      <div className="text-center py-20">
+        <BroadcastIcon className="w-16 h-16 mx-auto mb-4 opacity-30" />
+        <h2 className="text-xl text-[#9CA3B8]">
+          Esta configuración no es el Modo Live global
+        </h2>
+        <p className="mx-auto mt-2 max-w-md text-sm text-[#9CA3B8]">
+          El Modo Live actual es único y persistente para toda la tienda.
+        </p>
+        <Link
+          href="/admin/lives"
+          className="mt-4 inline-block text-primary hover:underline"
+        >
+          Ir al Modo Live
+        </Link>
+      </div>
+    )
+  }
+
+  const products = session.live_products
+  const current =
+    products.find((product) => product.product_id === session.current_product_id) ??
+    null
+  const currentHot = current ? isHotProduct(current) : false
+  const currentPromo = current ? getPromoPrice(current) : null
+  const currentNormal = current ? getNormalPrice(current) : null
+
+  const expired =
+    isHotSessionExpired(session) ||
+    (session.status === "ended" && session.ended_reason === "expired")
+  const active = session.status === "live" && !expired
+
+  const shownCount = products.filter((product) => product.shown_at !== null).length
+  const availableCount = products.filter(
+    (product) => product.status === "available",
+  ).length
+  const requestedCount = products.filter(
+    (product) => product.status === "requested",
+  ).length
+  const soldCount = products.filter((product) => product.status === "sold").length
+
+  const selectableProducts = products.filter((product) => {
+    if (product.product_id === session.current_product_id) return true
+    if (!isHotProduct(product)) return false
+    if ((product.products?.stock ?? 0) <= 0) return false
+    return product.status === "available" || product.status === "requested"
+  })
+
+  const filteredProducts = products.filter((product) => {
+    const term = productQuery.trim().toLowerCase()
+    if (!term) return true
+    return (product.products?.name ?? "").toLowerCase().includes(term)
+  })
+
+  const statusLabel =
+    session.status === "live" && !expired
+      ? "MODO LIVE ACTIVO"
+      : expired
+        ? "FINALIZADO POR TIEMPO"
+        : "DESACTIVADO"
+
+  const statusClass =
+    session.status === "live" && !expired
+      ? "bg-[#27AE60]/20 text-[#27AE60]"
+      : expired
+        ? "bg-[#E74C3C]/20 text-[#E74C3C]"
+        : "bg-white/10 text-[#9CA3B8]"
 
   return (
     <div className="min-h-screen bg-secondary">
-      <header className="sticky top-0 z-40 bg-secondary-light border-b border-white/12 px-7 py-4 flex items-center justify-between">
-        <Link
-          href="/admin/lives"
-          className="flex items-center gap-2 text-[#ABB2BF] hover:text-white transition-colors no-underline"
-          prefetch={false}
-        >
-          <ArrowLeftIcon className="w-5 h-5" />
-          <span className="font-medium">Sesiones en Vivo</span>
-        </Link>
-
+      <header className="sticky top-0 z-40 bg-secondary-light border-b border-white/12 px-7 py-4 flex items-center justify-between gap-4 max-md:px-4 max-md:flex-wrap">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="px-2 py-1 rounded-full bg-[#27AE60]/20 text-[#27AE60] font-semibold">
-              {session.status === "live" ? "● EN VIVO" : session.status.toUpperCase()}
-            </span>
-            <span className="text-[#9CA3B8]">|</span>
-            <span className="text-[#ABB2BF]">{session.title}</span>
-          </div>
+          <Link
+            href="/admin/lives"
+            className="flex items-center gap-2 text-[#ABB2BF] hover:text-white transition-colors no-underline"
+            prefetch={false}
+          >
+            <ArrowLeftIcon className="w-5 h-5" />
+            <span className="font-medium max-sm:hidden">Modo Live</span>
+          </Link>
+          <span className="text-white/20 max-sm:hidden">|</span>
+          <span className="text-[#ABB2BF] truncate max-w-[280px]">
+            {session.title}
+          </span>
+          <LiveBadge compact variant="soft" label="MODO LIVE" className="max-sm:hidden" />
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-4 text-sm">
-            <button
-              onClick={() => setIsMicOn(!isMicOn)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors",
-                isMicOn ? "bg-[#27AE60]/15 text-[#27AE60]" : "bg-[#E74C3C]/15 text-[#E74C3C]"
-              )}
-              aria-label={isMicOn ? "Silenciar micrófono" : "Activar micrófono"}
-            >
-              {isMicOn ? <MicIcon className="w-4 h-4" /> : <MicOffIcon className="w-4 h-4" />}
-              <span className="hidden sm:inline">{isMicOn ? "Mic ON" : "Mic OFF"}</span>
-            </button>
-            <button
-              onClick={() => setIsCameraOn(!isCameraOn)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors",
-                isCameraOn ? "bg-[#27AE60]/15 text-[#27AE60]" : "bg-[#E74C3C]/15 text-[#E74C3C]"
-              )}
-              aria-label={isCameraOn ? "Apagar cámara" : "Encender cámara"}
-            >
-              {isCameraOn ? <CameraIcon className="w-4 h-4" /> : <CameraOffIcon className="w-4 h-4" />}
-              <span className="hidden sm:inline">{isCameraOn ? "Cam ON" : "Cam OFF"}</span>
-            </button>
-            <button
-              onClick={() => setShowChat(!showChat)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors",
-                showChat ? "bg-primary/15 text-primary" : "bg-[#2A2D35] text-[#ABB2BF]"
-              )}
-              aria-label="Toggle chat"
-            >
-              <MessageSquareIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">Chat</span>
-              {comments.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-primary text-white text-[10px] flex items-center justify-center">
-                  {comments.length}
-                </span>
-              )}
-            </button>
-          </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <span
+            className={cn(
+              "px-2.5 py-1 rounded-full text-[11px] font-bold tracking-[0.5px]",
+              statusClass,
+            )}
+          >
+            {statusLabel}
+          </span>
+          {active && session.ends_at && (
+            <span className="text-[12px] text-[#9CA3B8]">
+              Termina en{" "}
+              <HotCountdown
+                endsAt={session.ends_at}
+                className="font-bold text-white"
+              />
+            </span>
+          )}
+          <Link
+            href={`/admin/lives/${session.id}/editar`}
+            className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors no-underline"
+            prefetch={false}
+          >
+            Administrar catálogo
+          </Link>
         </div>
       </header>
 
+      <div className="border-b border-white/12 bg-secondary-light px-4 py-3 lg:hidden">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="text-[10px] font-semibold uppercase tracking-[1px] text-[#9CA3B8]">
+            Acciones rápidas
+          </span>
+          <Link
+            href={`/admin/lives/${session.id}/editar`}
+            className="text-[11px] font-semibold text-primary no-underline"
+            prefetch={false}
+          >
+            Administrar catálogo
+          </Link>
+        </div>
+        <CampaignActions
+          session={session}
+          busy={busy}
+          run={run}
+          compact
+        />
+      </div>
+
       <main className="p-7 max-md:p-5 max-sm:p-3 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-5">
         <section className="flex flex-col gap-5">
-          <div className={cn(
-            "aspect-video rounded-[16px] overflow-hidden bg-[#1A1D24] relative",
-            session.status === "live" && "ring-2 ring-primary"
-          )}>
-            {session.status === "live" && (
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#E74C3C] text-white px-3 py-1 rounded-full text-[12px] font-bold animate-pulse">
+          {error && (
+            <div className="rounded-xl border border-[#E74C3C]/30 bg-[#E74C3C]/10 px-4 py-3 text-sm text-[#E74C3C]">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowAddProducts((current) => !current)}
+              className="inline-flex items-center gap-1.5 rounded-lg border-none bg-primary/15 px-3.5 py-2 text-[11px] font-bold text-primary transition-colors hover:bg-primary/25"
+            >
+              <BroadcastIcon className="h-3.5 w-3.5" />
+              {showAddProducts ? "Cerrar catálogo" : "Agregar productos"}
+            </button>
+          </div>
+
+          {showAddProducts && (
+            <div className="flex flex-col gap-2">
+              {catalogLoading ? (
+                <div className="rounded-xl border border-white/12 bg-secondary-light px-4 py-6 text-center text-sm text-[#9CA3B8]">
+                  Cargando catálogo...
+                </div>
+              ) : catalogError ? (
+                <div className="rounded-xl border border-[#E74C3C]/30 bg-[#E74C3C]/10 px-4 py-3 text-sm text-[#E74C3C]">
+                  {catalogError}
+                </div>
+              ) : (
+                <LiveProductPicker
+                  liveSessionId={session.id}
+                  products={catalog}
+                  categories={categories}
+                  existingProductIds={products.map((product) => product.product_id)}
+                  onAdded={() => {
+                    void fetchSession(true)
+                    void loadCatalog()
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          <div
+            className={cn(
+              "aspect-video rounded-[16px] overflow-hidden bg-[#1A1D24] relative",
+              session.status === "live" && !expired && "ring-2 ring-primary",
+            )}
+          >
+            {session.status === "live" && !expired && (
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-[#E74C3C] text-white px-3 py-1 rounded-full text-[12px] font-bold">
                 <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                EN VIVO
+                EN PANTALLA
               </div>
             )}
 
-            {currentProduct ? (
+            {current ? (
               <div className="w-full h-full flex flex-col">
                 <div className="relative flex-1 bg-[#1A1D24]">
-                  {currentProduct.products?.product_images?.[0] && (
+                  {current.products?.product_images?.[0] && (
                     <img
-                      src={currentProduct.products.product_images[0].image}
-                      alt={currentProduct.products.name}
+                      src={current.products.product_images[0].image}
+                      alt={current.products?.name ?? "Producto"}
                       className="w-full h-full object-cover opacity-90"
                     />
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[11px] font-bold",
-                        productStatusConfig[currentProduct.status as keyof typeof productStatusConfig]?.color
-                      )}>
-                        {productStatusConfig[currentProduct.status as keyof typeof productStatusConfig]?.label}
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-full text-[11px] font-bold text-white",
+                          productStatusConfig[current.status].color,
+                        )}
+                      >
+                        {productStatusConfig[current.status].label}
                       </span>
-                      <span className="text-primary font-semibold text-lg">
-                        {formatCurrency(currentProduct.products.discount_price ?? currentProduct.products.price)}
-                      </span>
+                      {currentHot && currentPromo !== null ? (
+                        <span className="text-[#F5B7B1] font-bold text-lg">
+                          Modo Live {formatCurrency(currentPromo)}
+                        </span>
+                      ) : (
+                        <span className="text-[#C9A96E] text-sm font-semibold">
+                          Sin precio del Modo Live
+                        </span>
+                      )}
+                      {currentNormal !== null && (
+                        <span className="text-white/60 text-sm line-through">
+                          {formatCurrency(currentNormal)}
+                        </span>
+                      )}
+                      {currentHot &&
+                        currentPromo !== null &&
+                        currentNormal !== null &&
+                        currentNormal > 0 && (
+                          <span className="rounded bg-[#E74C3C] px-2 py-0.5 text-[10px] font-bold text-white">
+                            -
+                            {Math.round(
+                              (1 - currentPromo / currentNormal) * 100,
+                            )}
+                            %
+                          </span>
+                        )}
                     </div>
-                    <h3 className="text-white text-xl font-bold">{currentProduct.products.name}</h3>
+                    <h3 className="text-white text-xl font-bold">
+                      {current.products?.name ?? "Producto"}
+                    </h3>
+                    <p className="text-white/60 text-xs mt-1">
+                      Stock: {current.products?.stock ?? 0}
+                    </p>
                   </div>
                 </div>
-                <div className="p-4 bg-secondary-light border-t border-white/12 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleUpdateLiveProductStatus(currentProduct.product_id, "available")}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                        currentProduct.status === "available"
-                          ? "bg-[#27AE60] text-white"
-                          : "bg-[#27AE60]/15 text-[#27AE60]"
-                      )}
-                    >
-                      Disponible
-                    </button>
-                    <button
-                      onClick={() => handleUpdateLiveProductStatus(currentProduct.product_id, "requested")}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                        currentProduct.status === "requested"
-                          ? "bg-[#C9A96E] text-white"
-                          : "bg-[#C9A96E]/15 text-[#C9A96E]"
-                      )}
-                    >
-                      Solicitado
-                    </button>
-                    <button
-                      onClick={() => handleUpdateLiveProductStatus(currentProduct.product_id, "reserved")}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                        currentProduct.status === "reserved"
-                          ? "bg-[#03C9D7] text-white"
-                          : "bg-[#03C9D7]/15 text-[#03C9D7]"
-                      )}
-                    >
-                      Reservado
-                    </button>
-                    <button
-                      onClick={() => handleUpdateLiveProductStatus(currentProduct.product_id, "sold")}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                        currentProduct.status === "sold"
-                          ? "bg-[#E74C3C] text-white"
-                          : "bg-[#E74C3C]/15 text-[#E74C3C]"
-                      )}
-                    >
-                      Vendido
-                    </button>
+                <div className="p-4 bg-secondary-light border-t border-white/12 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {(
+                      Object.keys(productStatusConfig) as LiveProductStatus[]
+                    ).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() =>
+                          run(`status-${current.product_id}-${status}`, () =>
+                            updateHotProductStatus(
+                              session.id,
+                              current.product_id,
+                              status,
+                            ),
+                          )
+                        }
+                        disabled={busy !== null}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border-none cursor-pointer disabled:opacity-50",
+                          current.status === status
+                            ? `${productStatusConfig[status].color} text-white`
+                            : "bg-white/5 text-[#ABB2BF] hover:bg-white/10",
+                        )}
+                      >
+                        {productStatusConfig[status].label}
+                      </button>
+                    ))}
                   </div>
-                  <Link
-                    href={`/admin/products/${currentProduct.product_id}/editar`}
-                    className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors no-underline"
-                    prefetch={false}
-                    target="_blank"
+                  <button
+                    onClick={() =>
+                      run("clear-current", () =>
+                        setCurrentLiveProduct(session.id, null),
+                      )
+                    }
+                    disabled={busy !== null}
+                    className="px-4 py-2 rounded-lg bg-[#2A2D35] text-white text-sm font-semibold hover:bg-white/10 transition-colors border-none cursor-pointer disabled:opacity-50"
                   >
-                    Editar producto
-                  </Link>
+                    Quitar de pantalla
+                  </button>
                 </div>
-              </div>
-            ) : session.status === "live" ? (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[#9CA3B8]">
-                <BroadcastIcon className="w-16 h-16 mb-4 opacity-50" />
-                <p className="text-lg">Selecciona un producto actual para mostrar en vivo</p>
-                <p className="text-sm mt-1">Usa el panel lateral para elegir el producto en pantalla</p>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[#9CA3B8]">
+              <div className="w-full h-full flex flex-col items-center justify-center text-[#9CA3B8] px-6 text-center">
                 <BroadcastIcon className="w-16 h-16 mb-4 opacity-50" />
-                <p className="text-lg">Sesión: {session.status === "not_started" ? "No iniciada" : session.status === "paused" ? "Pausada" : "Finalizada"}</p>
-                <p className="text-sm mt-1">Inicia la sesión para comenzar la transmisión</p>
+                <p className="text-lg">
+                  {session.status === "live" && !expired
+                    ? "Selecciona un producto para mostrar en pantalla"
+                    : "No hay producto en pantalla"}
+                </p>
+                <p className="text-sm mt-1">
+                  Usa el panel lateral para elegir un producto del Modo Live.
+                </p>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-3 sm:p-5">
+              <div className="flex items-center gap-2 text-[#9CA3B8] text-sm mb-2">
+                <BroadcastIcon className="w-4 h-4" />
+                <span>Productos</span>
+              </div>
+              <div className="text-2xl font-bold text-white sm:text-3xl">
+                {products.length}
+              </div>
+            </div>
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-3 sm:p-5">
               <div className="flex items-center gap-2 text-[#9CA3B8] text-sm mb-2">
                 <EyeIcon className="w-4 h-4" />
-                <span>Espectadores</span>
+                <span>Mostrados</span>
               </div>
-              <div className="text-3xl font-bold text-white">{viewers}</div>
+              <div className="text-2xl font-bold text-white sm:text-3xl">{shownCount}</div>
             </div>
-            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-3 sm:p-5">
               <div className="flex items-center gap-2 text-[#9CA3B8] text-sm mb-2">
                 <HeartIcon className="w-4 h-4" />
-                <span>Likes</span>
+                <span>Solicitados</span>
               </div>
-              <div className="text-3xl font-bold text-white">{likes}</div>
+              <div className="text-2xl font-bold text-[#C9A96E] sm:text-3xl">
+                {requestedCount}
+              </div>
             </div>
-            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-3 sm:p-5">
               <div className="flex items-center gap-2 text-[#9CA3B8] text-sm mb-2">
                 <ShoppingBagIcon className="w-4 h-4" />
                 <span>Vendidos</span>
               </div>
-              <div className="text-3xl font-bold text-[#27AE60]">{session.total_products_sold ?? 0}</div>
+              <div className="text-2xl font-bold text-[#27AE60] sm:text-3xl">{soldCount}</div>
+            </div>
+          </div>
+
+          <div className="hidden grid-cols-1 gap-4 sm:grid sm:grid-cols-3">
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-4">
+              <div className="text-[11px] uppercase tracking-[1px] text-[#9CA3B8] mb-1">
+                Iniciada
+              </div>
+              <div className="text-sm text-white">
+                {formatDateTime(session.started_at)}
+              </div>
+            </div>
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-4">
+              <div className="text-[11px] uppercase tracking-[1px] text-[#9CA3B8] mb-1">
+                Termina
+              </div>
+              <div className="text-sm text-white">
+                {formatDateTime(session.ends_at)}
+              </div>
+            </div>
+            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-4">
+              <div className="text-[11px] uppercase tracking-[1px] text-[#9CA3B8] mb-1">
+                Transcurrido
+              </div>
+              <div className="text-sm text-white">
+                <LiveElapsed
+                  startedAt={session.started_at}
+                  active={session.status === "live" && !expired}
+                  inactiveLabel="—"
+                />
+              </div>
             </div>
           </div>
         </section>
 
         <aside className="flex flex-col gap-5">
-          <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-bold">Productos de la Sesión</h3>
-              <span className="text-[10px] bg-[#C9A96E] text-white px-1.5 py-0.5 rounded font-semibold">BETA</span>
+          <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
+            <h3 className="text-white font-bold mb-4">Producto en pantalla</h3>
+            <select
+              value={current?.product_id ?? ""}
+              onChange={(event) =>
+                run("set-current", () =>
+                  setCurrentLiveProduct(
+                    session.id,
+                    event.target.value ? Number(event.target.value) : null,
+                  ),
+                )
+              }
+              disabled={busy !== null}
+              className="w-full px-3 py-2 rounded-lg bg-[#1A1D24] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors disabled:opacity-50"
+            >
+              <option value="">— Sin producto —</option>
+              {selectableProducts.map((product) => (
+                <option key={product.product_id} value={product.product_id}>
+                  {product.products?.name ?? `Producto ${product.product_id}`}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-[#9CA3B8] mt-2 leading-[1.5]">
+              Solo aparecen productos con precio del Modo Live, stock disponible y estado
+              disponible o solicitado.
+            </p>
+            {selectableProducts.length === 0 && (
+              <p className="text-[11px] text-[#C9A96E] mt-2">
+                No hay productos válidos. Agrega un producto con precio del Modo Live
+                desde el catálogo.
+              </p>
+            )}
+          </div>
+
+          <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-bold">Productos</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddProducts(true)
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }}
+                  className="rounded-lg border-none bg-primary/15 px-2.5 py-1 text-[10px] font-semibold text-primary transition-colors hover:bg-primary/25"
+                >
+                  Agregar
+                </button>
+                <span className="text-[10px] bg-[#C9A96E] text-white px-1.5 py-0.5 rounded font-semibold">
+                  {products.length}
+                </span>
+              </div>
             </div>
 
-            {session.status !== "ended" && (
-              <div className="mb-4 p-3 bg-[#2A2D35] rounded-xl border border-white/12">
-                <p className="text-[#ABB2BF] text-xs mb-3">Producto actual en pantalla</p>
-                <select
-                  value={currentProductId || ""}
-                  onChange={(e) => handleSetCurrentProduct(Number(e.target.value) || null)}
-                  className="w-full px-3 py-2 rounded-lg bg-[#1A1D24] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors"
-                >
-                  <option value="">— Seleccionar —</option>
-                  {session.live_products?.map((lp) => (
-                    <option key={lp.product_id} value={lp.product_id}>
-                      {lp.products?.name} {lp.product_id === currentProductId ? "✓" : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="relative mb-3">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3B8]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                type="search"
+                value={productQuery}
+                onChange={(event) => setProductQuery(event.target.value)}
+                placeholder="Buscar en el catálogo del Modo Live..."
+                className="w-full rounded-lg border border-white/12 bg-[#1A1D24] py-2 pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-[#6B7280] focus:border-primary"
+              />
+            </div>
 
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
-              {session.live_products?.map((lp) => {
-                const product = lp.products
-                const cfg = productStatusConfig[lp.status as keyof typeof productStatusConfig]
-                const price = product?.discount_price ?? product?.price
-                const isCurrent = lp.product_id === currentProductId
+            <div className="space-y-2 max-h-[52vh] overflow-y-auto sm:max-h-[520px]">
+              {filteredProducts.map((product) => {
+                const isCurrent =
+                  product.product_id === session.current_product_id
+                const promo = getPromoPrice(product)
+                const normal = getNormalPrice(product)
+                const productHot = isHotProduct(product)
+                const discountPct =
+                  productHot && promo !== null && normal !== null && normal > 0
+                    ? Math.round((1 - promo / normal) * 100)
+                    : null
+                const config =
+                  productStatusConfig[product.status] ??
+                  productStatusConfig.available
+                const productIndex = products.findIndex(
+                  (item) => item.product_id === product.product_id,
+                )
+                const isFirst = productIndex <= 0
+                const isLast = productIndex === products.length - 1
+                const canShow =
+                  !isCurrent &&
+                  productHot &&
+                  (product.products?.stock ?? 0) > 0 &&
+                  (product.status === "available" ||
+                    product.status === "requested")
 
                 return (
                   <div
-                    key={lp.product_id}
+                    key={product.product_id}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                      "rounded-xl border p-3 transition-all",
                       isCurrent
                         ? "bg-primary/10 border-primary/30"
-                        : "bg-[#2A2D35] border-white/12 hover:border-primary/20"
+                        : "bg-[#2A2D35] border-white/12 hover:border-primary/20",
                     )}
                   >
-                    {product?.product_images?.[0] && (
-                      <img
-                        src={product.product_images[0].image}
-                        alt={product?.name}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-medium truncate">{product?.name}</span>
-                        {isCurrent && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white">EN VIVO</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] text-[#ABB2BF]">
-                        <span className={cn("px-1.5 py-0.5 rounded text-[10px] font-bold", cfg?.color)}>
-                          {cfg?.label}
+                    <div className="flex items-start gap-3 max-sm:flex-wrap">
+                      {product.products?.product_images?.[0] ? (
+                        <img
+                          src={product.products.product_images[0].image}
+                          alt={product.products?.name ?? "Producto"}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/5 text-[9px] text-[#6B7280]">
+                          Sin foto
                         </span>
-                        <span className="text-primary font-semibold">Bs. {price?.toFixed(2)}</span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium truncate">
+                            {product.products?.name ?? "Producto"}
+                          </span>
+                          {isCurrent && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white shrink-0">
+                              EN PANTALLA
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-[#ABB2BF] flex-wrap">
+                          <span className="text-[10px] font-bold text-[#6B7280]">
+                            #{productIndex + 1}
+                          </span>
+                          <span
+                            className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px] font-bold text-white",
+                              config.color,
+                            )}
+                          >
+                            {config.label}
+                          </span>
+                          {productHot && promo !== null ? (
+                            <span className="text-[#F5B7B1] font-semibold">
+                              Modo Live {formatCurrency(promo)}
+                            </span>
+                          ) : (
+                            <span className="text-[#C9A96E]">
+                              Sin precio del Modo Live
+                            </span>
+                          )}
+                          {normal !== null && (
+                            <span className="text-[#6B7280] line-through">
+                              {formatCurrency(normal)}
+                            </span>
+                          )}
+                          {discountPct !== null && discountPct > 0 && (
+                            <span className="rounded bg-[#E74C3C] px-1 py-0.5 text-[9px] font-bold text-white">
+                              -{discountPct}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[#6B7280] mt-0.5">
+                          Stock: {product.products?.stock ?? 0}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {lp.status !== "sold" && (
+                      <div className="flex flex-col items-end gap-1 shrink-0 max-sm:w-full max-sm:flex-row max-sm:items-center max-sm:justify-end">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              run(`move-up-${product.product_id}`, () =>
+                                moveLiveProduct(
+                                  session.id,
+                                  product.product_id,
+                                  "up",
+                                ),
+                              )
+                            }
+                            disabled={busy !== null || isFirst}
+                            aria-label="Subir producto"
+                            className="rounded bg-white/5 px-2 py-1 text-[11px] font-bold text-[#ABB2BF] transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              run(`move-down-${product.product_id}`, () =>
+                                moveLiveProduct(
+                                  session.id,
+                                  product.product_id,
+                                  "down",
+                                ),
+                              )
+                            }
+                            disabled={busy !== null || isLast}
+                            aria-label="Bajar producto"
+                            className="rounded bg-white/5 px-2 py-1 text-[11px] font-bold text-[#ABB2BF] transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            ↓
+                          </button>
+                        </div>
+                        {canShow && (
+                          <button
+                            onClick={() =>
+                              run(`show-${product.product_id}`, () =>
+                                setCurrentLiveProduct(
+                                  session.id,
+                                  product.product_id,
+                                ),
+                              )
+                            }
+                            disabled={busy !== null}
+                            className="px-2 py-1 rounded bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 transition-colors border-none cursor-pointer disabled:opacity-50"
+                          >
+                            Mostrar
+                          </button>
+                        )}
+                        {isCurrent && (
+                          <button
+                            onClick={() =>
+                              run("clear-current", () =>
+                                setCurrentLiveProduct(session.id, null),
+                              )
+                            }
+                            disabled={busy !== null}
+                            className="px-2 py-1 rounded bg-white/10 text-white text-[11px] font-semibold hover:bg-white/20 transition-colors border-none cursor-pointer disabled:opacity-50"
+                          >
+                            Quitar de pantalla
+                          </button>
+                        )}
                         <select
-                          value={lp.status}
-                          onChange={(e) => handleUpdateLiveProductStatus(lp.product_id, e.target.value as any)}
-                          className="px-2 py-1 rounded bg-[#1A1D24] border border-white/12 text-white text-[11px] outline-none focus:border-primary"
+                          value={product.status}
+                          onChange={(event) =>
+                            run(
+                              `status-${product.product_id}-${event.target.value}`,
+                              () =>
+                                updateHotProductStatus(
+                                  session.id,
+                                  product.product_id,
+                                  event.target.value as LiveProductStatus,
+                                ),
+                            )
+                          }
+                          disabled={busy !== null}
+                          className="px-2 py-1 rounded bg-[#1A1D24] border border-white/12 text-white text-[11px] outline-none focus:border-primary disabled:opacity-50"
                         >
                           <option value="available">Disponible</option>
                           <option value="requested">Solicitado</option>
                           <option value="reserved">Reservado</option>
                           <option value="sold">Vendido</option>
                         </select>
-                      )}
-                      {!isCurrent && session.status === "live" && (
-                        <button
-                          onClick={() => handleSetCurrentProduct(lp.product_id)}
-                          className="px-2 py-1 rounded bg-primary/15 text-primary text-[11px] font-semibold hover:bg-primary/25 transition-colors border-none cursor-pointer"
-                        >
-                          Mostrar
-                        </button>
-                      )}
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/8 pt-2">
+                      <HotPromoForm
+                        liveSessionId={session.id}
+                        productId={product.product_id}
+                        productName={product.products?.name ?? "Producto"}
+                        normalPrice={normal ?? 0}
+                        initialPromo={product.promo_price}
+                        onSaved={() => fetchSession(true)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (
+                            !window.confirm(
+                              "¿Quitar este producto del catálogo del Modo Live? No se eliminará del catálogo general.",
+                            )
+                          ) {
+                            return
+                          }
+                          void run(`remove-${product.product_id}`, () =>
+                            removeProductFromLiveSession(
+                              session.id,
+                              product.product_id,
+                            ),
+                          )
+                        }}
+                        disabled={busy !== null}
+                        className="rounded-lg border-none bg-transparent px-2 py-1.5 text-[10px] font-semibold text-[#E74C3C] transition-colors hover:bg-[#E74C3C]/10 disabled:opacity-50"
+                      >
+                        Quitar del catálogo del Modo Live
+                      </button>
                     </div>
                   </div>
                 )
               })}
 
-              {(!session.live_products || session.live_products.length === 0) && (
+              {products.length === 0 && (
                 <div className="text-center py-8 text-[#9CA3B8]">
                   <BroadcastIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>No hay productos asignados</p>
-                  <p className="text-xs mt-1">Ve a Editar para agregar productos</p>
+                  <p>No hay productos en el catálogo del Modo Live</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddProducts(true)}
+                    className="text-xs mt-1 inline-block border-none bg-transparent text-primary hover:underline"
+                  >
+                    Agregar productos
+                  </button>
+                </div>
+              )}
+
+              {products.length > 0 && filteredProducts.length === 0 && (
+                <div className="py-8 text-center text-[#9CA3B8]">
+                  <p className="text-sm">Sin resultados para “{productQuery}”.</p>
+                  <button
+                    onClick={() => setProductQuery("")}
+                    className="mt-1 border-none bg-transparent text-xs text-primary hover:underline"
+                  >
+                    Limpiar búsqueda
+                  </button>
                 </div>
               )}
             </div>
           </div>
 
-          {showChat && (
-            <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5 flex flex-col h-[400px] animate-slide-in-right">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-bold flex items-center gap-2">
-                  <MessageSquareIcon className="w-5 h-5" />
-                  Chat en Vivo
-                </h3>
-                <button
-                  onClick={() => setShowChat(false)}
-                  className="p-1 text-[#9CA3B8] hover:text-white transition-colors"
-                  aria-label="Cerrar chat"
-                >
-                  <XIcon className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-3 mb-4" style={{ maxHeight: "280px" }}>
-                {comments.map((c) => (
-                  <div key={c.id} className="bg-[#2A2D35] rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-medium text-sm">{c.user}</span>
-                      <span className="text-[#9CA3B8] text-[11px]">{c.time}</span>
-                    </div>
-                    <p className="text-[#ABB2BF] text-sm">{c.message}</p>
-                  </div>
-                ))}
-                {comments.length === 0 && (
-                  <div className="text-center text-[#9CA3B8] text-sm py-8">
-                    No hay mensajes aún
-                  </div>
-                )}
-              </div>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  if (!newComment.trim()) return
-                  const msg = {
-                    id: Date.now(),
-                    user: "Admin",
-                    message: newComment.trim(),
-                    time: new Date().toLocaleTimeString("es-BO", { hour: "2-digit", minute: "2-digit" }),
-                  }
-                  setComments((prev) => [...prev, msg])
-                  setNewComment("")
-                }}
-                className="flex gap-2"
-              >
-                <input
-                  type="text"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Escribe un mensaje..."
-                  className="flex-1 px-3 py-2 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors"
-                />
-                <Button type="submit" variant="primary" size="sm">
-                  Enviar
-                </Button>
-              </form>
-            </div>
-          )}
-
           <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
-            <h3 className="text-white font-bold mb-4">Acciones Rápidas</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {session.status === "not_started" && (
-                <button
-                  onClick={() => handleStatusChange("live")}
-                  className="col-span-2 py-3 rounded-lg bg-[#27AE60] text-white font-semibold hover:bg-[#27AE60]/90 transition-colors"
-                >
-                  <BroadcastIcon className="w-4 h-4 inline mr-1" />
-                  Iniciar Transmisión
-                </button>
-              )}
-              {session.status === "live" && (
-                <>
-                  <button
-                    onClick={() => handleStatusChange("paused")}
-                    className="py-3 rounded-lg bg-[#C9A96E] text-white font-semibold hover:bg-[#C9A96E]/90 transition-colors"
-                  >
-                    <PauseIcon className="w-4 h-4 inline mr-1" />
-                    Pausar
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange("ended")}
-                    className="py-3 rounded-lg bg-[#E74C3C] text-white font-semibold hover:bg-[#E74C3C]/90 transition-colors"
-                  >
-                    <StopIcon className="w-4 h-4 inline mr-1" />
-                    Finalizar
-                  </button>
-                </>
-              )}
-              {session.status === "paused" && (
-                <>
-                  <button
-                    onClick={() => handleStatusChange("live")}
-                    className="py-3 rounded-lg bg-[#27AE60] text-white font-semibold hover:bg-[#27AE60]/90 transition-colors"
-                  >
-                    <PlayCircleIcon className="w-4 h-4 inline mr-1" />
-                    Reanudar
-                  </button>
-                  <button
-                    onClick={() => handleStatusChange("ended")}
-                    className="py-3 rounded-lg bg-[#E74C3C] text-white font-semibold hover:bg-[#E74C3C]/90 transition-colors"
-                  >
-                    <StopIcon className="w-4 h-4 inline mr-1" />
-                    Finalizar
-                  </button>
-                </>
-              )}
-              {session.status === "ended" && (
-                <button
-                  onClick={() => handleStatusChange("not_started")}
-                  className="col-span-2 py-3 rounded-lg bg-[#2A2D35] text-white font-semibold hover:bg-white/10 transition-colors"
-                >
-                  Reiniciar Sesión
-                </button>
-              )}
+            <h3 className="text-white font-bold mb-4">Modo Live</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[#9CA3B8]">Disponibles</span>
+                <span className="text-white font-semibold">
+                  {availableCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9CA3B8]">Solicitados</span>
+                <span className="text-[#C9A96E] font-semibold">
+                  {requestedCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#9CA3B8]">Vendidos</span>
+                <span className="text-[#27AE60] font-semibold">{soldCount}</span>
+              </div>
             </div>
+
+            <div className="mt-4 border-t border-white/12 pt-4">
+              <CampaignActions
+                session={session}
+                busy={busy}
+                run={run}
+              />
+            </div>
+
+            {active && (
+              <div className="mt-4 border-t border-white/12 pt-4">
+                <LiveEndScheduler
+                  sessionId={session.id}
+                  endsAt={session.ends_at}
+                  onSaved={() => fetchSession(true)}
+                />
+              </div>
+            )}
+
+            {session.ended_reason && (
+              <p className="text-[11px] text-[#9CA3B8] mt-3">
+                Motivo de cierre:{" "}
+                {session.ended_reason === "expired" ? "vencida" : "manual"}
+              </p>
+            )}
           </div>
         </aside>
       </main>
-
     </div>
   )
 }

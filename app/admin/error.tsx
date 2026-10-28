@@ -12,16 +12,26 @@ function describeError(error: (Error & { digest?: string }) | null | undefined):
     lower.includes("an error occurred") ||
     lower.includes("server-side exception")
   ) {
-    return "El servidor rechazó la operación sin detallar el motivo. Suele deberse a una imagen que supera el límite de subida, un formato no admitido o un fallo al guardar en el almacenamiento. Revisa la imagen e inténtalo de nuevo."
+    return "El servidor no pudo completar la operación y no devolvió el detalle en producción. Inténtalo de nuevo. Si el problema continúa, revisa los logs del servidor con el código de referencia."
   }
 
   if (lower.includes("body") && (lower.includes("limit") || lower.includes("exceed"))) {
-    return "La imagen supera el límite de subida del servidor. Prueba con una foto más pequeña o con una captura más reducida."
+    return "La imagen supera el límite de subida del servidor. Reduce el tamaño de la foto e inténtalo de nuevo."
+  }
+
+  if (
+    lower.includes("forbidden") ||
+    lower.includes("unauthorized") ||
+    lower.includes("not authorized") ||
+    lower.includes("row-level security") ||
+    lower.includes("permission denied")
+  ) {
+    return "Tu sesión no tiene permisos para realizar esta operación. Vuelve a iniciar sesión como administrador e inténtalo de nuevo."
   }
 
   if (message) return message
 
-  return "Hubo un error al procesar la solicitud. Vuelve a intentarlo. Si estabas subiendo una imagen, prueba con una foto más pequeña o en formato JPG."
+  return "Hubo un error al procesar la solicitud. Vuelve a intentarlo. Si el problema continúa, revisa el código de referencia en los logs del servidor."
 }
 
 export default function AdminError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
