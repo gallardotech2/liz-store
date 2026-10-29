@@ -273,8 +273,11 @@ CREATE TABLE live_sessions (
   total_likes INTEGER DEFAULT 0 CHECK (total_likes >= 0),
   total_followers INTEGER DEFAULT 0 CHECK (total_followers >= 0),
   notes TEXT DEFAULT '',
+  live_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT live_sessions_live_url_https_check
+    CHECK (live_url IS NULL OR live_url ~ '^https://'),
   CONSTRAINT live_sessions_duration_hours_check
     CHECK (duration_hours IS NULL OR duration_hours > 0),
   CONSTRAINT live_sessions_ended_reason_check
