@@ -73,8 +73,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "home">("pickup")
-  const defaultPickup = pickupPoints.length > 0 ? pickupPoints[0].name : ""
-  const [pickupLocation, setPickupLocation] = useState(defaultPickup)
+  const [pickupLocation, setPickupLocation] = useState("")
   const defaultMethod = paymentMethods.length > 0 ? paymentMethods[0].code : "pago_directo"
   const [paymentMethod, setPaymentMethod] = useState(defaultMethod)
   const [name, setName] = useState("")
@@ -83,6 +82,10 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const [error, setError] = useState("")
   const [highlightName, setHighlightName] = useState(false)
   const nameRef = useRef<HTMLInputElement>(null)
+  const [highlightPhone, setHighlightPhone] = useState(false)
+  const phoneRef = useRef<HTMLInputElement>(null)
+  const [highlightPickup, setHighlightPickup] = useState(false)
+  const pickupRef = useRef<HTMLDivElement>(null)
   const [referenceCode, setReferenceCode] = useState("")
   const [status, setStatus] = useState<"form" | "confirm" | "success">("form")
   const finalTotal = totals.subtotal
@@ -136,6 +139,20 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
       setHighlightName(true)
       nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
       window.setTimeout(() => setHighlightName(false), 2500)
+      return false
+    }
+    if (!phone.trim()) {
+      setError("Ingresa tu teléfono")
+      setHighlightPhone(true)
+      phoneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      window.setTimeout(() => setHighlightPhone(false), 2500)
+      return false
+    }
+    if (deliveryMethod === "pickup" && !pickupLocation) {
+      setError("Te falta seleccionar tu punto de recogida")
+      setHighlightPickup(true)
+      pickupRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      window.setTimeout(() => setHighlightPickup(false), 2500)
       return false
     }
     return true
@@ -318,13 +335,23 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         </div>
 
         <div className="flex flex-col gap-1.5 mb-5">
-          <label className="text-[13px] text-[#6B6B6B] dark:text-ink-soft font-medium">Teléfono</label>
+          <label className="text-[13px] text-[#6B6B6B] dark:text-ink-soft font-medium">Teléfono *</label>
           <input
+            ref={phoneRef}
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={user ? "Cargando..." : "Número de contacto (opcional)"}
-            className="px-3.5 py-2.5 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line text-[#2D2D2D] dark:text-ink-strong text-sm outline-none focus:border-primary transition-colors w-full"
+            onChange={(e) => {
+              setPhone(e.target.value)
+              if (highlightPhone) setHighlightPhone(false)
+            }}
+            required
+            aria-invalid={highlightPhone}
+            placeholder={user ? "Cargando..." : "Número de contacto"}
+            className={`px-3.5 py-2.5 rounded-xl bg-[#FDF8F6] dark:bg-surface border text-[#2D2D2D] dark:text-ink-strong text-sm outline-none focus:border-primary transition-all duration-300 w-full ${
+              highlightPhone
+                ? "border-[#E74C3C] ring-4 ring-[#E74C3C]/25"
+                : "border-[#EEE] dark:border-line"
+            }`}
           />
         </div>
 
@@ -380,7 +407,15 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         </div>
 
         {deliveryMethod === "pickup" && (
-          <div className="mb-6 p-5 rounded-xl bg-[#FDF8F6] dark:bg-surface">
+          <div
+            ref={pickupRef}
+            id="punto-recogida"
+            className={`mb-6 p-5 rounded-xl bg-[#FDF8F6] dark:bg-surface border-2 scroll-mt-24 transition-all duration-300 ${
+              highlightPickup
+                ? "border-[#E74C3C] ring-4 ring-[#E74C3C]/25"
+                : "border-transparent"
+            }`}
+          >
             <p className="text-[14px] text-[#6B6B6B] dark:text-ink-soft mb-4">
               Selecciona el punto de recogida más cercano a ti.
             </p>
@@ -396,14 +431,20 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                         ? "bg-white dark:bg-surface-raised border border-primary"
                         : "bg-white dark:bg-surface-raised border border-[#EEE] dark:border-line hover:border-[#DDD] dark:hover:border-line"
                     }`}
-                    onClick={() => setPickupLocation(point.name)}
+                    onClick={() => {
+                      setPickupLocation(point.name)
+                      setHighlightPickup(false)
+                    }}
                   >
                     <input
                       type="radio"
                       name="pickup_location"
                       value={point.name}
                       checked={pickupLocation === point.name}
-                      onChange={() => setPickupLocation(point.name)}
+                      onChange={() => {
+                        setPickupLocation(point.name)
+                        setHighlightPickup(false)
+                      }}
                       className="mt-0.5 accent-primary"
                     />
                     <div className="flex-1">
