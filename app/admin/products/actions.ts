@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
 import { uploadImage, deleteImage } from "@/lib/supabase/storage"
-import type { Database } from "@/types/database"
+import type { Database, Json } from "@/types/database"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 type DbClient = SupabaseClient
@@ -57,6 +57,24 @@ function getImageFile(formData: FormData): File | null {
   if (!value || typeof value === "string") return null
   const file = value as File
   return file.size > 0 ? file : null
+}
+
+function parseSpecifications(formData: FormData, current?: unknown): Json {
+  const specifications: Record<string, Json> =
+    current && typeof current === "object" && !Array.isArray(current)
+      ? { ...(current as Record<string, Json>) }
+      : {}
+
+  const talla = ((formData.get("spec_talla") as string) || "").trim()
+  const colores = ((formData.get("spec_colores") as string) || "").trim()
+
+  if (talla) specifications.talla = talla
+  else delete specifications.talla
+
+  if (colores) specifications.colores = colores
+  else delete specifications.colores
+
+  return specifications
 }
 
 function assertImageSelection(formData: FormData, file: File | null, required = false): void {
@@ -120,6 +138,7 @@ export async function createProduct(formData: FormData) {
   const stock = Number(formData.get("stock"))
   const short_description = (formData.get("short_description") as string) || ""
   const long_description = (formData.get("long_description") as string) || ""
+  const specifications = parseSpecifications(formData)
   const is_active = formData.get("is_active") === "on"
   const is_featured = formData.get("is_featured") === "on"
   const is_new = formData.get("is_new") === "on"
@@ -146,6 +165,7 @@ export async function createProduct(formData: FormData) {
         stock,
         short_description,
         long_description,
+        specifications,
         is_active,
         is_featured,
         is_new,
@@ -211,6 +231,12 @@ export async function updateProduct(id: number, formData: FormData) {
   const stock = Number(formData.get("stock"))
   const short_description = (formData.get("short_description") as string) || ""
   const long_description = (formData.get("long_description") as string) || ""
+  const { data: currentProduct } = await supabase
+    .from("products")
+    .select("specifications")
+    .eq("id", id)
+    .maybeSingle()
+  const specifications = parseSpecifications(formData, currentProduct?.specifications)
   const is_active = formData.get("is_active") === "on"
   const is_featured = formData.get("is_featured") === "on"
   const is_new = formData.get("is_new") === "on"
@@ -223,7 +249,7 @@ export async function updateProduct(id: number, formData: FormData) {
 
   const updateData: Database["public"]["Tables"]["products"]["Update"] = {
     name, slug, sku, category_id, price, discount_price, stock,
-    short_description, long_description, is_active, is_featured, is_new, is_offer,
+    short_description, long_description, specifications, is_active, is_featured, is_new, is_offer,
     meta_description, meta_keywords,
   }
 

@@ -112,6 +112,7 @@ export default async function ProductDetailPage({
     stock: number
     short_description: string
     long_description: string
+    specifications: Record<string, unknown> | null
     sku: string
     category_id: number
     category: { id: number; name: string; slug: string }
@@ -125,6 +126,13 @@ export default async function ProductDetailPage({
   }
 
   const p = product as unknown as RawProduct
+  const specs =
+    p.specifications && typeof p.specifications === "object" && !Array.isArray(p.specifications)
+      ? p.specifications
+      : {}
+  const talla = typeof specs.talla === "string" ? specs.talla.trim() : ""
+  const colores = typeof specs.colores === "string" ? specs.colores.trim() : ""
+  const description = (p.long_description || p.short_description || "").trim()
   const hasDiscount =
     p.discount_price !== null && p.discount_price < p.price
   const displayPrice = hasDiscount ? p.discount_price! : p.price
@@ -327,13 +335,6 @@ export default async function ProductDetailPage({
                 )}
               </div>
 
-              {p.short_description && (
-                <DescriptionCollapse
-                  text={p.short_description}
-                  className="my-6 leading-[1.8] text-[#6B6B6B] dark:text-ink-soft"
-                />
-              )}
-
               {hotProduct && p.stock > 0 && (
                 <div className="rounded-[16px] border-2 border-[#E74C3C]/30 bg-gradient-to-br from-[#FFF5F5] via-white to-[#FFFBF9] dark:from-[#2A1D1D] dark:via-surface-raised dark:to-surface p-5 my-6">
                   <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
@@ -407,15 +408,38 @@ export default async function ProductDetailPage({
                 </div>
               )}
 
-              {p.long_description && (
+              {description && (
                 <div className="mt-7.5">
                   <h3 className="font-sans text-lg mb-3 text-[#2D2D2D] dark:text-ink-strong">
                     Descripción
                   </h3>
                   <DescriptionCollapse
-                    text={p.long_description}
+                    text={description}
                     className="leading-[1.8] text-[#6B6B6B] dark:text-ink-soft"
                   />
+                </div>
+              )}
+
+              {(talla || colores) && (
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-[12px] border border-[rgba(255,142,159,0.25)] bg-white dark:bg-surface-raised p-4">
+                    <h3 className="font-sans text-lg mb-2 text-[#2D2D2D] dark:text-ink-strong">
+                      Talla
+                    </h3>
+                    <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">
+                      {talla || "Talla no especificada"}
+                    </p>
+                  </div>
+                  {colores && (
+                    <div className="rounded-[12px] border border-[rgba(255,142,159,0.25)] bg-white dark:bg-surface-raised p-4">
+                      <h3 className="font-sans text-lg mb-2 text-[#2D2D2D] dark:text-ink-strong">
+                        Colores
+                      </h3>
+                      <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">
+                        {colores}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -33,6 +33,7 @@ export default async function EditProductPage({
     stock: number
     short_description: string
     long_description: string
+    specifications: Record<string, unknown> | null
     is_active: boolean
     is_featured: boolean
     is_new: boolean

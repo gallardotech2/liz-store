@@ -35,6 +35,7 @@ interface ProductFormProps {
     stock: number
     short_description: string
     long_description: string
+    specifications?: Record<string, unknown> | null
     is_active: boolean
     is_featured: boolean
     is_new: boolean
@@ -292,6 +293,12 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
   }, [])
 
   const mainImage = initialData?.images?.find((img) => img.is_main) ?? initialData?.images?.[0]
+  const specs =
+    initialData?.specifications && typeof initialData.specifications === "object" && !Array.isArray(initialData.specifications)
+      ? initialData.specifications
+      : {}
+  const initialTalla = typeof specs.talla === "string" ? specs.talla : ""
+  const initialColores = typeof specs.colores === "string" ? specs.colores : ""
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -423,7 +430,7 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="short_description" className="text-[13px] text-[#ABB2BF] font-medium">
-            Descripción corta
+            Resumen para tarjetas
           </label>
           <textarea
             id="short_description"
@@ -432,11 +439,14 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
             defaultValue={initialData?.short_description ?? ""}
             className="px-3.5 py-2.5 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors resize-y"
           />
+          <p className="text-[11px] text-[#7D8596]">
+            Texto breve para el catálogo. No se muestra en la ficha del producto.
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="long_description" className="text-[13px] text-[#ABB2BF] font-medium">
-            Descripción larga
+            Descripción de la ficha
           </label>
           <textarea
             id="long_description"
@@ -444,6 +454,42 @@ export function ProductForm({ categories, initialData, action }: ProductFormProp
             rows={3}
             defaultValue={initialData?.long_description ?? ""}
             className="px-3.5 py-2.5 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors resize-y"
+          />
+          <p className="text-[11px] text-[#7D8596]">
+            Se muestra una sola vez en la ficha pública.
+          </p>
+        </div>
+
+        <div className="md:col-span-2 mt-2">
+          <h3 className="text-white text-base font-bold mb-1">Detalles del producto</h3>
+          <p className="text-[12px] text-[#7D8596] mb-4">
+            Talla y colores se muestran en la ficha, separados de la descripción.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="spec_talla" className="text-[13px] text-[#ABB2BF] font-medium">
+            Talla
+          </label>
+          <input
+            id="spec_talla"
+            name="spec_talla"
+            defaultValue={initialTalla}
+            placeholder="Ej. ajustable, 16, no especificada"
+            className="px-3.5 py-2.5 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="spec_colores" className="text-[13px] text-[#ABB2BF] font-medium">
+            Colores
+          </label>
+          <input
+            id="spec_colores"
+            name="spec_colores"
+            defaultValue={initialColores}
+            placeholder="Ej. dorado; rojo rubí"
+            className="px-3.5 py-2.5 rounded-xl bg-[#2A2D35] border border-white/12 text-white text-sm outline-none focus:border-primary transition-colors"
           />
         </div>
 
