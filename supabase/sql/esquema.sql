@@ -71,6 +71,7 @@ CREATE TABLE products (
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
   sku TEXT NOT NULL UNIQUE,
+  live_code TEXT,
   category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   price NUMERIC(10,2) NOT NULL,
   discount_price NUMERIC(10,2),
@@ -89,7 +90,9 @@ CREATE TABLE products (
   meta_description TEXT DEFAULT '',
   meta_keywords TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  CONSTRAINT products_live_code_format_check
+    CHECK (live_code IS NULL OR live_code ~ '^([0-9]{2}|[1-9][0-9]{2})$')
 );
 
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -398,6 +401,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 CREATE INDEX IF NOT EXISTS idx_categories_active_order ON categories(is_active, "order");
 CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_products_live_code ON products(live_code) WHERE live_code IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_active_featured ON products(is_active, is_featured);
 CREATE INDEX IF NOT EXISTS idx_products_category_active ON products(category_id, is_active);

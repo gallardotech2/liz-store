@@ -10,12 +10,14 @@ export interface HotSessionRow {
   ends_at: string | null
   duration_hours: number | null
   current_product_id: number | null
+  live_url?: string | null
 }
 
 export interface RawHotProduct {
   id: number
   name: string
   slug: string
+  short_description?: string | null
   price: number | string
   discount_price: number | string | null
   stock: number
@@ -47,12 +49,14 @@ export interface HotSession {
   endsAt: string | null
   durationHours: number | null
   currentProductId: number | null
+  liveUrl: string | null
 }
 
 export interface HotProduct {
   productId: number
   name: string
   slug: string
+  shortDescription: string
   image: string | null
   listPrice: number
   normalPrice: number
@@ -148,6 +152,7 @@ export function mapHotProduct(
     productId: product.id,
     name: product.name,
     slug: product.slug,
+    shortDescription: (product.short_description ?? "").replace(/\s+/g, " ").trim(),
     image: mainImage?.image ?? null,
     listPrice,
     normalPrice,
@@ -227,6 +232,7 @@ export function buildHotCampaign(
       endsAt: session.ends_at,
       durationHours: session.duration_hours,
       currentProductId: current?.productId ?? session.current_product_id,
+      liveUrl: session.live_url ?? null,
     },
     products,
     catalog,

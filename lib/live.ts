@@ -10,8 +10,10 @@ import {
   type HotSessionRow,
 } from "@/lib/hot"
 
-const HOT_SESSION_SELECT =
+const HOT_SESSION_BASE_SELECT =
   "id, title, status, started_at, ends_at, duration_hours, current_product_id"
+
+const HOT_SESSION_SELECT = `${HOT_SESSION_BASE_SELECT}, live_url`
 
 const HOT_PRODUCT_SELECT = `
   product_id,
@@ -23,6 +25,7 @@ const HOT_PRODUCT_SELECT = `
     id,
     name,
     slug,
+    short_description,
     price,
     discount_price,
     stock,
@@ -36,22 +39,57 @@ const HOT_PRODUCT_SELECT = `
   )
 `
 
-export async function fetchActiveHotCampaign(
+function isMissingLiveUrlColumn(
+  error: { code?: string; message?: string } | null,
+): boolean {
+  if (!error) return false
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    Boolean(error.message?.includes("live_url"))
+  )
+}
+
+async function fetchActiveSession(
   supabase: SupabaseClient,
-): Promise<HotCampaign | null> {
-  const { data: session, error: sessionError } = await supabase
+  select: string,
+) {
+  return supabase
     .from("live_sessions")
-    .select(HOT_SESSION_SELECT)
+    .select(select)
     .eq("status", "live")
     .eq("is_global", true)
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle()
+}
+
+export async function fetchActiveHotCampaign(
+  supabase: SupabaseClient,
+): Promise<HotCampaign | null> {
+  let { data: session, error: sessionError } = await fetchActiveSession(
+    supabase,
+    HOT_SESSION_SELECT,
+  )
+
+  if (sessionError && isMissingLiveUrlColumn(sessionError)) {
+    const fallback = await fetchActiveSession(
+      supabase,
+      HOT_SESSION_BASE_SELECT,
+    )
+    session = fallback.data
+    sessionError = fallback.error
+  }
 
   if (sessionError) throw sessionError
-  if (!session || !isHotSessionActive(session as HotSessionRow)) return null
+  if (
+    !session ||
+    !isHotSessionActive(session as unknown as HotSessionRow)
+  ) {
+    return null
+  }
 
-  const hotSession = session as HotSessionRow
+  const hotSession = session as unknown as HotSessionRow
 
   const { data: rows, error: productsError } = await supabase
     .from("live_products")

@@ -13,11 +13,13 @@ export function LiveProductCard({
   whatsappNumber,
   priority = false,
   className,
+  variant = "default",
 }: {
   product: HotProduct
   whatsappNumber: string
   priority?: boolean
   className?: string
+  variant?: "default" | "mini"
 }) {
   const soldOut = product.stock <= 0
   const unavailableLabel = getCardAvailability(product)
@@ -40,6 +42,98 @@ export function LiveProductCard({
       status: product.status,
     },
   )
+
+  if (variant === "mini") {
+    const miniTag = product.isCurrent
+      ? "En el LIVE"
+      : pricing.discountPercent > 0
+        ? `Ahorras ${pricing.discountPercent}%`
+        : "Precio regular"
+
+    return (
+      <article
+        className={cn(
+          "group min-w-0 overflow-hidden rounded-[15px] border border-[rgba(255,142,159,0.18)] bg-white transition-all duration-300 hover:border-[#FB8496] hover:shadow-[0_8px_24px_rgba(255,142,159,0.14)] dark:border-white/10 dark:bg-surface-raised",
+          className,
+        )}
+      >
+        <Link
+          href={`/productos/${product.slug}`}
+          className="block no-underline"
+        >
+          <div className="relative aspect-square overflow-hidden bg-[#FFFBF9] dark:bg-surface">
+            {product.image ? (
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                sizes="(max-width: 1024px) 112px, 220px"
+                className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                priority={priority}
+                loading={priority ? undefined : "lazy"}
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#FB8496] to-[#FDF8F6] text-[#B76E79] dark:to-surface">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
+              </div>
+            )}
+
+            {product.isCurrent ? (
+              <span className="absolute left-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.3px] text-white">
+                En el LIVE
+              </span>
+            ) : (
+              pricing.discountPercent > 0 && (
+                <span className="absolute right-2 top-2 rounded-full bg-[#E74C3C] px-1.5 py-0.5 text-[9px] font-bold text-white">
+                  -{pricing.discountPercent}%
+                </span>
+              )
+            )}
+          </div>
+
+          <div className="p-2.5">
+            <h3 className="line-clamp-2 min-h-[2.6em] text-[11px] font-semibold leading-[1.3] text-[#2D2D2D] transition-colors group-hover:text-primary-dark dark:text-ink-strong">
+              {product.name}
+            </h3>
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-1">
+              <span
+                className={
+                  pricing.hasLivePrice
+                    ? "text-[13px] font-extrabold text-[#E74C3C]"
+                    : "text-[13px] font-extrabold text-primary-dark dark:text-primary"
+                }
+              >
+                {formatCurrency(pricing.displayPrice)}
+              </span>
+              {pricing.crossedPrice !== null && (
+                <span className="text-[9px] text-[#9CA3B8] line-through">
+                  {formatCurrency(pricing.crossedPrice)}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-[9px] font-semibold text-[#27AE60]">
+              {miniTag}
+            </p>
+          </div>
+        </Link>
+      </article>
+    )
+  }
 
   return (
     <article

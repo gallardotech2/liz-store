@@ -2149,3 +2149,31 @@ GRANT EXECUTE ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) TO authen
 
 NOTIFY pgrst, 'reload schema';
 */
+
+-- ============================================================
+-- Fix 0024: Identificador permanente de productos para Modo Estudio de Live
+-- Fecha ejecución: 2026-10-28
+-- Estado: EJECUTADO
+-- Descripción: Agrega live_code TEXT nullable a products para asignar
+--   identificadores manuales (01–99 y 100–999) desde el catálogo Live.
+--   Conserva ceros iniciales al ser texto, impide duplicados con un índice
+--   único parcial y valida el formato con un CHECK. No rellena datos
+--   existentes: los productos sin código quedan en NULL.
+-- ============================================================
+/*
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS live_code TEXT;
+
+ALTER TABLE public.products
+  DROP CONSTRAINT IF EXISTS products_live_code_format_check;
+
+ALTER TABLE public.products
+  ADD CONSTRAINT products_live_code_format_check
+  CHECK (live_code IS NULL OR live_code ~ '^([0-9]{2}|[1-9][0-9]{2})$');
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_products_live_code
+  ON public.products (live_code)
+  WHERE live_code IS NOT NULL;
+
+NOTIFY pgrst, 'reload schema';
+*/

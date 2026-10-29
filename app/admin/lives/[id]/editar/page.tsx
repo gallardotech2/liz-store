@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { DeleteButton } from "@/components/admin/DeleteButton"
 import { HotPromoForm } from "@/components/admin/HotPromoForm"
+import { LiveProductCodeForm } from "@/components/admin/LiveProductCodeForm"
 import { LiveProductStatusSelect } from "@/components/admin/LiveProductStatusSelect"
 import {
   LiveProductPicker,
@@ -152,6 +153,30 @@ export default async function EditLiveSessionPage({
       (a.order ?? 0) - (b.order ?? 0) || a.product_id - b.product_id,
   )
 
+  const liveProductIds = hotProducts.map((product) => product.product_id)
+  const liveCodes = new Map<number, string | null>()
+  let liveCodeError: string | null = null
+
+  if (liveProductIds.length > 0) {
+    const { data: codeRows, error: codeError } = await supabase
+      .from("products")
+      .select("id, live_code")
+      .in("id", liveProductIds)
+
+    if (codeError) {
+      liveCodeError = codeError.message?.includes("live_code")
+        ? "Falta aplicar Fix 0024 en el SQL Editor de Supabase para habilitar los identificadores."
+        : codeError.message
+    } else {
+      for (const row of (codeRows ?? []) as Array<{
+        id: number
+        live_code: string | null
+      }>) {
+        liveCodes.set(row.id, row.live_code ?? null)
+      }
+    }
+  }
+
   const pickerProducts: LivePickerProduct[] = (
     (products ?? []) as EditableProductRow[]
   ).map((product) => {
@@ -262,6 +287,15 @@ export default async function EditLiveSessionPage({
         </div>
       </div>
 
+      {liveCodeError && (
+        <div className="mb-5 rounded-[16px] border border-[#C9A96E]/30 bg-[#C9A96E]/10 p-4">
+          <p className="text-sm font-bold text-[#C9A96E]">
+            Identificadores no disponibles
+          </p>
+          <p className="mt-1 text-[12px] text-[#D7DBE3]">{liveCodeError}</p>
+        </div>
+      )}
+
       <LiveProductPicker
         liveSessionId={liveSessionId}
         products={pickerProducts}
@@ -314,6 +348,7 @@ export default async function EditLiveSessionPage({
                 const isCurrent = product.product_id === currentProductId
                 const invalidPromo =
                   product.promo_price !== null && live === null
+                const liveCode = liveCodes.get(product.product_id) ?? null
                 const canShow =
                   !isCurrent &&
                   live !== null &&
@@ -361,6 +396,11 @@ export default async function EditLiveSessionPage({
                               Inactivo
                             </span>
                           )}
+                          {liveCode && (
+                            <span className="rounded bg-[#C9A96E]/15 px-1.5 py-0.5 text-[9px] font-bold text-[#C9A96E]">
+                              Código {liveCode}
+                            </span>
+                          )}
                         </div>
                         <p className="mt-0.5 text-[11px] text-[#9CA3B8]">
                           Stock: {item?.stock ?? 0} · Orden: {index + 1}
@@ -381,6 +421,16 @@ export default async function EditLiveSessionPage({
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    <div className="mt-3 rounded-lg border border-white/8 bg-black/10 px-3 py-2">
+                      <LiveProductCodeForm
+                        liveSessionId={liveSessionId}
+                        productId={product.product_id}
+                        productName={item?.name ?? "Producto"}
+                        initialCode={liveCode}
+                        disabled={Boolean(liveCodeError)}
+                      />
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/8 pt-3">

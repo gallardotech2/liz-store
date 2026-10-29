@@ -194,6 +194,7 @@ export interface ProductsTable {
     price: number
     discount_price: number | null
     live_price: number | null
+    live_code: string | null
     stock: number
     short_description: string
     long_description: string
@@ -219,6 +220,7 @@ export interface ProductsTable {
     price: number
     discount_price?: number | null
     live_price?: number | null
+    live_code?: string | null
     stock?: number
     short_description?: string
     long_description?: string
@@ -244,6 +246,7 @@ export interface ProductsTable {
     price?: number
     discount_price?: number | null
     live_price?: number | null
+    live_code?: string | null
     stock?: number
     short_description?: string
     long_description?: string
@@ -667,6 +670,7 @@ export interface LiveSessionsTable {
     total_likes: number
     total_followers: number
     notes: string
+    live_url: string | null
     created_at: string
     updated_at: string
   }
@@ -690,6 +694,7 @@ export interface LiveSessionsTable {
     total_likes?: number
     total_followers?: number
     notes?: string
+    live_url?: string | null
     created_at?: string
     updated_at?: string
   }
@@ -713,6 +718,7 @@ export interface LiveSessionsTable {
     total_likes?: number
     total_followers?: number
     notes?: string
+    live_url?: string | null
     created_at?: string
     updated_at?: string
   }

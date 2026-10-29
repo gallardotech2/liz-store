@@ -11,9 +11,12 @@ import {
   EyeIcon,
   ShoppingBagIcon,
   HeartIcon,
+  ExternalLinkIcon,
 } from "@/components/admin/Icons"
 import { HotCountdown } from "@/components/layout/HotCountdown"
 import { HotPromoForm } from "@/components/admin/HotPromoForm"
+import { LiveProductCodeForm } from "@/components/admin/LiveProductCodeForm"
+import { LiveUrlForm } from "@/components/admin/LiveUrlForm"
 import {
   LiveProductPicker,
   type LivePickerCategory,
@@ -64,6 +67,7 @@ interface StudioSession {
   ended_at: string | null
   ended_reason: "manual" | "expired" | null
   current_product_id: number | null
+  live_url: string | null
   live_products: StudioProduct[]
 }
 
@@ -81,6 +85,49 @@ interface PickerProductRow {
   category_id: number
   category: { name: string } | Array<{ name: string }> | null
   product_images: Array<{ image: string; is_main: boolean }> | null
+}
+
+function getStudioSessionSelect(includeLiveUrl: boolean) {
+  return `
+    id,
+    title,
+    status,
+    is_global,
+    started_at,
+    ends_at,
+    duration_hours,
+    ended_at,
+    ended_reason,
+    current_product_id,
+    ${includeLiveUrl ? "live_url," : ""}
+    live_products(
+      id,
+      product_id,
+      status,
+      "order",
+      promo_price,
+      shown_at,
+      products(
+        id,
+        name,
+        price,
+        discount_price,
+        stock,
+        product_images(image, is_main)
+      )
+    )
+  `
+}
+
+function isMissingLiveUrlColumn(
+  error: { code?: string; message?: string } | null,
+): boolean {
+  if (!error) return false
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    Boolean(error.message?.includes("live_url"))
+  )
 }
 
 function toPickerProducts(rows: PickerProductRow[]): LivePickerProduct[] {
@@ -213,52 +260,78 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
   const [catalogLoading, setCatalogLoading] = useState(false)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [showAddProducts, setShowAddProducts] = useState(false)
+  const [liveCodes, setLiveCodes] = useState<Map<number, string | null>>(
+    new Map(),
+  )
+  const [liveCodeError, setLiveCodeError] = useState<string | null>(null)
 
   const fetchSession = useCallback(
     async (silent = false) => {
       try {
         const supabase = createClient()
-        const { data, error: fetchError } = await (supabase as any)
+        const { data, error: fetchError } = await supabase
           .from("live_sessions")
-          .select(`
-            id,
-            title,
-            status,
-            is_global,
-            started_at,
-            ends_at,
-            duration_hours,
-            ended_at,
-            ended_reason,
-            current_product_id,
-            live_products(
-              id,
-              product_id,
-              status,
-              "order",
-              promo_price,
-              shown_at,
-              products(
-                id,
-                name,
-                price,
-                discount_price,
-                stock,
-                product_images(image, is_main)
-              )
-            )
-          `)
+          .select(getStudioSessionSelect(true))
           .eq("id", liveSessionId)
           .single()
 
-        if (fetchError) throw fetchError
+        let sessionRow = data as unknown as StudioSession | null
+        let sessionError = fetchError
+
+        if (sessionError && isMissingLiveUrlColumn(sessionError)) {
+          const fallback = await supabase
+            .from("live_sessions")
+            .select(getStudioSessionSelect(false))
+            .eq("id", liveSessionId)
+            .single()
+
+          sessionRow = fallback.data as unknown as StudioSession | null
+          sessionError = fallback.error
+        }
+
+        if (sessionError) throw sessionError
+        if (!sessionRow) throw new Error("Modo Live no encontrado.")
 
         const sorted = {
-          ...(data as StudioSession),
-          live_products: [...((data as StudioSession).live_products ?? [])].sort(
+          ...sessionRow,
+          live_url: sessionRow.live_url ?? null,
+          live_products: [...(sessionRow.live_products ?? [])].sort(
             (a, b) =>
               (a.order ?? 0) - (b.order ?? 0) || a.product_id - b.product_id,
           ),
+        }
+
+        const productIds = sorted.live_products.map(
+          (product) => product.product_id,
+        )
+
+        if (productIds.length > 0) {
+          const { data: codeRows, error: codeError } = await supabase
+            .from("products")
+            .select("id, live_code")
+            .in("id", productIds)
+
+          if (codeError) {
+            setLiveCodeError(
+              codeError.message?.includes("live_code")
+                ? "Falta aplicar la migración del identificador (Fix 0024) en Supabase."
+                : codeError.message,
+            )
+            setLiveCodes(new Map())
+          } else {
+            const codes = new Map<number, string | null>()
+            for (const row of (codeRows ?? []) as Array<{
+              id: number
+              live_code: string | null
+            }>) {
+              codes.set(row.id, row.live_code ?? null)
+            }
+            setLiveCodes(codes)
+            setLiveCodeError(null)
+          }
+        } else {
+          setLiveCodes(new Map())
+          setLiveCodeError(null)
         }
 
         setSession(sorted)
@@ -457,9 +530,15 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
   })
 
   const filteredProducts = products.filter((product) => {
-    const term = productQuery.trim().toLowerCase()
+    const term = productQuery.trim()
     if (!term) return true
-    return (product.products?.name ?? "").toLowerCase().includes(term)
+    if (
+      (product.products?.name ?? "").toLowerCase().includes(term.toLowerCase())
+    ) {
+      return true
+    }
+    const code = liveCodes.get(product.product_id) ?? null
+    return code !== null && code === term
   })
 
   const statusLabel =
@@ -513,6 +592,13 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
               />
             </span>
           )}
+          <a
+            href="#live-url"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#ABB2BF] no-underline transition-colors hover:bg-white/10"
+          >
+            <ExternalLinkIcon className="h-3.5 w-3.5" />
+            URL del Live
+          </a>
           <Link
             href={`/admin/lives/${session.id}/editar`}
             className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary-dark transition-colors no-underline"
@@ -781,6 +867,25 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
         </section>
 
         <aside className="flex flex-col gap-5">
+          <div
+            id="live-url"
+            className="scroll-mt-32 bg-secondary-light border border-white/12 rounded-[16px] p-5"
+          >
+            <div className="mb-3 flex items-center gap-2">
+              <ExternalLinkIcon className="h-4 w-4 text-primary" />
+              <h3 className="text-white font-bold">Poner URL del Live</h3>
+            </div>
+            <p className="mb-3 text-[11px] leading-[1.5] text-[#9CA3B8]">
+              Se usa solo para el botón «Abrir Live» de la tienda. La vista
+              pública muestra la imagen, no reproduce este enlace.
+            </p>
+            <LiveUrlForm
+              liveSessionId={session.id}
+              initialUrl={session.live_url}
+              onSaved={() => fetchSession(true)}
+            />
+          </div>
+
           <div className="bg-secondary-light border border-white/12 rounded-[16px] p-5">
             <h3 className="text-white font-bold mb-4">Producto en pantalla</h3>
             <select
@@ -851,10 +956,16 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
                 type="search"
                 value={productQuery}
                 onChange={(event) => setProductQuery(event.target.value)}
-                placeholder="Buscar en el catálogo del Modo Live..."
+                placeholder="Buscar por nombre o identificador..."
                 className="w-full rounded-lg border border-white/12 bg-[#1A1D24] py-2 pl-9 pr-3 text-sm text-white outline-none transition-colors placeholder:text-[#6B7280] focus:border-primary"
               />
             </div>
+
+            {liveCodeError && (
+              <div className="mb-3 rounded-lg border border-[#C9A96E]/30 bg-[#C9A96E]/10 px-3 py-2 text-[10px] leading-[1.5] text-[#C9A96E]">
+                {liveCodeError}
+              </div>
+            )}
 
             <div className="space-y-2 max-h-[52vh] overflow-y-auto sm:max-h-[520px]">
               {filteredProducts.map((product) => {
@@ -870,6 +981,7 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
                 const config =
                   productStatusConfig[product.status] ??
                   productStatusConfig.available
+                const liveCode = liveCodes.get(product.product_id) ?? null
                 const productIndex = products.findIndex(
                   (item) => item.product_id === product.product_id,
                 )
@@ -912,6 +1024,11 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
                           {isCurrent && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary text-white shrink-0">
                               EN PANTALLA
+                            </span>
+                          )}
+                          {liveCode && (
+                            <span className="shrink-0 rounded bg-[#C9A96E]/15 px-1.5 py-0.5 text-[10px] font-bold text-[#C9A96E]">
+                              Código {liveCode}
                             </span>
                           )}
                         </div>
@@ -1042,6 +1159,14 @@ export default function AdminLiveStudioPage({ params }: StudioPageProps) {
                     </div>
 
                     <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/8 pt-2">
+                      <LiveProductCodeForm
+                        liveSessionId={session.id}
+                        productId={product.product_id}
+                        productName={product.products?.name ?? "Producto"}
+                        initialCode={liveCode}
+                        disabled={Boolean(liveCodeError)}
+                        onSaved={() => fetchSession(true)}
+                      />
                       <HotPromoForm
                         liveSessionId={session.id}
                         productId={product.product_id}

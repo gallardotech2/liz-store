@@ -13,6 +13,7 @@ import { ScrollNudge } from "@/components/shop/ScrollNudge"
 import { HotHome } from "@/components/shop/HotHome"
 import { getActiveHotCampaign } from "@/lib/live"
 import { getSocialWhatsAppNumber } from "@/lib/queries/social-links"
+import { SITE_NAME } from "@/lib/constants"
 
 export const revalidate = 3600
 
@@ -42,7 +43,7 @@ export default async function HomePage() {
   const supabase = await createClient()
   const s = supabase as any
 
-  const [categoriesResult, featuredResult, newResult, testimonialsResult, _storeProfileResult, productCounts, hotCampaign] =
+  const [categoriesResult, featuredResult, newResult, testimonialsResult, storeProfileResult, productCounts, hotCampaign] =
     await Promise.all([
       s.from("categories").select("*").eq("is_active", true).order("order"),
       s
@@ -65,7 +66,18 @@ export default async function HomePage() {
 
   if (hotCampaign) {
     const whatsappNumber = await getSocialWhatsAppNumber(supabase)
-    return <HotHome campaign={hotCampaign} whatsappNumber={whatsappNumber} />
+    const storeName =
+      typeof storeProfileResult.data?.name === "string" &&
+      storeProfileResult.data.name.trim()
+        ? storeProfileResult.data.name.trim()
+        : SITE_NAME
+    return (
+      <HotHome
+        campaign={hotCampaign}
+        whatsappNumber={whatsappNumber}
+        storeName={storeName}
+      />
+    )
   }
 
   type RawCategory = {

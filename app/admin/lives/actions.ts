@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { requireAdmin } from "@/lib/supabase/admin-auth"
+import { parseLiveCodeInput } from "@/lib/live-code"
+import { parseLiveUrlInput } from "@/lib/live-url"
 import type { LiveProductStatus } from "@/types/database"
 
 const LIVE_PRODUCT_STATUSES: LiveProductStatus[] = [
@@ -297,6 +299,89 @@ export async function updateHotProductPromo(
   return { error: null }
 }
 
+export async function updateProductLiveCode(
+  liveSessionId: number,
+  productId: number,
+  formData: FormData,
+): Promise<{ error: string | null; code?: string | null }> {
+  await requireAdmin()
+
+  if (!Number.isInteger(liveSessionId) || liveSessionId <= 0) {
+    return { error: "Modo Live inválido." }
+  }
+  if (!Number.isInteger(productId) || productId <= 0) {
+    return { error: "Producto inválido." }
+  }
+
+  const input = parseLiveCodeInput(formData.get("live_code"))
+  if (input.error) return { error: input.error }
+
+  const supabase = await createClient()
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("live_products")
+    .select("product_id")
+    .eq("session_id", liveSessionId)
+    .eq("product_id", productId)
+    .maybeSingle()
+
+  if (membershipError) return { error: membershipError.message }
+  if (!membership) {
+    return { error: "El producto no pertenece al catálogo del Modo Live." }
+  }
+
+  if (input.code !== null) {
+    const { data: duplicate, error: duplicateError } = await supabase
+      .from("products")
+      .select("id")
+      .eq("live_code", input.code)
+      .neq("id", productId)
+      .maybeSingle()
+
+    if (duplicateError) {
+      return {
+        error: duplicateError.message?.includes("live_code")
+          ? "Falta aplicar la migración del identificador (Fix 0024) en Supabase."
+          : duplicateError.message,
+      }
+    }
+    if (duplicate) {
+      return {
+        error: `El identificador ${input.code} ya está asignado a otro producto.`,
+      }
+    }
+  }
+
+  const { data: updated, error } = await (supabase as any)
+    .from("products")
+    .update({ live_code: input.code })
+    .eq("id", productId)
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        error: `El identificador ${input.code} ya está asignado a otro producto.`,
+      }
+    }
+    if (error.message?.includes("live_code")) {
+      return {
+        error: "Falta aplicar la migración del identificador (Fix 0024) en Supabase.",
+      }
+    }
+    return { error: error.message }
+  }
+  if (!updated) {
+    return {
+      error: "No se pudo guardar el identificador. Verifica tus permisos.",
+    }
+  }
+
+  revalidateHot(liveSessionId)
+  return { error: null, code: input.code }
+}
+
 export async function updateHotProductStatus(
   liveSessionId: number,
   productId: number,
@@ -494,6 +579,58 @@ export async function updateLiveModeTitle(id: number, formData: FormData) {
 
   revalidateHot(id)
   redirect(`/admin/lives/${id}/editar`)
+}
+
+export async function updateLiveModeUrl(
+  id: number,
+  formData: FormData,
+): Promise<{ error: string | null; url?: string | null }> {
+  await requireAdmin()
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return { error: "Modo Live inválido." }
+  }
+
+  const input = parseLiveUrlInput(formData.get("live_url"))
+  if (input.error) return { error: input.error }
+
+  const supabase = await createClient()
+
+  const { data: session, error: sessionError } = await (supabase as any)
+    .from("live_sessions")
+    .select("id")
+    .eq("id", id)
+    .eq("is_global", true)
+    .maybeSingle()
+
+  if (sessionError) return { error: sessionError.message }
+  if (!session) return { error: "Modo Live no encontrado." }
+
+  const { error } = await (supabase as any)
+    .from("live_sessions")
+    .update({
+      live_url: input.url,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("is_global", true)
+
+  if (error) {
+    if (
+      error.code === "42703" ||
+      error.code === "PGRST204" ||
+      error.message?.includes("live_url")
+    ) {
+      return {
+        error:
+          "Falta aplicar la migración de la URL del Live (Fix 0025) en Supabase.",
+      }
+    }
+    return { error: error.message }
+  }
+
+  revalidateHot(id)
+  return { error: null, url: input.url }
 }
 
 export async function moveLiveProduct(
