@@ -1,9 +1,9 @@
 import Link from "next/link"
-import Image from "next/image"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createStaticClient } from "@/lib/supabase/static"
 import { ProductCard } from "@/components/ui/ProductCard"
+import { ProductGallery } from "@/components/shop/ProductGallery"
 import { formatCurrency } from "@/lib/utils"
 import { AddToCartForm } from "./AddToCartForm"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
@@ -141,7 +141,7 @@ export default async function ProductDetailPage({
     : 0
 
   const sortedImages = [...(p.product_images ?? [])].sort(
-    (a, b) => a.order - b.order,
+    (a, b) => a.order - b.order || a.id - b.id,
   )
   const mainImage = sortedImages.find((img) => img.is_main) ?? sortedImages[0]
 
@@ -230,40 +230,7 @@ export default async function ProductDetailPage({
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-[1fr_1fr] gap-12.5 py-15 max-lg:grid-cols-1 max-md:pt-3.5">
             <div className="sticky top-[100px] max-lg:static">
-              <div className="aspect-square rounded-[16px] overflow-hidden bg-[#FFFBF9] dark:bg-surface mb-3.75">
-                {mainImage ? (
-                  <Image
-                    src={mainImage.image}
-                    alt={mainImage.alt_text || p.name}
-                    width={600}
-                    height={600}
-                    className="w-full h-full object-cover object-center"
-                    priority
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6] dark:to-surface">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                  </div>
-                )}
-              </div>
-              {sortedImages.length > 1 && (
-                <div className="flex gap-2.5">
-                  {sortedImages.map((img) => (
-                   <div
-                       key={img.id}
-                       className="w-20 h-20 rounded-[8px] overflow-hidden cursor-pointer border-2 border-transparent hover:border-primary transition-colors duration-300"
-                     >
-                       <Image
-                         src={img.image}
-                         alt={img.alt_text || p.name}
-                         width={80}
-                         height={80}
-                         className="w-full h-full object-cover object-center"
-                       />
-                     </div>
-                  ))}
-                </div>
-              )}
+              <ProductGallery images={sortedImages} productName={p.name} />
             </div>
 
             <div className="pt-5">

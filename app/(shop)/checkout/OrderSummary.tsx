@@ -21,6 +21,7 @@ interface OrderSummaryProps {
 export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
   const router = useRouter()
   const [items, setItems] = useState(initialItems)
+  const [expanded, setExpanded] = useState(false)
   const [, startTransition] = useTransition()
 
   const subtotal = useMemo(() =>
@@ -46,49 +47,77 @@ export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] sticky top-[100px]">
-      <h3 className="text-xl mb-6 pb-4 border-b border-[#EEE] dark:border-line font-serif text-[#2D2D2D] dark:text-ink-strong">
+    <div className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 max-md:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] sticky top-[100px] md:order-2 max-md:static">
+      <h3 className="text-xl mb-6 pb-4 max-md:mb-3 max-md:pb-3 border-b border-[#EEE] dark:border-line font-serif text-[#2D2D2D] dark:text-ink-strong">
         Resumen del pedido
       </h3>
-      {items.map((item) => {
-        const total = item.price * item.quantity
-        return (
-          <div
-            key={item.id}
-            className="flex gap-3 mb-4 pb-4 border-b border-[#F5F5F5] dark:border-line-faint"
-          >
-            <div className="w-[60px] h-[60px] rounded-[8px] overflow-hidden flex-shrink-0 bg-[#FFFBF9] dark:bg-surface">
-              {item.image ? (
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[#2D2D2D] dark:text-ink-strong truncate">{item.name}</div>
-              <div className="text-[12px] text-[#6B6B6B] dark:text-ink-soft">x{item.quantity}</div>
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className="text-sm font-semibold text-primary">
-                Bs. {total.toFixed(2)}
+      <div id="order-summary-items">
+        {items.map((item, index) => {
+          const total = item.price * item.quantity
+          const hiddenOnMobile = !expanded && index >= 3
+          return (
+            <div
+              key={item.id}
+              className={`${hiddenOnMobile ? "hidden md:flex" : "flex"} gap-3 mb-4 pb-4 max-md:mb-3 max-md:pb-3 border-b border-[#F5F5F5] dark:border-line-faint`}
+            >
+              <div className="w-[60px] h-[60px] max-md:w-[52px] max-md:h-[52px] rounded-[8px] overflow-hidden flex-shrink-0 bg-[#FFFBF9] dark:bg-surface">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={() => handleRemove(item.id)}
-                className="flex items-center gap-1 text-[11px] text-[#E74C3C] dark:text-[#FF8A80] bg-transparent border-none cursor-pointer hover:text-[#C0392B] dark:hover:text-[#EF9A9A] transition-colors p-0"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                Eliminar
-              </button>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-[#2D2D2D] dark:text-ink-strong truncate">{item.name}</div>
+                <div className="text-[12px] text-[#6B6B6B] dark:text-ink-soft">x{item.quantity}</div>
+              </div>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <div className="text-sm font-semibold text-primary">
+                  Bs. {total.toFixed(2)}
+                </div>
+                <button
+                  onClick={() => handleRemove(item.id)}
+                  className="flex items-center gap-1 text-[11px] text-[#E74C3C] dark:text-[#FF8A80] bg-transparent border-none cursor-pointer hover:text-[#C0392B] dark:hover:text-[#EF9A9A] transition-colors p-0"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Eliminar
+                </button>
+              </div>
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
+      {items.length > 3 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-controls="order-summary-items"
+          className="md:hidden mb-4 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-[#EEE] bg-[#FDF8F6] px-3 py-2 text-[12px] font-semibold text-primary transition-colors hover:border-primary/40 dark:border-line dark:bg-surface"
+        >
+          {expanded ? "Ver menos" : "Ver todo el resumen"}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+      )}
       <div className="flex justify-between mb-2 text-[14px]">
         <span className="text-[#6B6B6B] dark:text-ink-soft">Subtotal</span>
         <span>Bs. {subtotal.toFixed(2)}</span>

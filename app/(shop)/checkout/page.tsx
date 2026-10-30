@@ -111,6 +111,7 @@ export default async function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-[1fr_380px] gap-10 items-start max-lg:grid-cols-1">
+          <OrderSummary items={mergedItems} />
           <CheckoutForm
             items={mergedItems}
             totals={{
@@ -127,7 +128,6 @@ export default async function CheckoutPage() {
             pickupPoints={(pickupPoints ?? []) as any[]}
             whatsappNumber={whatsappNumber}
           />
-          <OrderSummary items={mergedItems} />
         </div>
       </div>
     </section>

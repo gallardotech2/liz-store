@@ -304,7 +304,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         </div>
       )}
 
-      <div id="datos-contacto" className="scroll-mt-24 bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)]">
+      <div id="datos-contacto" className="scroll-mt-24 bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] md:order-1">
         <h2 className="text-lg font-serif text-[#2D2D2D] dark:text-ink-strong mb-6">Datos de contacto</h2>
 
         {user && profile && (
