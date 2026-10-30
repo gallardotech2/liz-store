@@ -5,6 +5,7 @@ import { CookieConsent } from "@/components/ui/CookieConsent"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { InlineScript } from "@/components/theme/InlineScript"
 import "./globals.css"
+import "./dark-glass.css"
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",

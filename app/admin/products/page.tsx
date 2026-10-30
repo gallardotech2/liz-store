@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { DeleteButton } from "@/components/admin/DeleteButton"
+import { ExportProductsButton } from "@/components/admin/ExportProductsButton"
 import { AdminProductFilters } from "@/components/admin/AdminProductFilters"
 import { deleteProduct } from "./actions"
 
@@ -96,9 +97,12 @@ export default async function AdminProductsPage({
             {raw.length} producto{raw.length !== 1 ? "s" : ""} registrado{raw.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link href="/admin/products/nuevo" prefetch={false}>
-          <Button variant="primary" size="sm">+ Nuevo producto</Button>
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportProductsButton />
+          <Link href="/admin/products/nuevo" prefetch={false}>
+            <Button variant="primary" size="sm">+ Nuevo producto</Button>
+          </Link>
+        </div>
       </div>
 
       <AdminProductFilters

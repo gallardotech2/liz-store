@@ -234,7 +234,7 @@ export function Header({
       ) : null}
 
       <header
-        className={`sticky top-0 z-[1000] bg-white dark:bg-page/80 dark:backdrop-blur-md transition-shadow duration-300 ${
+        className={`sticky top-0 z-[1000] bg-white glass-dark transition-shadow duration-300 ${
           scrolled ? "shadow-[0_4px_15px_rgba(255,142,159,0.12)]" : "shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)]"
         }`}
       >

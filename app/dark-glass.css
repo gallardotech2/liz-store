@@ -1,0 +1,31 @@
+/*
+ * Superficies translúcidas del modo oscuro.
+ *
+ * En equipos sin soporte de backdrop-filter, la transparencia del 80%
+ * dejaba leer el contenido que pasaba por detrás del header, la barra
+ * inferior y el resumen fijo del checkout. El fallback base es sólido;
+ * solo cuando el navegador puede difuminar el fondo se recupera el
+ * efecto glass con mayor opacidad y blur.
+ */
+.dark .glass-dark {
+  background-color: #0d0b0e;
+  background-color: var(--color-page);
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .dark .glass-dark {
+    background-color: rgb(13 11 14 / 0.9);
+    background-color: color-mix(in srgb, var(--color-page) 90%, transparent);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .dark .glass-dark {
+    background-color: #0d0b0e;
+    background-color: var(--color-page);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

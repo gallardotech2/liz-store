@@ -41,7 +41,7 @@ export function BottomNav({ cartCount, hotActive = false }: BottomNavProps) {
       className="md:hidden fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)]"
     >
       <div
-        className="bg-white dark:bg-page/80 dark:backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)]"
+        className="bg-white glass-dark shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)]"
         role="tablist"
       >
         <div className="flex items-center justify-around">

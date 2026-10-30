@@ -604,7 +604,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
 
       <div
         ref={mobileBarRef}
-        className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] rounded-t-xl bg-white/85 dark:bg-page/80 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)] pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] rounded-t-xl bg-white/85 glass-dark backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="px-3.5 pt-2.5">
           <div className="flex items-center justify-between gap-3">
