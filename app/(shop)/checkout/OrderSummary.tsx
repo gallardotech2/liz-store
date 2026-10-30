@@ -47,7 +47,7 @@ export function OrderSummary({ items: initialItems }: OrderSummaryProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 max-md:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] sticky top-[100px] md:order-2 max-md:static">
+    <div className="bg-white dark:bg-surface-raised rounded-[16px] p-7.5 max-md:p-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] sticky top-[100px] md:order-2 max-md:hidden">
       <h3 className="text-xl mb-6 pb-4 max-md:mb-3 max-md:pb-3 border-b border-[#EEE] dark:border-line font-serif text-[#2D2D2D] dark:text-ink-strong">
         Resumen del pedido
       </h3>

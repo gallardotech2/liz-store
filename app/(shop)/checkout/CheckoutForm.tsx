@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 
 interface CartItem {
@@ -88,7 +89,10 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const pickupRef = useRef<HTMLDivElement>(null)
   const [referenceCode, setReferenceCode] = useState("")
   const [status, setStatus] = useState<"form" | "confirm" | "success">("form")
+  const [summaryExpanded, setSummaryExpanded] = useState(false)
   const finalTotal = totals.subtotal
+  const mobileBarRef = useRef<HTMLDivElement>(null)
+  const [mobileBarHeight, setMobileBarHeight] = useState(0)
 
   useEffect(() => {
     if (user && profile) {
@@ -105,6 +109,21 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         setStatus("confirm")
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const node = mobileBarRef.current
+    if (!node) return
+
+    const updateHeight = () => {
+      setMobileBarHeight(node.getBoundingClientRect().height)
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(node)
+
+    return () => observer.disconnect()
   }, [])
 
   function buildWhatsAppMessage(): string {
@@ -579,10 +598,90 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
           )}
           {loading ? "Procesando..." : "Solicitar por WhatsApp"}
         </Button>
+
+        <div aria-hidden="true" className="md:hidden" style={{ height: mobileBarHeight }} />
       </div>
 
-      <div className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] rounded-t-xl bg-white/85 dark:bg-page/80 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)] pb-[env(safe-area-inset-bottom)]">
-        <div className="px-3.5 py-2.5">
+      <div
+        ref={mobileBarRef}
+        className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] left-0 right-0 z-[60] rounded-t-xl bg-white/85 dark:bg-page/80 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.45)] pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="px-3.5 pt-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="truncate text-[11px] font-semibold uppercase tracking-[1px] text-[#6B6B6B] dark:text-ink-soft">
+              Resumen del pedido
+            </span>
+            <span className="shrink-0 text-[13px] font-semibold text-[#2D2D2D] dark:text-ink-strong">
+              Subtotal Bs. {totals.subtotal.toFixed(2)}
+            </span>
+          </div>
+
+          <div
+            id="mobile-order-summary-items"
+            className={`mt-1.5 ${summaryExpanded ? "max-h-[min(30dvh,180px)] overflow-y-auto overscroll-contain" : ""}`}
+          >
+            {items.slice(0, summaryExpanded ? items.length : 2).map((item) => {
+              const lineTotal = item.price * item.quantity
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2.5 border-b border-[#F5F5F5] py-1.5 last:border-b-0 dark:border-line-faint"
+                >
+                  <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-[#FFFBF9] dark:bg-surface">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[rgb(251,132,150)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-medium text-[#2D2D2D] dark:text-ink-strong">{item.name}</p>
+                    <p className="text-[10.5px] text-[#6B6B6B] dark:text-ink-soft">x{item.quantity}</p>
+                  </div>
+                  <span className="shrink-0 text-[12px] font-semibold text-primary">
+                    Bs. {lineTotal.toFixed(2)}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          {items.length > 2 && (
+            <button
+              type="button"
+              onClick={() => setSummaryExpanded((value) => !value)}
+              aria-expanded={summaryExpanded}
+              aria-controls="mobile-order-summary-items"
+              className="mt-1.5 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#EEE] bg-[#FDF8F6] px-2.5 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:border-primary/40 dark:border-line dark:bg-surface"
+            >
+              {summaryExpanded ? "Ver menos" : `Mostrar ${items.length - 2} más`}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform duration-200 ${summaryExpanded ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <div className="border-t border-[#EEE] px-3.5 pb-2.5 pt-2 dark:border-line">
           {error && (
             <div className="mb-2 text-[12px] text-[#E74C3C] dark:text-[#FF8A80] text-center">{error}</div>
           )}
