@@ -387,31 +387,22 @@ export default async function ProductDetailPage({
                 </div>
               )}
 
-              {(talla || colores) && (
-                <div className="mt-6 space-y-4">
-                  <div className="rounded-[12px] border border-[rgba(255,142,159,0.25)] bg-white dark:bg-surface-raised p-4">
-                    <h3 className="font-sans text-lg mb-2 text-[#2D2D2D] dark:text-ink-strong">
-                      Talla
-                    </h3>
-                    <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">
-                      {talla || "Talla no especificada"}
-                    </p>
+              <div className="mt-5 space-y-1 text-[13px] text-[#6B6B6B] dark:text-ink-soft">
+                {(talla || colores) && (
+                  <div>
+                    <strong className="text-[#2D2D2D] dark:text-ink-strong">Talla:</strong>{" "}
+                    {talla || "No especificada"}
                   </div>
-                  {colores && (
-                    <div className="rounded-[12px] border border-[rgba(255,142,159,0.25)] bg-white dark:bg-surface-raised p-4">
-                      <h3 className="font-sans text-lg mb-2 text-[#2D2D2D] dark:text-ink-strong">
-                        Colores
-                      </h3>
-                      <p className="text-[13px] text-[#6B6B6B] dark:text-ink-soft">
-                        {colores}
-                      </p>
-                    </div>
-                  )}
+                )}
+                {colores && (
+                  <div>
+                    <strong className="text-[#2D2D2D] dark:text-ink-strong">Colores:</strong>{" "}
+                    {colores}
+                  </div>
+                )}
+                <div>
+                  <strong className="text-[#2D2D2D] dark:text-ink-strong">SKU:</strong> {p.sku}
                 </div>
-              )}
-
-              <div className="mt-5 text-[13px] text-[#6B6B6B] dark:text-ink-soft">
-                <strong>SKU:</strong> {p.sku}
               </div>
             </div>
           </div>
