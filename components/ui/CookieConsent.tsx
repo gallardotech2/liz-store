@@ -1,15 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 
 const STORAGE_KEY = "liz_cookie_consent"
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const consent = localStorage.getItem(STORAGE_KEY)
-    if (!consent) setVisible(true)
+    if (!consent) queueMicrotask(() => setVisible(true))
   }, [])
 
   const accept = () => {
@@ -22,7 +24,7 @@ export function CookieConsent() {
     setVisible(false)
   }
 
-  if (!visible) return null
+  if (!visible || pathname?.startsWith("/auth/")) return null
 
   return (
     <div className="fixed bottom-0 max-md:bottom-28 left-0 right-0 z-50 p-4 md:p-6">

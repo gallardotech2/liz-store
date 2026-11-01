@@ -15,14 +15,49 @@ export default function UpdatePasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [linkError, setLinkError] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
-        setReady(true)
+    let cancelled = false
+    let resolved = false
+
+    const markReady = () => {
+      if (cancelled) return
+      resolved = true
+      setLinkError(false)
+      setReady(true)
+    }
+
+    if (window.location.hash.includes("error_description")) {
+      queueMicrotask(() => setLinkError(true))
+      return
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION"))) {
+        markReady()
       }
     })
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (data.session) markReady()
+      })
+      .catch(() => {})
+
+    const timeoutId = window.setTimeout(() => {
+      if (!resolved) setLinkError(true)
+    }, 8000)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+      subscription.unsubscribe()
+    }
   }, [])
 
   function validatePassword(value: string): string | null {
@@ -89,6 +124,42 @@ export default function UpdatePasswordPage() {
           >
             Iniciar sesión
           </Link>
+        </div>
+      </section>
+    )
+  }
+
+  if (linkError && !ready) {
+    return (
+      <section className="min-h-[80vh] flex items-center justify-center px-5 py-12 sm:py-15">
+        <div className="bg-white dark:bg-surface-raised rounded-[24px] p-7 sm:p-10 w-full max-w-[440px] shadow-[0_10px_40px_rgba(255,142,159,0.15)] text-center">
+          <div className="w-16 h-16 rounded-full bg-[rgba(231,76,60,0.08)] flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E74C3C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h1 className="text-[26px] sm:text-[28px] font-serif mb-3 text-[#2D2D2D] dark:text-ink-strong">
+            Enlace inválido o expirado
+          </h1>
+          <p className="text-[#6B6B6B] dark:text-ink-soft text-[15px] mb-7 leading-relaxed">
+            Este enlace para restablecer tu contraseña ya no es válido. Solicita uno nuevo para continuar.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/auth/reset-password"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-gradient-to-br from-primary to-primary-dark text-white text-sm font-semibold no-underline hover:-translate-y-0.5 transition-all duration-300 shadow-[0_4px_15px_rgba(255,142,159,0.3)]"
+            >
+              Solicitar nuevo enlace
+            </Link>
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full border border-[rgba(0,0,0,0.15)] dark:border-[rgba(255,255,255,0.15)] text-[#4A4A4A] dark:text-ink text-sm font-semibold no-underline hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            >
+              Volver a iniciar sesión
+            </Link>
+          </div>
         </div>
       </section>
     )

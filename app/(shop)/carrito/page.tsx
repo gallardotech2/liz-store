@@ -181,24 +181,14 @@ export default async function CartPage() {
             </div>
             <div className="flex justify-between mb-3 text-[15px]">
               <span className="text-[#6B6B6B] dark:text-ink-soft">Envío</span>
-              <span>
-                {summary.shipping === 0 ? (
-                  <span className="text-[#27AE60] font-semibold">GRATIS</span>
-                ) : (
-                  formatCurrency(summary.shipping)
-                )}
+              <span className="text-[#27AE60] font-semibold text-[13px] text-right">
+                Se coordina por WhatsApp
               </span>
             </div>
             <div className="flex justify-between text-[22px] font-bold text-primary border-t border-[#EEE] dark:border-line pt-4 mt-4 font-serif">
               <span>Total</span>
-              <span>{formatCurrency(summary.total)}</span>
+              <span>{formatCurrency(summary.subtotal)}</span>
             </div>
-            {summary.freeShippingRemaining > 0 && (
-              <div className="text-center text-[13px] text-[#27AE60] mt-3 pt-2.5 pb-2.5 px-2.5 bg-[rgba(39,174,96,0.08)] rounded-[8px]">
-                Agrega {formatCurrency(summary.freeShippingRemaining)} más para
-                envío gratis
-              </div>
-            )}
             <Link href="/checkout" prefetch={false}>
               <Button variant="primary" className="w-full justify-center mt-5">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>

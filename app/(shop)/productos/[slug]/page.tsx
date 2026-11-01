@@ -44,17 +44,34 @@ export async function generateMetadata({
   const supabase = await createClient()
   const { data } = await supabase
     .from("products")
-    .select("name, meta_description, meta_keywords")
+    .select("name, short_description, long_description, meta_description, meta_keywords")
     .eq("slug", cleanSlug)
     .eq("is_active", true)
     .single()
 
-  const prod = data as { name: string; meta_description: string | null; meta_keywords: string | null } | null
+  const prod = data as {
+    name: string
+    short_description: string | null
+    long_description: string | null
+    meta_description: string | null
+    meta_keywords: string | null
+  } | null
   if (!prod) return { title: "Producto no encontrado" }
+
+  const fallbackDescription = (prod.short_description || prod.long_description || "")
+    .replace(/\s+/g, " ")
+    .trim()
+  const description =
+    prod.meta_description?.trim() ||
+    (fallbackDescription
+      ? fallbackDescription.length > 155
+        ? `${fallbackDescription.slice(0, 154).trimEnd()}…`
+        : fallbackDescription
+      : `${prod.name.trim()} — Bisutería y accesorios elegantes en Liz Store. Compra segura con envío a Bolivia.`)
 
   return {
     title: prod.name,
-    description: prod.meta_description || undefined,
+    description,
     keywords: prod.meta_keywords || undefined,
     alternates: {
       canonical: `/productos/${slug}`,
@@ -64,7 +81,7 @@ export async function generateMetadata({
       locale: "es_BO",
       siteName: "Liz Store",
       title: prod.name,
-      description: prod.meta_description || undefined,
+      description,
       url: `/productos/${slug}`,
       images: [
         {
