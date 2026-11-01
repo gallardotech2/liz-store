@@ -35,7 +35,7 @@ export default async function SolicitudesPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/auth/login?next=/perfil/solicitudes")
   }
 
   const { data: requests } = await getUserRequests(supabase, user.id)

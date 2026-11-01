@@ -14,6 +14,7 @@ import type { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Carrito de Compras",
   description: "Revisa tu carrito de compras en Liz Store.",
+  robots: { index: false, follow: false },
 }
 
 export default async function CartPage() {
@@ -142,8 +143,12 @@ export default async function CartPage() {
                           defaultValue={item.quantity}
                           min={1}
                           max={item.stock}
+                          title={`Máximo ${item.stock} unidades disponibles`}
                           className="w-15 px-1.5 py-1 border border-[#ddd] dark:border-line rounded-[6px] text-center text-sm"
                         />
+                        <span className="text-[11px] text-[#999] dark:text-ink-soft">
+                          Máx. {item.stock}
+                        </span>
                         <button
                           type="submit"
                           className="text-xs text-primary font-semibold bg-none border-none cursor-pointer hover:underline"

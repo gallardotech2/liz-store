@@ -35,7 +35,7 @@ export default async function HistorialPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/auth/login?next=/perfil/historial")
   }
 
   const { data: requests } = await getUserRequests(supabase, user.id)

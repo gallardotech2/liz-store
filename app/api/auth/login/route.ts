@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limit"
 import { verifyTurnstile } from "@/lib/security/turnstile"
 import { isHoneypot } from "@/lib/whatsapp/validation"
+import { translateAuthError } from "@/lib/auth-errors"
 
 export const dynamic = "force-dynamic"
 
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 
     if (error || !data.user) {
       return NextResponse.json(
-        { error: error?.message ?? "Error de autenticación" },
+        { error: translateAuthError(error?.message, "No pudimos iniciar sesión. Intenta de nuevo.") },
         { status: 401 },
       )
     }

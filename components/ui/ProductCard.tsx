@@ -74,6 +74,11 @@ export function ProductCard({
               Nuevo
             </span>
           )}
+          {unavailableLabel && (
+            <span className="inline-block rounded-full bg-[#6B6B6B] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.5px] text-white">
+              {unavailableLabel}
+            </span>
+          )}
         </div>
 
         <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-0 translate-x-2.5 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">

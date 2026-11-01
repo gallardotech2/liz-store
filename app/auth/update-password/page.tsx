@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { translateAuthError } from "@/lib/auth-errors"
 
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 
@@ -90,7 +91,7 @@ export default function UpdatePasswordPage() {
       const { error } = await supabase.auth.updateUser({ password })
 
       if (error) {
-        setError(error.message || "Error al actualizar la contraseña")
+        setError(translateAuthError(error.message, "Error al actualizar la contraseña"))
         return
       }
 

@@ -61,7 +61,9 @@ export default function LoginPage() {
         return
       }
 
-      router.push(data.role === "admin" ? "/admin" : "/")
+      const rawNext = new URLSearchParams(window.location.search).get("next")
+      const next = rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null
+      router.push(next ?? (data.role === "admin" ? "/admin" : "/"))
     } catch {
       setError("Error de conexión con el servidor")
       setTurnstileReset((value) => value + 1)

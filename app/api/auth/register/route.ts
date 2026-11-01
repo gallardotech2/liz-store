@@ -4,33 +4,11 @@ import { NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limit"
 import { verifyTurnstile } from "@/lib/security/turnstile"
 import { isHoneypot } from "@/lib/whatsapp/validation"
+import { translateAuthError } from "@/lib/auth-errors"
 
 export const dynamic = "force-dynamic"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-const ERROR_TRANSLATIONS: Record<string, string> = {
-  "rate limit": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
-  "rate_limit": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
-  "email not confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
-  "Email not confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
-  "invalid email": "Ingresa un correo electrónico válido.",
-  "Invalid email": "Ingresa un correo electrónico válido.",
-  "weak password": "La contraseña es muy débil. Usa al menos 8 caracteres.",
-  "Weak password": "La contraseña es muy débil. Usa al menos 8 caracteres.",
-  "over_request": "Demasiadas solicitudes. Espera unos minutos.",
-  "over_email_send_rate": "Demasiados intentos. Espera unos minutos e intenta de nuevo.",
-  "signup_disabled": "El registro está deshabilitado temporalmente.",
-}
-
-function translateError(msg: string): string {
-  for (const [key, translation] of Object.entries(ERROR_TRANSLATIONS)) {
-    if (msg.toLowerCase().includes(key.toLowerCase())) {
-      return translation
-    }
-  }
-  return "Error al crear la cuenta. Intenta de nuevo."
-}
 
 export async function POST(request: Request) {
   try {
@@ -121,7 +99,10 @@ export async function POST(request: Request) {
       if (normalized.includes("already") && normalized.includes("registered")) {
         return NextResponse.json({ success: true, requiresConfirmation: true, user: null })
       }
-      return NextResponse.json({ error: translateError(error.message) }, { status: 400 })
+      return NextResponse.json(
+        { error: translateAuthError(error.message, "Error al crear la cuenta. Intenta de nuevo.") },
+        { status: 400 },
+      )
     }
 
     if (!data.user) {
