@@ -2202,3 +2202,131 @@ COMMENT ON COLUMN public.live_sessions.live_url
 
 NOTIFY pgrst, 'reload schema';
 */
+
+-- ============================================================
+-- Fix 0026: Remediación H-01 — autorización admin desde app_metadata
+-- Fecha ejecución: 2026-11-01
+-- Estado: EJECUTADO
+-- Descripción: Endurece la autorización administrativa. handle_new_user()
+--   toma el rol de raw_app_meta_data (no editable por el usuario);
+--   profiles.role queda como dato sincronizado sin privilegios; se
+--   bloquea el cambio de role por usuarios authenticated; se elimina la
+--   política INSERT anónima de profiles; se reaplican grants por columna
+--   después de los grants globales; e is_hot_admin() valida
+--   app_metadata.role desde el JWT. Admins verificados (ambos ya con
+--   app_metadata.role='admin'): gallardoelvirio@gmail.com y
+--   marielacondori037@gmail.com. No se requirió backfill.
+-- ============================================================
+/*
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, nombre, role)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'nombre', ''),
+    CASE
+      WHEN NEW.raw_app_meta_data ->> 'role' = 'admin' THEN 'admin'
+      ELSE 'customer'
+    END
+  );
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_change()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role
+     AND auth.uid() IS NOT NULL THEN
+    RAISE EXCEPTION 'No autorizado para cambiar el rol del perfil'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prevent_profile_role_change ON public.profiles;
+CREATE TRIGGER prevent_profile_role_change
+  BEFORE UPDATE OF role ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_profile_role_change();
+
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM 'customer'
+     AND current_user IN ('anon', 'authenticated') THEN
+    RAISE EXCEPTION 'No autorizado para crear un perfil con ese rol'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prevent_profile_role_insert ON public.profiles;
+CREATE TRIGGER prevent_profile_role_insert
+  BEFORE INSERT ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_profile_role_insert();
+
+DROP POLICY IF EXISTS "Profiles: propio UPDATE" ON public.profiles;
+CREATE POLICY "Profiles: propio UPDATE" ON public.profiles
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = id)
+  WITH CHECK ((SELECT auth.uid()) = id);
+
+DROP POLICY IF EXISTS "Profiles: anon INSERT (trigger)" ON public.profiles;
+
+CREATE OR REPLACE FUNCTION public.is_hot_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+  SELECT auth.uid() IS NOT NULL
+    AND COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
+$$;
+
+REVOKE ALL ON FUNCTION public.is_hot_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_hot_admin() FROM anon, authenticated;
+
+REVOKE ALL ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) TO authenticated;
+
+REVOKE ALL ON public.profiles FROM anon, authenticated;
+GRANT SELECT (id, nombre, avatar) ON public.profiles TO anon;
+GRANT SELECT (id, nombre, avatar, phone, role, created_at) ON public.profiles TO authenticated;
+GRANT UPDATE (nombre, avatar, phone) ON public.profiles TO authenticated;
+
+NOTIFY pgrst, 'reload schema';
+*/

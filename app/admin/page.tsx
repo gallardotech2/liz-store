@@ -24,7 +24,7 @@ export default async function AdminDashboard() {
     supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }),
     supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("whatsapp_requests").select("*", { count: "exact", head: true }).in("status", ["payment_confirmed"]),
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("categories").select("*", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("whatsapp_requests").select("product_price").in("status", ["payment_confirmed"]),
   ])

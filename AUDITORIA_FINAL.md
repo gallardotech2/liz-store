@@ -142,7 +142,7 @@ docs_migracion/         # 7 bitácoras de migración
 | **S7** | **RLS `orders`: anon INSERT sin validar ownership** | ~Policy permite `user_id` arbitrario~ → ✅ Policies actualizadas con validación de ownership | ✅ **RESUELTO** — Auth users solo crean orders con su propio user_id; anon solo con user_id NULL | `supabase/sql/esquema.sql`, `ejecucion.sql` | 🟢 Resuelto |
 | **S8** | **RLS `order_items`: INSERT sin validar order ownership** | ~Policy con `WITH CHECK (true)`~ → ✅ Policy valida que order pertenece al usuario | ✅ **RESUELTO** — INSERT solo permite order_items en orders propios | `supabase/sql/esquema.sql`, `ejecucion.sql` | 🟢 Resuelto |
 | **S9** | **Cart cookie sin firma/encriptación** | ~JSON plano en cookie~ → ✅ Cookie firmada con HMAC SHA-256 | ✅ **RESUELTO** — `lib/cart.ts` firma cookies; manipulación produce descarte | `lib/cart.ts`, `carrito/actions.ts` | 🟢 Resuelto |
-| **S10** | **Trigger `handle_new_user` vs app_metadata** | Desync en metadata de admin | Verificado: trigger implementa correctamente SECURITY DEFINER + role desde raw_user_meta_data | `esquema.sql:374-382` | 🟡 Verificado (no es issue) |
+| **S10** | **Trigger `handle_new_user` tomaba el rol de `raw_user_meta_data`** | Escalada: un registro directo en Auth podía crear un perfil admin | ✅ Corregido localmente: usa `raw_app_meta_data`; migración Fix 0026 pendiente de ejecutar | `supabase/sql/esquema.sql`, `supabase/sql/ejecucion.sql` | 🟠 Pendiente remoto |
 | **S11** | **Contraste insuficiente** | ~`#888888` sobre `#FDF8F6` = 3.1:1~ → ✅ Cambiado a `#6B6B6B` = 4.5:1 | ✅ **RESUELTO** — 86 ocurrencias actualizadas, WCAG AA compliant | Global (86 archivos .tsx) | 🟢 Resuelto |
 | **S12** | **Validación upload imágenes solo client-side** | ~Servidor no valida magic bytes/size/tipo~ → ✅ Validación server-side agregada | ✅ **RESUELTO** — Magic bytes, max 5MB, whitelist MIME types | `lib/supabase/storage.ts` | 🟢 Resuelto |
 | **S13** | **No rate limiting en auth endpoints** | ~Sin protección en `/api/auth/*`~ → ✅ Rate limiting por IP implementado | ✅ **RESUELTO** — 10 req/min/IP en login y register | `lib/rate-limit.ts`, `app/api/auth/login/route.ts`, `register/route.ts` | 🟢 Resuelto |
@@ -176,7 +176,7 @@ docs_migracion/         # 7 bitácoras de migración
 | **P3** | Cart cookie 30 días — razonable | `lib/cart.ts:24` |
 | **P4** | Images: `priority` en main + `loading=lazy` en thumbnails — correcto | `ProductCard.tsx:84`, `productos/[slug]/page.tsx:195` |
 | **P5** | `transactions.order_id UNIQUE` — correcto para Escudo Pago | `supabase/sql/esquema.sql:153` |
-| **P6** | Grants column-level en `profiles` — bien implementado | `supabase/sql/esquema.sql:500-503` |
+| **P6** | Grants column-level en `profiles` — **corregido localmente**: el grant global de tabla anulaba los grants por columna | `supabase/sql/esquema.sql` (sección GRANTS) |
 | **P7** | Escudo Pago oculto con feature flag — sin dead code | `lib/features.ts`, `CheckoutForm.tsx` |
 
 ---
@@ -200,11 +200,13 @@ docs_migracion/         # 7 bitácoras de migración
 |---|-------|----------|--------------|--------|
 | 7 | **Firmar cart cookie** con `iron-session` (o JWT) | `lib/cart.ts`, `app/(shop)/carrito/actions.ts`, `package.json` + `npm i iron-session` | Cookie manipulada client-side → error firma / descarte | 🟢 Resuelto — HMAC SHA-256 implementado |
 | 8 | **Validación servidor upload imágenes** (magic bytes, size, tipo) | `lib/supabase/storage.ts` | Archivo >5MB o .svg/.php → reject 400 | 🟢 Resuelto — magic bytes + size + MIME validation |
-| 9 | **Corregir trigger `handle_new_user`** para setear `app_metadata.role` | `supabase/sql/esquema.sql:374-382` (ejecutar en Supabase SQL Editor) | Admin creado via SQL → acceso dashboard OK | 🟡 Verificado — trigger implementado correctamente |
+| 9 | **Corregir autorización H-01**: `handle_new_user` desde `raw_app_meta_data`, protección de `profiles.role`, grants y `is_hot_admin` desde `app_metadata` | `supabase/sql/esquema.sql`, `supabase/sql/ejecucion.sql` (Fix 0026), auth de la app | Pruebas locales completas; migración y backfill pendientes en staging | 🟠 Corregido localmente — Fix 0026 pendiente de ejecutar |
 | 10 | **Rate limiting** en `/api/auth/*` (Upstash Redis o `next-rate-limit`) | `app/api/auth/login/route.ts`, `register/route.ts`, `package.json` | 10 req/min/IP → 429 | 🟢 Resuelto — `lib/rate-limit.ts` creado |
 | 11 | **Endurecer RLS `orders`/`order_items` INSERT** — validar ownership via `session_key` o `user_id` = `auth.uid()` | `supabase/sql/esquema.sql:419-427` (migración) | Guest checkout crea order con `session_key`; no puede setear `user_id` ajeno | 🟢 Resuelto — policies actualizadas |
 | 12 | **Subir contraste textos grises** `#888888` → `#6B6B6B` (4.5:1) | `app/globals.css`, componentes Tailwind | Lighthouse/axe: contraste pass | 🟢 Resuelto — 86 archivos actualizados |
 | — | **Google OAuth funcional** | `components/auth/GoogleButton.tsx`, `app/auth/callback/route.ts` | Botón activo, callback funcional | 🟢 Resuelto |
+
+> **Actualización H-01 (2026-11-01):** se corrigió localmente la escalada de privilegios: autorización desde `app_metadata.role`, `profiles.role` solo sincronizado, trigger de protección, grants column-level reaplicados y `is_hot_admin()` desde el JWT. La migración `Fix 0026` está en `supabase/sql/ejecucion.sql` en estado **PENDIENTE**; no se ha ejecutado en Supabase ni se ha hecho backfill automático de administradores.
 
 ### SPRINT 3 — MEDIOS (Calidad/Performance) — ~3.5h
 

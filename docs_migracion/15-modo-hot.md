@@ -67,8 +67,8 @@ Registrado en `supabase/sql/migraciones.sql` y reflejado en
 
 ### RPCs (`SECURITY DEFINER`)
 
-Todas validan `profiles.role='admin'` con `is_hot_admin()`, usan
-`search_path = public, pg_temp`, revocan `PUBLIC` y otorgan `authenticated`:
+Todas validan `app_metadata.role='admin'` con `is_hot_admin()`, usan
+`search_path = public, pg_temp`, revocan `PUBLIC`/`anon` y otorgan `authenticated`:
 
 - `activate_hot_session(p_session_id, p_duration_hours DEFAULT NULL)`
 - `set_hot_current_product(p_session_id, p_product_id)`
@@ -76,7 +76,9 @@ Todas validan `profiles.role='admin'` con `is_hot_admin()`, usan
 - `update_hot_product_promo(p_session_id, p_product_id, p_promo_price)`
 - `remove_hot_product(p_session_id, p_product_id)`
 
-`is_hot_admin()` es interna, no se otorga a ningún rol.
+`is_hot_admin()` es interna (`SECURITY INVOKER`, `search_path = ''`), valida
+`auth.jwt() -> 'app_metadata' ->> 'role'` y no se otorga a `PUBLIC`, `anon` ni
+`authenticated`. Los RPCs `SECURITY DEFINER` la invocan como owner.
 
 ## Admin
 

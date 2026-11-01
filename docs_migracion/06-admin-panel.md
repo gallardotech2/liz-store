@@ -20,7 +20,7 @@
 ### Autenticación y autorización
 - El layout (`app/admin/layout.tsx`) es un **Server Component** que verifica la sesión con `createClient()` de `@supabase/ssr`.
 - Redirige a `/auth/login` si no hay sesión.
-- Verifica el rol `admin` en la columna `role` de la tabla `profiles`.
+- Verifica `app_metadata.role === 'admin'` en el usuario autenticado (fuente única de autorización). La columna `profiles.role` se conserva solo como dato sincronizado para mostrar en la interfaz.
 - Al cerrar sesión, se llama `supabase.auth.signOut()` del lado del cliente y redirige a `/auth/login`.
 
 ### Layout y sidebar

@@ -251,7 +251,7 @@ supabase/sql/                         # Sistema de migraciones
 **Flujo:**
 1. Usuario se registra/login mediante Server Actions o Google OAuth
 2. `proxy.ts` (middleware) refresca la sesión en cada navegación
-3. Admin layout verifica sesión + role `admin` en tabla `profiles`
+3. Admin layout verifica sesión + `app_metadata.role === 'admin'` (fuente única de autorización); `profiles.role` se mantiene sincronizado solo para visualización
 4. Perfil de usuario en `/perfil` (editar datos personales)
 
 **Protección de rutas:**

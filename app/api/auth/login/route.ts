@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
     const result = await supabase
       .from("profiles")
-      .select("*")
+      .select("nombre")
       .eq("id", userId)
       .single()
 
@@ -71,11 +71,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: msg }, { status: 500 })
     }
 
-    const profile = result.data as unknown as { role: string; nombre: string }
+    const profile = result.data as unknown as { nombre: string }
 
     return NextResponse.json({
       success: true,
-      role: profile.role,
+      role: data.user.app_metadata?.role === "admin" ? "admin" : "customer",
       user: {
         id: userId,
         email: data.user.email,

@@ -43,7 +43,7 @@ export default async function PerfilPage() {
   const { data: profile } = await getProfile(supabase, user.id)
   const { data: requests } = await getUserRequests(supabase, user.id, 5)
 
-  const isAdmin = (profile as { role?: string } | null)?.role === "admin"
+  const isAdmin = user.app_metadata?.role === "admin"
   const nombre = (profile as { nombre?: string } | null)?.nombre?.trim() || ""
   const phone = (profile as { phone?: string } | null)?.phone?.trim() || ""
   const avatar = (profile as { avatar?: string | null } | null)?.avatar || ""

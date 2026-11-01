@@ -30,13 +30,7 @@ export async function GET(request: NextRequest) {
             .eq("id", user.id)
         }
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single()
-
-        const role = (profile as unknown as { role?: string })?.role
+        const role = user.app_metadata?.role
         const redirectTo = role === "admin" ? "/admin" : next
 
         return NextResponse.redirect(`${origin}${redirectTo}`)

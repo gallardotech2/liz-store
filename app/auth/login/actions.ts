@@ -23,17 +23,7 @@ export async function login(formData: FormData) {
       return redirect("/auth/login?error=" + encodeURIComponent(error.message))
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single()
-
-    if (profileError) {
-      return redirect("/auth/login?error=Error+al+verificar+permisos")
-    }
-
-    const role = (profile as unknown as { role?: string })?.role
+    const role = data.user.app_metadata?.role
 
     if (role !== "admin") {
       return redirect("/auth/login?error=No+tienes+permisos+de+administrador")

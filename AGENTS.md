@@ -51,6 +51,8 @@
 
 ## Sistema de Migraciones SQL (estilo e-mstore V2.0)
 
+> 🚨 **DOCUMENTO DE CONTINUIDAD PRIORITARIO (H-01 Opción B):** `Fix 0026` fue **ejecutado en Supabase el 2026-11-01**. La autorización admin ya usa `app_metadata.role`, con triggers anti-escalada y grants por columna. Pendiente: re-login de administradores (JWT), despliegue del código y validación funcional. El estado completo y punto de recuperación están registrados en [`docs_migracion/24-continuidad-seguridad-h01-2026-11-01.md`](docs_migracion/24-continuidad-seguridad-h01-2026-11-01.md) (también guardado en la memoria técnica Engram).
+
 ### Los 3 archivos
 | Archivo | Propósito |
 |---------|-----------|

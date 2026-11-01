@@ -473,23 +473,79 @@ END;
 $$;
 
 -- Trigger: crear profile automáticamente al registrarse
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+-- El rol de autorización vive en app_metadata (solo editable con service role).
+-- profiles.role queda como dato sincronizado para mostrar en la interfaz.
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, nombre, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'nombre', ''),
-    COALESCE(NEW.raw_user_meta_data ->> 'role', 'customer')
+    CASE
+      WHEN NEW.raw_app_meta_data ->> 'role' = 'admin' THEN 'admin'
+      ELSE 'customer'
+    END
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Trigger: impedir que usuarios autenticados modifiquen su propio rol.
+-- El service role y el SQL Editor no tienen auth.uid(), por lo que pueden
+-- sincronizar profiles.role durante el backfill aprobado.
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_change()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role
+     AND auth.uid() IS NOT NULL THEN
+    RAISE EXCEPTION 'No autorizado para cambiar el rol del perfil'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prevent_profile_role_change ON public.profiles;
+CREATE TRIGGER prevent_profile_role_change
+  BEFORE UPDATE OF role ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_profile_role_change();
+
+-- Trigger: ningún rol de API (anon/authenticated) puede insertar perfiles
+-- con privilegios. El alta normal la realiza handle_new_user como owner.
+CREATE OR REPLACE FUNCTION public.prevent_profile_role_insert()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM 'customer'
+     AND current_user IN ('anon', 'authenticated') THEN
+    RAISE EXCEPTION 'No autorizado para crear un perfil con ese rol'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS prevent_profile_role_insert ON public.profiles;
+CREATE TRIGGER prevent_profile_role_insert
+  BEFORE INSERT ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_profile_role_insert();
 
 -- =========================================================================
 -- RLS POLICIES
@@ -497,9 +553,11 @@ CREATE TRIGGER on_auth_user_created
 
 -- Profiles
 CREATE POLICY "Profiles: propio SELECT" ON profiles FOR SELECT USING (id = auth.uid());
-CREATE POLICY "Profiles: propio UPDATE" ON profiles FOR UPDATE USING (id = auth.uid());
+CREATE POLICY "Profiles: propio UPDATE" ON profiles
+  FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = id)
+  WITH CHECK ((SELECT auth.uid()) = id);
 CREATE POLICY "Profiles: admin todo" ON profiles FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
-CREATE POLICY "Profiles: anon INSERT (trigger)" ON profiles FOR INSERT WITH CHECK (true);
 
 -- Addresses
 CREATE POLICY "Addresses: propio SELECT" ON addresses FOR SELECT USING (user_id = auth.uid());
@@ -657,18 +715,15 @@ CREATE OR REPLACE FUNCTION public.is_hot_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
-SET search_path = public, pg_temp
+SECURITY INVOKER
+SET search_path = ''
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles
-    WHERE id = auth.uid()
-      AND role = 'admin'
-  );
+  SELECT auth.uid() IS NOT NULL
+    AND COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
 $$;
 
 REVOKE ALL ON FUNCTION public.is_hot_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_hot_admin() FROM anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.activate_hot_session(
   p_session_id INTEGER,
@@ -1172,14 +1227,14 @@ END;
 $$;
 
 -- Solo usuarios autenticados pueden invocar los RPCs; el helper interno
--- valida además que el perfil tenga role='admin'.
-REVOKE ALL ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) FROM PUBLIC;
+-- valida además que app_metadata.role sea 'admin'.
+REVOKE ALL ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.add_hot_product(INTEGER, INTEGER, INTEGER, NUMERIC) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.update_hot_product_promo(INTEGER, INTEGER, NUMERIC) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.add_hot_products(INTEGER, INTEGER[]) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.remove_hot_product(INTEGER, INTEGER) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.start_live_mode(INTEGER, TIMESTAMPTZ) FROM PUBLIC, anon;
 
 GRANT EXECUTE ON FUNCTION public.activate_hot_session(INTEGER, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.set_hot_current_product(INTEGER, INTEGER) TO authenticated;
@@ -1197,12 +1252,14 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO authenticat
 GRANT USAGE ON SCHEMA public TO authenticator;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticator;
 
-REVOKE ALL ON profiles FROM anon, authenticated;
-GRANT SELECT(id, nombre, avatar) ON profiles TO anon;
-GRANT SELECT(id, nombre, avatar, phone, role) ON profiles TO authenticated;
-GRANT UPDATE(phone, avatar, nombre) ON profiles TO authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON social_links TO anon, authenticated;
-
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;
+
+-- profiles debe reaplicarse DESPUÉS de los grants globales: un privilegio
+-- de tabla anula el privilegio por columnas. Los usuarios solo pueden
+-- actualizar nombre, avatar y teléfono; el rol nunca se otorga por columna.
+REVOKE ALL ON public.profiles FROM anon, authenticated;
+GRANT SELECT (id, nombre, avatar) ON public.profiles TO anon;
+GRANT SELECT (id, nombre, avatar, phone, role, created_at) ON public.profiles TO authenticated;
+GRANT UPDATE (nombre, avatar, phone) ON public.profiles TO authenticated;

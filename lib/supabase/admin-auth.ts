@@ -6,13 +6,7 @@ export async function requireAdmin() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if ((profile as unknown as { role?: string })?.role !== "admin") {
+  if (user.app_metadata?.role !== "admin") {
     redirect("/auth/login")
   }
   return user
