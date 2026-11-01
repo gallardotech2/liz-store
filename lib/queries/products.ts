@@ -81,7 +81,7 @@ export function getProductsByIds(client: SupabaseClient, ids: number[]) {
 export function getFeaturedProducts(client: SupabaseClient, limit = 8) {
   return client
     .from("products")
-    .select("id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
+    .select("id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
     .eq("is_active", true)
     .eq("is_featured", true)
     .limit(limit)
@@ -90,7 +90,7 @@ export function getFeaturedProducts(client: SupabaseClient, limit = 8) {
 export function getNewProducts(client: SupabaseClient, limit = 8) {
   return client
     .from("products")
-    .select("id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
+    .select("id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
     .eq("is_active", true)
     .eq("is_new", true)
     .limit(limit)
@@ -99,7 +99,7 @@ export function getNewProducts(client: SupabaseClient, limit = 8) {
 export function getRelatedProducts(client: SupabaseClient, productId: number, categoryId: number, limit = 4) {
   return client
     .from("products")
-    .select("id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
+    .select("id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug)")
     .eq("is_active", true)
     .eq("category_id", categoryId)
     .neq("id", productId)

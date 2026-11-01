@@ -48,13 +48,13 @@ export default async function HomePage() {
       s.from("categories").select("*").eq("is_active", true).order("order"),
       s
         .from("products")
-        .select("id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)")
+        .select("id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)")
         .eq("is_active", true)
         .eq("is_featured", true)
         .limit(8),
       s
         .from("products")
-        .select("id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)")
+        .select("id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)")
         .eq("is_active", true)
         .eq("is_new", true)
         .limit(8),

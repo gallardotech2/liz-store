@@ -14,6 +14,7 @@ interface ProductCardProduct {
   slug: string
   price: number
   discountPrice: number | null
+  stock?: number | null
   rating: number
   ratingCount: number
   isNew: boolean
@@ -50,7 +51,11 @@ export function ProductCard({
         }
       : null)
   const pricing = resolveCardPricing(product, live)
-  const unavailableLabel = getCardAvailability(liveProduct)
+  const unavailableLabel =
+    getCardAvailability(liveProduct) ??
+    (product.stock !== undefined && product.stock !== null && Number(product.stock) <= 0
+      ? "Agotado"
+      : null)
 
   return (
     <article

@@ -57,7 +57,7 @@ export default async function OffersPage({
   const query = s
     .from("products")
     .select(
-      "id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
+      "id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
       { count: "exact" },
     )
     .eq("is_active", true)
