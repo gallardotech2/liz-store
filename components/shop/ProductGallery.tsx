@@ -1,7 +1,9 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
+import { ProductGalleryModal } from "@/components/shop/ProductGalleryModal"
 
 interface ProductGalleryImage {
   id: number
@@ -16,93 +18,233 @@ interface ProductGalleryProps {
   productName: string
 }
 
+interface ZoomPanelPlacement {
+  left: number
+  top: number
+  size: number
+}
+
+const ZOOM_SCALE = 2.5
+const PANEL_EDGE = 16
+const PANEL_GAP = 16
+const TAP_CANCEL_PX = 10
+const HOVER_ZOOM_MIN_WIDTH = 1024
+
+function getOrigin(rect: DOMRect, clientX: number, clientY: number) {
+  const x = rect.width > 0 ? (clientX - rect.left) / rect.width : 0.5
+  const y = rect.height > 0 ? (clientY - rect.top) / rect.height : 0.5
+
+  return {
+    x: Math.min(1, Math.max(0, x)) * 100,
+    y: Math.min(1, Math.max(0, y)) * 100,
+  }
+}
+
+function getPanelPlacement(rect: DOMRect): ZoomPanelPlacement {
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const size = Math.round(
+    Math.max(
+      180,
+      Math.min(480, viewportWidth * 0.4, viewportHeight - PANEL_EDGE * 2),
+    ),
+  )
+  const rightLeft = rect.right + PANEL_GAP
+  let left: number
+
+  if (rightLeft + size <= viewportWidth - PANEL_EDGE) {
+    left = rightLeft
+  } else if (rect.left - PANEL_GAP - size >= PANEL_EDGE) {
+    left = rect.left - PANEL_GAP - size
+  } else {
+    left = (viewportWidth - size) / 2
+  }
+
+  const top = Math.min(
+    Math.max(rect.top + (rect.height - size) / 2, PANEL_EDGE),
+    viewportHeight - size - PANEL_EDGE,
+  )
+
+  return { left: Math.round(left), top: Math.round(top), size }
+}
+
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
   const initialIndex = Math.max(
     0,
     images.findIndex((img) => img.is_main),
   )
   const [activeIndex, setActiveIndex] = useState(initialIndex)
-  const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [isClosing, setIsClosing] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const [zoom, setZoom] = useState<
+    (ZoomPanelPlacement & {
+      originX: number
+      originY: number
+    }) | null
+  >(null)
+  const [galleryOpen, setGalleryOpen] = useState(false)
   const activeImage = images[activeIndex] ?? images[0]
 
+  const imageBoxRef = useRef<HTMLButtonElement>(null)
+  const zoomedImageRef = useRef<HTMLDivElement>(null)
+  const originRef = useRef({ x: 50, y: 50 })
+  const zoomActiveRef = useRef(false)
+  const tapStartRef = useRef<{ x: number; y: number } | null>(null)
+
+  const applyOrigin = useCallback(() => {
+    const node = zoomedImageRef.current
+    if (!node) return
+    node.style.transformOrigin = `${originRef.current.x}% ${originRef.current.y}%`
+  }, [])
+
+  const openZoom = useCallback((clientX: number, clientY: number) => {
+    const box = imageBoxRef.current
+    if (!box) return
+
+    const rect = box.getBoundingClientRect()
+    const origin = getOrigin(rect, clientX, clientY)
+    originRef.current = origin
+    zoomActiveRef.current = true
+    setZoom({
+      ...getPanelPlacement(rect),
+      originX: origin.x,
+      originY: origin.y,
+    })
+  }, [])
+
+  const updateZoom = useCallback(
+    (clientX: number, clientY: number) => {
+      const box = imageBoxRef.current
+      if (!box || !zoomActiveRef.current) return
+
+      originRef.current = getOrigin(
+        box.getBoundingClientRect(),
+        clientX,
+        clientY,
+      )
+      applyOrigin()
+    },
+    [applyOrigin],
+  )
+
+  const closeZoom = useCallback(() => {
+    zoomActiveRef.current = false
+    setZoom(null)
+  }, [])
+
+  const openGallery = useCallback(() => {
+    closeZoom()
+    setGalleryOpen(true)
+  }, [closeZoom])
+
+  const closeGallery = useCallback(
+    (index: number) => {
+      setGalleryOpen(false)
+      setActiveIndex(
+        Math.min(
+          Math.max(0, index),
+          Math.max(0, images.length - 1),
+        ),
+      )
+      window.requestAnimationFrame(() => {
+        imageBoxRef.current?.focus({ preventScroll: true })
+      })
+    },
+    [images.length],
+  )
+
   useEffect(() => {
-    if (!lightboxOpen) return
+    if (!zoom) return
 
-    const previousOverflow = document.body.style.overflow
-    const trigger = triggerRef.current
-    document.body.style.overflow = "hidden"
+    const handleScrollOrResize = () => closeZoom()
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault()
-        setIsClosing(true)
-        return
-      }
-
-      if (event.key === "Tab") {
-        event.preventDefault()
-        closeButtonRef.current?.focus()
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    closeButtonRef.current?.focus()
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true })
+    window.addEventListener("resize", handleScrollOrResize)
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-      document.body.style.overflow = previousOverflow
-      trigger?.focus()
+      window.removeEventListener("scroll", handleScrollOrResize)
+      window.removeEventListener("resize", handleScrollOrResize)
     }
-  }, [lightboxOpen])
+  }, [zoom, closeZoom])
 
-  useEffect(() => {
-    if (!isClosing) return
+  const handlePointerEnter = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== "mouse") return
+    if (window.innerWidth < HOVER_ZOOM_MIN_WIDTH) return
+    openZoom(event.clientX, event.clientY)
+  }
 
-    const timeout = window.setTimeout(() => {
-      setLightboxOpen(false)
-      setIsClosing(false)
-    }, 180)
+  const handlePointerMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== "mouse") return
+    if (!zoomActiveRef.current) return
+    updateZoom(event.clientX, event.clientY)
+  }
 
-    return () => window.clearTimeout(timeout)
-  }, [isClosing])
+  const handlePointerLeave = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse") {
+      if (zoomActiveRef.current) closeZoom()
+      return
+    }
+
+    tapStartRef.current = null
+  }
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse") return
+    tapStartRef.current = { x: event.clientX, y: event.clientY }
+  }
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse") return
+
+    const start = tapStartRef.current
+    tapStartRef.current = null
+    if (!start) return
+
+    const distance = Math.hypot(
+      event.clientX - start.x,
+      event.clientY - start.y,
+    )
+    if (distance <= TAP_CANCEL_PX) openGallery()
+  }
+
+  const handlePointerCancel = () => {
+    tapStartRef.current = null
+  }
+
+  const handleImageClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.detail === 0 || window.innerWidth < HOVER_ZOOM_MIN_WIDTH) {
+      openGallery()
+    }
+  }
 
   return (
     <>
       <div className="aspect-square rounded-[16px] overflow-hidden bg-[#FFFBF9] dark:bg-surface mb-3.75">
         {activeImage ? (
           <button
-            ref={triggerRef}
+            ref={imageBoxRef}
             type="button"
-            onClick={() => {
-              setIsClosing(false)
-              setLightboxOpen(true)
-            }}
-            aria-label={`Ampliar imagen de ${productName}`}
+            data-gallery-trigger
+            aria-label={`Abrir galería de imágenes de ${productName}`}
             aria-haspopup="dialog"
-            className="group relative block h-full w-full cursor-zoom-in border-0 bg-transparent p-0"
+            className="group relative block h-full w-full cursor-zoom-in select-none touch-manipulation border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+            style={{ WebkitTouchCallout: "none" }}
+            onPointerEnter={handlePointerEnter}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+            onPointerDown={handlePointerDown}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+            onClick={handleImageClick}
+            onContextMenu={(event) => event.preventDefault()}
           >
             <Image
               src={activeImage.image}
               alt={activeImage.alt_text || productName}
               width={600}
               height={600}
+              draggable={false}
               className="w-full h-full object-cover object-center"
               priority
             />
-            <span
-              className="pointer-events-none absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur-sm transition-colors duration-200 group-hover:bg-black/70"
-              aria-hidden="true"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="16.5" y1="16.5" x2="21" y2="21" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-                <line x1="11" y1="8" x2="11" y2="14" />
-              </svg>
-            </span>
           </button>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[rgb(251,132,150)] text-4xl bg-gradient-to-br from-[rgb(251,132,150)] to-[#FDF8F6] dark:to-surface">
@@ -137,44 +279,53 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         </div>
       )}
 
-      {lightboxOpen && activeImage && (
-        <div
-          className={`fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur-sm ${isClosing ? "animate-lightbox-out" : "animate-lightbox-in"} motion-reduce:animate-none`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Imagen ampliada de ${productName}`}
-          onClick={() => setIsClosing(true)}
-        >
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              setIsClosing(true)
-            }}
-            aria-label="Cerrar imagen ampliada"
-            className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] z-10 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-white/95 text-[#2D2D2D] shadow-lg transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+      {zoom &&
+        activeImage &&
+        createPortal(
           <div
-            className={`relative aspect-square w-full max-w-[min(1100px,calc(100dvh-2rem))] ${isClosing ? "animate-lightbox-zoom-out" : "animate-lightbox-zoom-in"} motion-reduce:animate-none`}
-            onClick={(event) => event.stopPropagation()}
+            data-product-zoom-panel
+            aria-hidden="true"
+            className="pointer-events-none fixed z-[1050] overflow-hidden rounded-[16px] border border-[#eee] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.24)] animate-zoom-panel-in motion-reduce:animate-none dark:border-line dark:bg-surface"
+            style={{
+              left: zoom.left,
+              top: zoom.top,
+              width: zoom.size,
+              height: zoom.size,
+            }}
           >
-            <Image
-              src={activeImage.image}
-              alt={activeImage.alt_text || productName}
-              fill
-              sizes="100vw"
-              loading="eager"
-              className="object-contain"
-            />
-          </div>
-        </div>
-      )}
+            <div
+              ref={zoomedImageRef}
+              className="absolute inset-0 will-change-transform"
+              style={{
+                transform: `scale(${ZOOM_SCALE})`,
+                transformOrigin: `${zoom.originX}% ${zoom.originY}%`,
+              }}
+            >
+              <Image
+                src={activeImage.image}
+                alt=""
+                fill
+                sizes="1200px"
+                loading="eager"
+                draggable={false}
+                className="object-cover object-center"
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {galleryOpen &&
+        activeImage &&
+        createPortal(
+          <ProductGalleryModal
+            images={images}
+            initialIndex={activeIndex}
+            productName={productName}
+            onClose={closeGallery}
+          />,
+          document.body,
+        )}
     </>
   )
 }
