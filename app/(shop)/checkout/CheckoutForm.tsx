@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { TurnstileWidget } from "@/components/security/TurnstileWidget"
+import { removeFromCartAction } from "@/app/(shop)/carrito/actions"
 
 interface CartItem {
   id: string
@@ -14,13 +15,6 @@ interface CartItem {
   image: string
   slug: string
   stock: number
-}
-
-interface CheckoutTotals {
-  subtotal: number
-  shipping: number
-  total: number
-  freeShippingRemaining: number
 }
 
 interface StoreProfile {
@@ -61,7 +55,6 @@ interface PickupPoint {
 
 interface CheckoutFormProps {
   items: CartItem[]
-  totals: CheckoutTotals
   storeProfile: StoreProfile | null
   user: { id: string; email: string } | null
   profile: { nombre: string; phone: string } | null
@@ -71,7 +64,7 @@ interface CheckoutFormProps {
   whatsappNumber: string
 }
 
-export function CheckoutForm({ items, totals, storeProfile, user, profile, paymentMethods, qrPayments, pickupPoints, whatsappNumber }: CheckoutFormProps) {
+export function CheckoutForm({ items, storeProfile, user, profile, paymentMethods, qrPayments, pickupPoints, whatsappNumber }: CheckoutFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "home">("pickup")
@@ -94,9 +87,43 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const [turnstileReset, setTurnstileReset] = useState(0)
   const [website, setWebsite] = useState("")
   const [summaryExpanded, setSummaryExpanded] = useState(false)
-  const finalTotal = totals.subtotal
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [cartItems, setCartItems] = useState(items)
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const finalTotal = subtotal
   const mobileBarRef = useRef<HTMLDivElement>(null)
   const [mobileBarHeight, setMobileBarHeight] = useState(0)
+
+  async function handleRemove(productId: string) {
+    if (removingId) return
+
+    setRemovingId(productId)
+    setError("")
+
+    try {
+      const formData = new FormData()
+      formData.append("productId", productId)
+      await removeFromCartAction(formData)
+
+      const updatedItems = cartItems.filter((item) => item.id !== productId)
+      setCartItems(updatedItems)
+
+      if (updatedItems.length === 0) {
+        router.push("/carrito")
+        return
+      }
+
+      router.refresh()
+    } catch {
+      setError("No se pudo eliminar el producto. Intenta de nuevo.")
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
+  useEffect(() => {
+    setCartItems(items)
+  }, [items])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -129,7 +156,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
       ? `📍 Recoger en: ${pickupLocation}`
       : `🚚 Envío a domicilio - Pendiente de coordinar por WhatsApp`
 
-    const itemsText = items
+    const itemsText = cartItems
       .map((i) => `• ${i.name} x${i.quantity} - Bs. ${(i.price * i.quantity).toFixed(2)}`)
       .join("\n")
 
@@ -198,7 +225,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((i) => ({
+          items: cartItems.map((i) => ({
             id: i.id,
             price: i.price,
             quantity: i.quantity,
@@ -269,7 +296,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             )}
             <div className="text-left mb-6 p-4 rounded-xl bg-[#FDF8F6] dark:bg-surface">
               <p className="text-[14px] font-semibold text-[#2D2D2D] dark:text-ink-strong mb-2">Resumen del pedido</p>
-              {items.map((item) => (
+              {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 py-1.5 text-[13px] text-[#6B6B6B] dark:text-ink-soft">
                   <span className="text-[#2D2D2D] dark:text-ink-strong font-medium">{item.name}</span>
                   <span>x{item.quantity}</span>
@@ -639,7 +666,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
               Resumen del pedido
             </span>
             <span className="shrink-0 text-[13px] font-semibold text-[#2D2D2D] dark:text-ink-strong">
-              Subtotal Bs. {totals.subtotal.toFixed(2)}
+              Subtotal Bs. {subtotal.toFixed(2)}
             </span>
           </div>
 
@@ -647,7 +674,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             id="mobile-order-summary-items"
             className={`mt-1.5 ${summaryExpanded ? "max-h-[min(30dvh,180px)] overflow-y-auto overscroll-contain" : ""}`}
           >
-            {items.slice(0, summaryExpanded ? items.length : 2).map((item) => {
+            {cartItems.slice(0, summaryExpanded ? cartItems.length : 2).map((item) => {
               const lineTotal = item.price * item.quantity
               return (
                 <div
@@ -676,12 +703,22 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
                   <span className="shrink-0 text-[12px] font-semibold text-primary">
                     Bs. {lineTotal.toFixed(2)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(item.id)}
+                    disabled={removingId !== null}
+                    aria-label={`Eliminar ${item.name} del pedido`}
+                    className="flex shrink-0 cursor-pointer items-center gap-0.5 border-none bg-transparent p-0 text-[10.5px] font-medium text-[#E74C3C] transition-colors hover:text-[#C0392B] disabled:cursor-wait disabled:opacity-50 dark:text-[#FF8A80] dark:hover:text-[#EF9A9A]"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    {removingId === item.id ? "..." : "Eliminar"}
+                  </button>
                 </div>
               )
             })}
           </div>
 
-          {items.length > 2 && (
+          {cartItems.length > 2 && (
             <button
               type="button"
               onClick={() => setSummaryExpanded((value) => !value)}
@@ -689,7 +726,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
               aria-controls="mobile-order-summary-items"
               className="mt-1.5 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#EEE] bg-[#FDF8F6] px-2.5 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:border-primary/40 dark:border-line dark:bg-surface"
             >
-              {summaryExpanded ? "Ver menos" : `Mostrar ${items.length - 2} más`}
+              {summaryExpanded ? "Ver menos" : `Mostrar ${cartItems.length - 2} más`}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="13"

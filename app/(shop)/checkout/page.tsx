@@ -2,7 +2,7 @@ import Link from "next/link"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { parseCart, calculateCartTotal, CART_COOKIE } from "@/lib/cart"
+import { parseCart, CART_COOKIE } from "@/lib/cart"
 import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 import { CheckoutForm } from "./CheckoutForm"
 import { OrderSummary } from "./OrderSummary"
@@ -62,10 +62,6 @@ export default async function CheckoutPage() {
     return { ...item, stock: item.quantity } as import("@/lib/cart").CartItem & { stock: number }
   })
 
-  const summary = calculateCartTotal(
-    Object.fromEntries(mergedItems.map((i) => [i.id, i])),
-  )
-
   const { data: storeProfile } = await (supabase as any)
     .from("store_profiles")
     .select("*")
@@ -114,12 +110,6 @@ export default async function CheckoutPage() {
           <OrderSummary items={mergedItems} />
           <CheckoutForm
             items={mergedItems}
-            totals={{
-              subtotal: summary.subtotal,
-              shipping: summary.shipping,
-              total: summary.total,
-              freeShippingRemaining: summary.freeShippingRemaining,
-            }}
             storeProfile={storeProfile || null}
             user={user ? { id: user.id, email: user.email ?? "" } : null}
             profile={profile}
