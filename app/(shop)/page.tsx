@@ -93,6 +93,7 @@ export default async function HomePage() {
     slug: string
     price: number
     discount_price: number | null
+    stock: number | null
     rating: number
     rating_count: number
     is_new: boolean
@@ -128,6 +129,7 @@ export default async function HomePage() {
       slug: p.slug,
       price: p.price,
       discountPrice: p.discount_price,
+      stock: p.stock,
       rating: p.rating,
       ratingCount: p.rating_count,
       isNew: p.is_new,

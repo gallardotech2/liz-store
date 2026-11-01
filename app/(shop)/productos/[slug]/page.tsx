@@ -174,7 +174,7 @@ export default async function ProductDetailPage({
     s
       .from("products")
       .select(
-        "id, name, slug, price, discount_price, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
+        "id, name, slug, price, discount_price, stock, rating, rating_count, is_new, is_featured, category:categories(id, name, slug), product_images(image, is_main)",
       )
       .eq("is_active", true)
       .eq("category_id", p.category_id)
@@ -198,6 +198,7 @@ export default async function ProductDetailPage({
     slug: string
     price: number
     discount_price: number | null
+    stock: number | null
     rating: number
     rating_count: number
     is_new: boolean
@@ -215,6 +216,7 @@ export default async function ProductDetailPage({
       slug: rp.slug,
       price: rp.price,
       discountPrice: rp.discount_price,
+      stock: rp.stock,
       rating: rp.rating,
       ratingCount: rp.rating_count,
       isNew: rp.is_new,
