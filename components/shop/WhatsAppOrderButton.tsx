@@ -62,7 +62,7 @@ export function WhatsAppOrderButton({
       const whatsappUrl = `https://wa.me/${destination}?text=${encodeURIComponent(msg)}`
       window.open(whatsappUrl, "_blank")
 
-      router.push("/perfil/solicitudes")
+      if (!data.guest) router.push("/perfil/solicitudes")
     } catch {
       setError("Error de conexión")
     } finally {

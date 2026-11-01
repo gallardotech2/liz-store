@@ -802,6 +802,27 @@ export interface ProductInterestsTable {
   }
 }
 
+export interface RateLimitsTable {
+  Row: {
+    key: string
+    count: number
+    reset_at: string
+    updated_at: string
+  }
+  Insert: {
+    key: string
+    count?: number
+    reset_at: string
+    updated_at?: string
+  }
+  Update: {
+    key?: string
+    count?: number
+    reset_at?: string
+    updated_at?: string
+  }
+}
+
 export interface PickupPointsTable {
   Row: {
     id: number
@@ -874,7 +895,7 @@ export interface AdminAuthorizedTable {
 export interface WhatsappRequestsTable {
   Row: {
     id: number
-    user_id: string
+    user_id: string | null
     product_id: number
     product_name: string
     product_image: string
@@ -887,7 +908,7 @@ export interface WhatsappRequestsTable {
   }
   Insert: {
     id?: number
-    user_id: string
+    user_id: string | null
     product_id: number
     product_name: string
     product_image?: string
@@ -900,7 +921,7 @@ export interface WhatsappRequestsTable {
   }
   Update: {
     id?: number
-    user_id?: string
+    user_id?: string | null
     product_id?: number
     product_name?: string
     product_image?: string
@@ -963,6 +984,7 @@ export interface Database {
       live_session_products: LiveSessionProductsTable
       live_products: LiveProductsTable
       product_interests: ProductInterestsTable
+      rate_limits: RateLimitsTable
       pickup_points: PickupPointsTable,
       admin_authorized: AdminAuthorizedTable,
       whatsapp_requests: WhatsappRequestsTable
@@ -970,6 +992,18 @@ export interface Database {
     }
     Views: {}
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_window_seconds: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       start_live_mode: {
         Args: {
           p_session_id: number

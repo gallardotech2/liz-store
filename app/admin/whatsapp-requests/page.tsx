@@ -13,7 +13,7 @@ type RequestRow = {
   product_price: number | null
   notes: string | null
   created_at: string
-  user_id: string
+  user_id: string | null
 }
 
 const STATUS_OPTIONS: { value: WhatsappRequestStatus; label: string }[] = [
@@ -146,7 +146,7 @@ export default function AdminWhatsAppRequestsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-[#9CA3B8] font-mono text-xs max-sm:hidden">{req.user_id.slice(0, 8)}...</td>
+                    <td className="p-4 text-[#9CA3B8] font-mono text-xs max-sm:hidden">{req.user_id ? `${req.user_id.slice(0, 8)}...` : "Invitado"}</td>
                     <td className="p-4 text-[#9CA3B8] text-xs max-sm:hidden">
                       {new Date(req.created_at).toLocaleDateString("es-BO")}
                     </td>

@@ -1,23 +1,40 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limit"
+import { verifyTurnstile } from "@/lib/security/turnstile"
+import { isHoneypot } from "@/lib/whatsapp/validation"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request)
-    const { allowed } = checkRateLimit(`login:${clientIp}`)
+    const rateLimit = await checkRateLimit(`login:${clientIp}`, 5, 60)
 
-    if (!allowed) {
+    if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "Demasiados intentos. Espera un minuto e intenta de nuevo." },
-        { status: 429 },
+        { status: 429, headers: rateLimitHeaders(rateLimit) },
       )
     }
 
-    const { email, password } = await request.json()
+    const body = (await request.json()) as Record<string, unknown>
+
+    if (isHoneypot(body)) {
+      return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 })
+    }
+
+    const turnstile = await verifyTurnstile(body.turnstileToken, clientIp, "login")
+    if (!turnstile.ok) {
+      return NextResponse.json(
+        { error: "No pudimos verificar que eres una persona. Recarga e intenta de nuevo." },
+        { status: 403 },
+      )
+    }
+
+    const email = typeof body.email === "string" ? body.email : ""
+    const password = typeof body.password === "string" ? body.password : ""
 
     if (!email || !password) {
       return NextResponse.json(

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { PasswordInput } from "@/components/auth/PasswordInput"
 import { GoogleButton } from "@/components/auth/GoogleButton"
+import { TurnstileWidget } from "@/components/security/TurnstileWidget"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -19,6 +20,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [password2, setPassword2] = useState("")
+  const [website, setWebsite] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [turnstileReset, setTurnstileReset] = useState(0)
 
   const [nombreError, setNombreError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -67,18 +71,31 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre: nombre.trim(), email, password }),
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          email,
+          password,
+          website,
+          turnstileToken,
+        }),
       })
       const data = await res.json()
 
       if (!res.ok) {
         setError(data.error || "Error al crear la cuenta")
+        setTurnstileReset((value) => value + 1)
+        return
+      }
+
+      if (data.requiresConfirmation) {
+        setSuccess("Revisa tu correo para confirmar tu cuenta (y la carpeta de spam). Si el correo ya estaba registrado, inicia sesión o recupera tu contraseña.")
         return
       }
 
       router.push("/")
     } catch {
       setError("Error de conexión con el servidor")
+      setTurnstileReset((value) => value + 1)
     } finally {
       setLoading(false)
     }
@@ -201,6 +218,23 @@ export default function RegisterPage() {
               autoComplete="new-password"
               placeholder="Repite la contraseña"
               error={password2Error}
+            />
+
+            <input
+              type="text"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="hidden"
+            />
+
+            <TurnstileWidget
+              action="register"
+              onToken={setTurnstileToken}
+              resetKey={turnstileReset}
             />
 
             {error && (

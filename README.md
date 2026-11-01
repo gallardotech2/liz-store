@@ -127,9 +127,9 @@ app/                                  # App Router — 30+ pages, 4 layouts
 ├── api/                              # Route Handlers
 │   ├── auth/login/route.ts
 │   ├── auth/register/route.ts
+│   ├── auth/reset-password/route.ts
 │   ├── check-admin/route.ts
 │   ├── check-db/route.ts
-│   ├── check-page/route.ts
 │   ├── perfil/update/route.ts        # Actualizar perfil
 │   ├── whatsapp-request/
 │   │   ├── create/route.ts           # Crear solicitud

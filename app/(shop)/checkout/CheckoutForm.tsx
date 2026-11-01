@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/Button"
+import { TurnstileWidget } from "@/components/security/TurnstileWidget"
 
 interface CartItem {
   id: string
@@ -77,8 +78,8 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const [pickupLocation, setPickupLocation] = useState("")
   const defaultMethod = paymentMethods.length > 0 ? paymentMethods[0].code : "pago_directo"
   const [paymentMethod, setPaymentMethod] = useState(defaultMethod)
-  const [name, setName] = useState("")
-  const [phone, setPhone] = useState("")
+  const [name, setName] = useState(profile?.nombre || "")
+  const [phone, setPhone] = useState(profile?.phone || "")
   const [notes, setNotes] = useState("")
   const [error, setError] = useState("")
   const [highlightName, setHighlightName] = useState(false)
@@ -89,26 +90,23 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
   const pickupRef = useRef<HTMLDivElement>(null)
   const [referenceCode, setReferenceCode] = useState("")
   const [status, setStatus] = useState<"form" | "confirm" | "success">("form")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [turnstileReset, setTurnstileReset] = useState(0)
+  const [website, setWebsite] = useState("")
   const [summaryExpanded, setSummaryExpanded] = useState(false)
   const finalTotal = totals.subtotal
   const mobileBarRef = useRef<HTMLDivElement>(null)
   const [mobileBarHeight, setMobileBarHeight] = useState(0)
 
   useEffect(() => {
-    if (user && profile) {
-      setName(profile.nombre || "")
-      setPhone(profile.phone || "")
-    }
-  }, [user, profile])
+    if (typeof window === "undefined") return
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const sent = sessionStorage.getItem("liz_whatsapp_sent")
-      if (sent === "1") {
-        sessionStorage.removeItem("liz_whatsapp_sent")
-        setStatus("confirm")
-      }
-    }
+    const sent = sessionStorage.getItem("liz_whatsapp_sent")
+    if (sent !== "1") return
+
+    sessionStorage.removeItem("liz_whatsapp_sent")
+    const timeoutId = window.setTimeout(() => setStatus("confirm"), 0)
+    return () => window.clearTimeout(timeoutId)
   }, [])
 
   useEffect(() => {
@@ -126,7 +124,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
     return () => observer.disconnect()
   }, [])
 
-  function buildWhatsAppMessage(): string {
+  function buildWhatsAppMessage(codeOverride?: string): string {
     const deliveryInfo = deliveryMethod === "pickup"
       ? `📍 Recoger en: ${pickupLocation}`
       : `🚚 Envío a domicilio - Pendiente de coordinar por WhatsApp`
@@ -146,7 +144,8 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
     const pmName = paymentMethods.find((p) => p.code === paymentMethod)?.name || paymentMethod
     msg += `💳 *Pago:* ${pmName}\n`
     if (notes) msg += `\n📝 *Notas:* ${notes}\n`
-    if (referenceCode) msg += `\n🔖 *Código:* ${referenceCode}\n`
+    const code = codeOverride ?? referenceCode
+    if (code) msg += `\n🔖 *Código:* ${code}\n`
     msg += "\n━━━━━━━━━━━━━━━━\n"
       + "✅ *Solicitud enviada desde Liz Store*"
     return msg
@@ -187,9 +186,13 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
     setError("")
     if (!validate()) return
 
+    if (website.trim()) {
+      setError("Solicitud inválida")
+      return
+    }
+
     setLoading(true)
 
-    let code = ""
     try {
       const res = await fetch("/api/whatsapp-request/checkout", {
         method: "POST",
@@ -197,13 +200,13 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         body: JSON.stringify({
           items: items.map((i) => ({
             id: i.id,
-            name: i.name,
             price: i.price,
             quantity: i.quantity,
-            image: i.image,
           })),
           name: name.trim(),
           phone,
+          website,
+          turnstileToken,
           deliveryMethod,
           addressText: deliveryMethod === "home" ? "Pendiente de coordinar" : (() => { const p = pickupPoints.find(p => p.name === pickupLocation); return p ? `${p.name} - ${p.address}` : pickupLocation })(),
           reference: "",
@@ -212,26 +215,30 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
         }),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
         setError(data.error || "Error al crear la solicitud")
-      } else {
-        code = data.referenceCode || ""
+        setTurnstileReset((value) => value + 1)
+        return
       }
+
+      const code = data.referenceCode || ""
+      if (code) setReferenceCode(code)
+
+      const msg = buildWhatsAppMessage(code)
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`
+      sessionStorage.setItem("liz_whatsapp_sent", "1")
+      window.open(whatsappUrl, "_blank")
+
+      setStatus("success")
+      setTurnstileReset((value) => value + 1)
     } catch {
-      // No bloquear el pedido: se abre WhatsApp igualmente
+      setError("No pudimos registrar tu solicitud. Revisa tu conexión e intenta de nuevo.")
+      setTurnstileReset((value) => value + 1)
+    } finally {
+      setLoading(false)
     }
-
-    if (code) setReferenceCode(code)
-
-    const msg = buildWhatsAppMessage()
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`
-    sessionStorage.setItem("liz_whatsapp_sent", "1")
-    window.open(whatsappUrl, "_blank")
-
-    setStatus("success")
-    setLoading(false)
   }
 
   return (
@@ -324,6 +331,17 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
       )}
 
       <div id="datos-contacto" className="scroll-mt-24 bg-white dark:bg-surface-raised rounded-[16px] p-7.5 shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45)] md:order-1">
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="hidden"
+        />
+
         <h2 className="text-lg font-serif text-[#2D2D2D] dark:text-ink-strong mb-6">Datos de contacto</h2>
 
         {user && profile && (
@@ -344,6 +362,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
               if (highlightName) setHighlightName(false)
             }}
             required
+            maxLength={100}
             placeholder={user ? "Cargando..." : "Tu nombre"}
             className={`px-3.5 py-2.5 rounded-xl bg-[#FDF8F6] dark:bg-surface border text-[#2D2D2D] dark:text-ink-strong text-sm outline-none focus:border-primary transition-all duration-300 w-full ${
               highlightName
@@ -364,6 +383,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
               if (highlightPhone) setHighlightPhone(false)
             }}
             required
+            maxLength={30}
             aria-invalid={highlightPhone}
             placeholder={user ? "Cargando..." : "Número de contacto"}
             className={`px-3.5 py-2.5 rounded-xl bg-[#FDF8F6] dark:bg-surface border text-[#2D2D2D] dark:text-ink-strong text-sm outline-none focus:border-primary transition-all duration-300 w-full ${
@@ -504,6 +524,7 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
+            maxLength={500}
             placeholder="Alguna nota especial para tu pedido..."
             className="px-3.5 py-2.5 rounded-xl bg-[#FDF8F6] dark:bg-surface border border-[#EEE] dark:border-line text-[#2D2D2D] dark:text-ink-strong text-sm outline-none focus:border-primary transition-colors w-full resize-y"
           />
@@ -575,6 +596,12 @@ export function CheckoutForm({ items, totals, storeProfile, user, profile, payme
             )
           })}
         </div>
+
+        <TurnstileWidget
+          action="checkout"
+          onToken={setTurnstileToken}
+          resetKey={turnstileReset}
+        />
 
         {error && (
           <div className="mb-6 p-3 rounded-xl bg-[rgba(231,76,60,0.08)] border border-[rgba(231,76,60,0.2)] text-[#E74C3C] dark:text-[#FF8A80] text-[13px] flex items-start gap-2 max-md:hidden">

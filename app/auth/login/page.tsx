@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { PasswordInput } from "@/components/auth/PasswordInput"
 import { GoogleButton } from "@/components/auth/GoogleButton"
+import { TurnstileWidget } from "@/components/security/TurnstileWidget"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -16,6 +17,9 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [website, setWebsite] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [turnstileReset, setTurnstileReset] = useState(0)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
@@ -46,19 +50,21 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, website, turnstileToken }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
         setError(data.error || "Error al iniciar sesión")
+        setTurnstileReset((value) => value + 1)
         return
       }
 
       router.push(data.role === "admin" ? "/admin" : "/")
     } catch {
       setError("Error de conexión con el servidor")
+      setTurnstileReset((value) => value + 1)
     } finally {
       setLoading(false)
     }
@@ -138,6 +144,23 @@ export default function LoginPage() {
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
+
+          <input
+            type="text"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="hidden"
+          />
+
+          <TurnstileWidget
+            action="login"
+            onToken={setTurnstileToken}
+            resetKey={turnstileReset}
+          />
 
           {error && (
             <div

@@ -380,6 +380,16 @@ CREATE TABLE product_interests (
 
 ALTER TABLE product_interests ENABLE ROW LEVEL SECURITY;
 
+-- Rate Limits (solo accesible mediante check_rate_limit)
+CREATE TABLE rate_limits (
+  key TEXT PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 0,
+  reset_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
 -- Admin Authorized (admins con permiso OTP para acciones críticas)
 CREATE TABLE admin_authorized (
   id SERIAL PRIMARY KEY,
@@ -435,6 +445,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_authorized_user_id ON admin_authorized(user
 CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_user_id ON whatsapp_requests(user_id);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_reference_code ON whatsapp_requests(reference_code);
 CREATE INDEX IF NOT EXISTS idx_whatsapp_requests_status ON whatsapp_requests(status);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_reset_at ON rate_limits(reset_at);
 
 -- =========================================================================
 -- TRIGGERS
@@ -580,14 +591,17 @@ CREATE POLICY "Product Images: admin todo" ON product_images FOR ALL USING ((aut
 
 -- Orders
 CREATE POLICY "Orders: propio SELECT" ON orders FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Orders: auth INSERT propio" ON orders FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Orders: anon INSERT guest" ON orders FOR INSERT TO anon WITH CHECK (user_id IS NULL AND session_key IS NOT NULL AND session_key != '');
-CREATE POLICY "Orders: propio UPDATE" ON orders FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "Orders: admin todo" ON orders FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Order Items
-CREATE POLICY "Order Items: propio ver" ON order_items FOR SELECT USING (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND (orders.user_id = auth.uid() OR orders.user_id IS NULL)));
-CREATE POLICY "Order Items: INSERT propio" ON order_items FOR INSERT TO anon, authenticated WITH CHECK (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND ((auth.uid() IS NOT NULL AND orders.user_id = auth.uid()) OR (auth.uid() IS NULL AND orders.user_id IS NULL AND orders.session_key IS NOT NULL))));
+CREATE POLICY "Order Items: propio ver" ON order_items
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1
+    FROM orders o
+    WHERE o.id = order_items.order_id
+      AND o.user_id = (SELECT auth.uid())
+  ));
 CREATE POLICY "Order Items: admin todo" ON order_items FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Transactions
@@ -604,7 +618,13 @@ CREATE POLICY "QR Payments: admin todo" ON qr_payments FOR ALL USING ((auth.jwt(
 
 -- Reviews
 CREATE POLICY "Reviews: anon SELECT aprobadas" ON reviews FOR SELECT TO anon, authenticated USING (is_approved = true);
-CREATE POLICY "Reviews: auth INSERT" ON reviews FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Reviews: auth INSERT" ON reviews
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = (SELECT auth.uid())
+    AND is_approved = false
+    AND is_verified = false
+  );
 CREATE POLICY "Reviews: admin todo" ON reviews FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Review Images
@@ -628,7 +648,6 @@ CREATE POLICY "Live Products: anon SELECT" ON live_products FOR SELECT TO anon, 
 CREATE POLICY "Live Products: admin todo" ON live_products FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Product Interests
-CREATE POLICY "Product Interests: INSERT anon" ON product_interests FOR INSERT TO anon, authenticated WITH CHECK (true);
 CREATE POLICY "Product Interests: admin SELECT" ON product_interests FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Pickup Points
@@ -643,7 +662,6 @@ CREATE POLICY "Admin Authorized: admin DELETE" ON admin_authorized FOR DELETE TO
 
 -- WhatsApp Requests
 CREATE POLICY "WhatsApp: propio SELECT" ON whatsapp_requests FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "WhatsApp: auth INSERT" ON whatsapp_requests FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
 CREATE POLICY "WhatsApp: admin todo" ON whatsapp_requests FOR ALL USING ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 -- Social Links
@@ -668,6 +686,12 @@ INSERT INTO storage.buckets (id, name, public) VALUES
   ('live', 'live', true)
 ON CONFLICT (id) DO NOTHING;
 
+UPDATE storage.buckets
+SET public = true,
+    file_size_limit = 5242880,
+    allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+WHERE id = 'reviews';
+
 -- Storage policies: product-images
 CREATE POLICY "Storage product-images: anon SELECT" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'product-images');
 CREATE POLICY "Storage product-images: admin INSERT" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images' AND ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'));
@@ -675,7 +699,12 @@ CREATE POLICY "Storage product-images: admin DELETE" ON storage.objects FOR DELE
 
 -- Storage policies: reviews
 CREATE POLICY "Storage reviews: anon SELECT" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'reviews');
-CREATE POLICY "Storage reviews: auth INSERT" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'reviews');
+CREATE POLICY "Storage reviews: auth INSERT" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'reviews'
+    AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+  );
 
 -- Storage policies: live
 CREATE POLICY "Storage live: anon SELECT" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'live');
@@ -706,6 +735,55 @@ BEGIN
   WHERE id = session_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION public.increment_session_interested(integer) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.increment_session_shown(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.increment_session_interested(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_session_shown(integer) TO authenticated;
+
+-- Rate limit distribuido (Fix 0027)
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  p_key TEXT,
+  p_limit INTEGER,
+  p_window_seconds INTEGER
+)
+RETURNS TABLE(allowed BOOLEAN, remaining INTEGER, reset_at TIMESTAMPTZ)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count INTEGER;
+  v_reset_at TIMESTAMPTZ;
+BEGIN
+  IF p_limit < 1 OR p_window_seconds < 1 THEN
+    RAISE EXCEPTION 'invalid rate limit parameters';
+  END IF;
+
+  INSERT INTO public.rate_limits AS rl (key, count, reset_at, updated_at)
+  VALUES (p_key, 1, now() + make_interval(secs => p_window_seconds), now())
+  ON CONFLICT (key) DO UPDATE
+    SET count = CASE WHEN rl.reset_at <= now() THEN 1 ELSE rl.count + 1 END,
+        reset_at = CASE
+          WHEN rl.reset_at <= now()
+            THEN now() + make_interval(secs => p_window_seconds)
+          ELSE rl.reset_at
+        END,
+        updated_at = now()
+  RETURNING rl.count, rl.reset_at INTO v_count, v_reset_at;
+
+  DELETE FROM public.rate_limits AS expired
+  WHERE expired.reset_at < now() - interval '1 day';
+
+  RETURN QUERY
+  SELECT v_count <= p_limit,
+         GREATEST(p_limit - v_count, 0),
+         v_reset_at;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.check_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(text, integer, integer) TO service_role;
 
 -- -------------------------------------------------------------------------
 -- Modo Hot (Fix 0021)

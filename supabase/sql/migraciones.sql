@@ -2330,3 +2330,151 @@ GRANT UPDATE (nombre, avatar, phone) ON public.profiles TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 */
+
+-- ============================================================
+-- Fix 0027: Endurecimiento post-H-01 — RLS, Storage y rate limit
+-- Fecha ejecución: 2026-11-01
+-- Estado: EJECUTADO
+-- Descripción: Cierra SEC-02, SEC-03, SEC-07, SEC-08, SEC-11 y SEC-12.
+--   Elimina escrituras directas de pedidos/ítems, WhatsApp e intereses;
+--   restringe la lectura de ítems al dueño autenticado; impide que las
+--   reviews se autopubliquen o autoverifiquen; limita el bucket reviews a
+--   5 MB, imágenes y carpeta con UID; revoca increment_session_* a
+--   PUBLIC/anon; crea rate_limits y check_rate_limit (SECURITY DEFINER)
+--   ejecutable solo por service_role. Ejecutado en el SQL Editor de
+--   Supabase con resultado "Success. No rows returned".
+-- ============================================================
+/*
+BEGIN;
+
+-- ------------------------------------------------------------
+-- 1. Pedidos: sin actualización propia ni escrituras directas
+-- ------------------------------------------------------------
+DROP POLICY IF EXISTS "Orders: propio UPDATE" ON public.orders;
+DROP POLICY IF EXISTS "Orders: anon INSERT guest" ON public.orders;
+DROP POLICY IF EXISTS "Orders: auth INSERT propio" ON public.orders;
+
+-- ------------------------------------------------------------
+-- 2. Ítems de pedido: lectura solo del dueño; sin INSERT directo
+-- ------------------------------------------------------------
+DROP POLICY IF EXISTS "Order Items: propio ver" ON public.order_items;
+CREATE POLICY "Order Items: propio ver" ON public.order_items
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1
+    FROM public.orders o
+    WHERE o.id = order_items.order_id
+      AND o.user_id = (SELECT auth.uid())
+  ));
+
+DROP POLICY IF EXISTS "Order Items: INSERT propio" ON public.order_items;
+
+-- ------------------------------------------------------------
+-- 3. WhatsApp: sin INSERT directo de usuarios
+--    La API inserta server-side con service role tras validar.
+-- ------------------------------------------------------------
+DROP POLICY IF EXISTS "WhatsApp: auth INSERT" ON public.whatsapp_requests;
+
+-- ------------------------------------------------------------
+-- 4. Reviews: impedir autopublicación y autoverificación
+-- ------------------------------------------------------------
+DROP POLICY IF EXISTS "Reviews: auth INSERT" ON public.reviews;
+CREATE POLICY "Reviews: auth INSERT" ON public.reviews
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    user_id = (SELECT auth.uid())
+    AND is_approved = false
+    AND is_verified = false
+  );
+
+-- ------------------------------------------------------------
+-- 5. Storage reviews: límites de archivo y subida solo del dueño
+--    El archivo debe subirse en una carpeta con el UID del usuario.
+-- ------------------------------------------------------------
+UPDATE storage.buckets
+SET public = true,
+    file_size_limit = 5242880,
+    allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+WHERE id = 'reviews';
+
+DROP POLICY IF EXISTS "Storage reviews: auth INSERT" ON storage.objects;
+CREATE POLICY "Storage reviews: auth INSERT" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'reviews'
+    AND (storage.foldername(name))[1] = (SELECT auth.uid()::text)
+  );
+
+-- ------------------------------------------------------------
+-- 6. Intereses de producto: cerrar INSERT anónimo (spam)
+-- ------------------------------------------------------------
+DROP POLICY IF EXISTS "Product Interests: INSERT anon" ON public.product_interests;
+
+-- ------------------------------------------------------------
+-- 7. RPCs de métricas: no ejecutables por anon
+-- ------------------------------------------------------------
+REVOKE EXECUTE ON FUNCTION public.increment_session_interested(integer) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.increment_session_shown(integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.increment_session_interested(integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_session_shown(integer) TO authenticated;
+
+-- ------------------------------------------------------------
+-- 8. Rate limit distribuido (anti-bot)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+  key TEXT PRIMARY KEY,
+  count INTEGER NOT NULL DEFAULT 0,
+  reset_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_reset_at
+  ON public.rate_limits(reset_at);
+
+ALTER TABLE public.rate_limits ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(
+  p_key TEXT,
+  p_limit INTEGER,
+  p_window_seconds INTEGER
+)
+RETURNS TABLE(allowed BOOLEAN, remaining INTEGER, reset_at TIMESTAMPTZ)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count INTEGER;
+  v_reset_at TIMESTAMPTZ;
+BEGIN
+  IF p_limit < 1 OR p_window_seconds < 1 THEN
+    RAISE EXCEPTION 'invalid rate limit parameters';
+  END IF;
+
+  INSERT INTO public.rate_limits AS rl (key, count, reset_at, updated_at)
+  VALUES (p_key, 1, now() + make_interval(secs => p_window_seconds), now())
+  ON CONFLICT (key) DO UPDATE
+    SET count = CASE WHEN rl.reset_at <= now() THEN 1 ELSE rl.count + 1 END,
+        reset_at = CASE
+          WHEN rl.reset_at <= now()
+            THEN now() + make_interval(secs => p_window_seconds)
+          ELSE rl.reset_at
+        END,
+        updated_at = now()
+  RETURNING rl.count, rl.reset_at INTO v_count, v_reset_at;
+
+  DELETE FROM public.rate_limits AS expired
+  WHERE expired.reset_at < now() - interval '1 day';
+
+  RETURN QUERY
+  SELECT v_count <= p_limit,
+         GREATEST(p_limit - v_count, 0),
+         v_reset_at;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.check_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(text, integer, integer) TO service_role;
+
+COMMIT;
+*/

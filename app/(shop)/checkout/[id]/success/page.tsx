@@ -1,8 +1,6 @@
-import { cookies } from "next/headers"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { clearCartCookie } from "@/lib/cart"
 import { getOrderWhatsAppNumber } from "@/lib/queries/store-profile"
 
 export const metadata = {
@@ -23,22 +21,38 @@ export default async function OrderSuccessPage({
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: order } = await (supabase as any)
+  interface SuccessOrder {
+    id: number
+    user_id: string | null
+    total: number
+    subtotal: number
+    shipping_cost: number
+    payment_method: string
+  }
+
+  const { data: orderRaw } = await supabase
     .from("orders")
     .select("*")
     .eq("id", orderId)
     .single()
 
+  const order = orderRaw as unknown as SuccessOrder | null
   if (!order) notFound()
-  if (order.user_id && order.user_id !== user?.id) notFound()
+  if (!user || order.user_id !== user.id) notFound()
 
-  const { data: items } = await (supabase as any)
+  interface SuccessOrderItem {
+    id: number
+    quantity: number
+    price: number
+    product: { name: string; slug: string } | null
+  }
+
+  const { data: itemsRaw } = await supabase
     .from("order_items")
-    .select("id, quantity, unit_price, product:products(name, slug)")
+    .select("id, quantity, price, product:products(name, slug)")
     .eq("order_id", orderId)
 
-  const cookieStore = await cookies()
-  clearCartCookie(cookieStore)
+  const items = (itemsRaw as unknown as SuccessOrderItem[] | null) ?? []
 
   const whatsappNumber = await getOrderWhatsAppNumber(supabase)
 
@@ -73,12 +87,12 @@ export default async function OrderSuccessPage({
           <div className="mb-6">
             <div className="text-[13px] text-[#6B6B6B] dark:text-ink-soft mb-3">Productos</div>
             <div className="space-y-3">
-              {(items ?? []).map((item: any) => (
+              {items.map((item) => (
                 <div key={item.id} className="flex justify-between items-center">
                   <div className="text-sm text-[#2D2D2D] dark:text-ink-strong">
                     {item.product?.name ?? "Producto"} <span className="text-[#6B6B6B] dark:text-ink-soft">x{item.quantity}</span>
                   </div>
-                  <div className="text-sm font-medium">Bs. {(item.unit_price * item.quantity).toFixed(2)}</div>
+                  <div className="text-sm font-medium">Bs. {(item.price * item.quantity).toFixed(2)}</div>
                 </div>
               ))}
             </div>
@@ -91,7 +105,7 @@ export default async function OrderSuccessPage({
             </div>
             <div className="flex justify-between text-[14px]">
               <span className="text-[#6B6B6B] dark:text-ink-soft">Envío</span>
-              <span>{Number(order.shipping) === 0 ? <span className="text-[#27AE60] font-semibold">GRATIS</span> : `Bs. ${Number(order.shipping).toFixed(2)}`}</span>
+              <span>{Number(order.shipping_cost) === 0 ? <span className="text-[#27AE60] font-semibold">GRATIS</span> : `Bs. ${Number(order.shipping_cost).toFixed(2)}`}</span>
             </div>
             {order.payment_method === "pago_directo" && (
               <div className="mt-4 p-4 rounded-xl bg-[rgba(255,142,159,0.06)] border border-[rgba(255,142,159,0.15)]">

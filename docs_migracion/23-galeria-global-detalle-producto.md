@@ -112,4 +112,6 @@ Otras vistas:
 
 - No se modificaron tarjetas de producto, carrito, checkout, cookies, WhatsApp, precios, SKU, descripciones, activación/configuración de Modo Live, carga de imágenes ni la paleta.
 - No se hicieron cambios en la base de datos ni en Storage.
-- No se ejecutaron commits, pushes ni despliegues.
+- Commit `f86deab` (`feat: zoom al hover y galería modal táctil en ficha de producto`), publicado en `origin/main`.
+- El zoom por hover aplica **solo a la imagen principal de la ficha de producto** (`/productos/[slug]`); las tarjetas del catálogo no se modificaron. En Android/táctil, un toque abre la galería modal.
+- Si no se observa en producción, revisar el despliegue de Vercel asociado a `f86deab` y la caché del navegador.

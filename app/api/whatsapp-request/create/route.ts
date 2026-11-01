@@ -1,45 +1,92 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { createServiceClient } from "@/lib/supabase/service"
+import { checkRateLimit, getClientIp, rateLimitHeaders } from "@/lib/rate-limit"
+import { parseCartItems, repriceCart, type ProductForValidation } from "@/lib/whatsapp/validation"
+import { insertWhatsappRequest } from "@/lib/whatsapp/server"
+
+export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
   const clientIp = getClientIp(request)
-  const { allowed } = checkRateLimit(`whatsapp:create:${clientIp}`)
-  if (!allowed) {
-    return NextResponse.json({ error: "Demasiados intentos. Espera un minuto." }, { status: 429 })
+  const rateLimit = await checkRateLimit(`whatsapp:create:${clientIp}`, 10, 60)
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Espera un minuto." },
+      { status: 429, headers: rateLimitHeaders(rateLimit) },
+    )
   }
 
-  const supabase = await createClient()
+  let body: Record<string, unknown> | null
+  try {
+    const raw = await request.json()
+    body = raw !== null && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : null
+  } catch {
+    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 })
+  }
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const body = await request.json()
-  const { productId, productName, productImage, productPrice } = body
-
-  if (!productId || !productName) {
+  if (!body) {
     return NextResponse.json({ error: "Faltan datos del producto" }, { status: 400 })
   }
 
-  const refCode = `PED-${String(Math.floor(100000 + Math.random() * 900000))}`
-
-  const { data, error } = await supabase
-    .from("whatsapp_requests")
-    .insert({
-      user_id: user?.id ?? null,
-      product_id: Number(productId),
-      product_name: productName,
-      product_image: productImage || "",
-      product_price: productPrice ? Number(productPrice) : null,
-      reference_code: refCode,
-    } as never)
-    .select("reference_code")
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: "Error al crear la solicitud" }, { status: 500 })
+  const parsedItems = parseCartItems([{ id: body.productId, quantity: 1 }])
+  if (!parsedItems.ok) {
+    return NextResponse.json({ error: "Faltan datos del producto" }, { status: 400 })
   }
 
-  const result = data as unknown as { reference_code: string } | null
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  return NextResponse.json({ referenceCode: result?.reference_code ?? refCode })
+  const productId = parsedItems.data[0].id
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("id, name, price, discount_price, stock, product_images(image, is_main)")
+    .eq("id", productId)
+    .eq("is_active", true)
+    .single()
+
+  if (productError || !product) {
+    return NextResponse.json({ error: "Producto no disponible" }, { status: 400 })
+  }
+
+  const priced = repriceCart(parsedItems.data, [product as ProductForValidation])
+  if (!priced.ok) {
+    return NextResponse.json({ error: priced.error, code: priced.code }, { status: 400 })
+  }
+
+  const item = priced.data.items[0]
+
+  let admin
+  try {
+    admin = createServiceClient()
+  } catch (error) {
+    console.error("[whatsapp-create] service client", error)
+    return NextResponse.json(
+      { error: "El servidor no está configurado para procesar solicitudes. Intenta más tarde." },
+      { status: 503 },
+    )
+  }
+
+  try {
+    const { referenceCode } = await insertWhatsappRequest(admin, {
+      user_id: user?.id ?? null,
+      product_id: item.id,
+      product_name: item.name,
+      product_image: item.image,
+      product_price: item.subtotal,
+      notes: "",
+    })
+
+    return NextResponse.json({ referenceCode, guest: !user })
+  } catch (error) {
+    console.error("[whatsapp-create] insert", error)
+    return NextResponse.json(
+      { error: "Error al crear la solicitud" },
+      { status: 500 },
+    )
+  }
 }

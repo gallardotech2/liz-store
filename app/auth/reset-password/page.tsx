@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { TurnstileWidget } from "@/components/security/TurnstileWidget"
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -12,6 +12,9 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [website, setWebsite] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const [turnstileReset, setTurnstileReset] = useState(0)
 
   function validateEmail(value: string): string | null {
     if (!value.trim()) return "Ingresa tu correo electrónico"
@@ -30,21 +33,23 @@ export default function ResetPasswordPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const origin = window.location.origin
-
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/update-password`,
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, website, turnstileToken }),
       })
+      const data = await res.json()
 
-      if (error) {
-        setError(error.message || "Error al enviar el correo de recuperación")
+      if (!res.ok) {
+        setError(data.error || "Error al enviar el correo de recuperación")
+        setTurnstileReset((value) => value + 1)
         return
       }
 
       setSent(true)
     } catch {
       setError("Error de conexión con el servidor")
+      setTurnstileReset((value) => value + 1)
     } finally {
       setLoading(false)
     }
@@ -121,6 +126,23 @@ export default function ResetPasswordPage() {
               </p>
             )}
           </div>
+
+          <input
+            type="text"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="hidden"
+          />
+
+          <TurnstileWidget
+            action="reset"
+            onToken={setTurnstileToken}
+            resetKey={turnstileReset}
+          />
 
           {error && (
             <div
