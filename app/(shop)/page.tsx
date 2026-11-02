@@ -4,8 +4,6 @@ import type { Metadata } from "next"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/Button"
 import { ProductCard } from "@/components/ui/ProductCard"
-import { formatCurrency } from "@/lib/utils"
-import { FaShieldAlt, FaTruck, FaGem, FaHeart } from "react-icons/fa"
 import { HeroSocialIcons } from "@/components/layout/HeroSocialIcons"
 import { ESCUDO_PAGO_ENABLED } from "@/lib/features"
 import { PersonalizedCategories } from "@/components/shop/PersonalizedCategories"
@@ -359,51 +357,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="bg-white dark:bg-surface-raised py-15 border-t border-[rgba(255,142,159,0.1)] border-b border-[rgba(255,142,159,0.1)]">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-7.5 text-center">
-            {ESCUDO_PAGO_ENABLED && (
-              <div className="p-5 flex flex-col items-center">
-                <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
-                  <FaShieldAlt className="text-[26px]" />
-                </div>
-                <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Escudo Pago</h4>
-                <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
-                  Tu dinero protegido hasta recibir tu pedido. Paga con total confianza.
-                </p>
-              </div>
-            )}
-            <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
-                <FaTruck className="text-[26px]" />
-              </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Envío Seguro</h4>
-              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
-                Realizamos envíos seguros y rápidos a todo el país.
-              </p>
-            </div>
-            <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
-                <FaGem className="text-[26px]" />
-              </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Calidad Seleccionada</h4>
-              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
-                Trabajamos con piezas cuidadosamente seleccionadas.
-              </p>
-            </div>
-            <div className="p-5 flex flex-col items-center">
-              <div className="text-primary mb-4 flex items-center justify-center w-14 h-14 rounded-full bg-[rgba(255,142,159,0.08)]">
-                <FaHeart className="text-[26px]" />
-              </div>
-              <h4 className="font-sans text-base mb-2 text-[#2D2D2D] dark:text-ink-strong">Atención Personalizada</h4>
-              <p className="text-sm text-[#6B6B6B] dark:text-ink-soft leading-[1.6]">
-                Te brindamos asistencia durante tu proceso de compra.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {ESCUDO_PAGO_ENABLED && (
         <section className="py-20">
